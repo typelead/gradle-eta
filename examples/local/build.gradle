@@ -1,0 +1,24 @@
+// Example for building the plugin locally and using the local installation.
+//
+// You will need to build and deploy the gradle-eta plugin to your local m2 repo with
+//
+//    % cd path/to/gradle-eta
+//    % gradle assemble publishToMavenLocal
+//
+// See the buildscript in this file for how to depend on a local gradle-eta plugin.
+
+buildscript {
+  repositories {
+    mavenLocal()
+
+    dependencies {
+      classpath 'com.typelead:gradle-eta:0.0.1-SNAPSHOT'
+    }
+  }
+}
+
+apply plugin: 'eta'
+
+eta {
+    etlasVersion = '1.0.2.0'
+}

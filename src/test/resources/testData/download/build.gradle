@@ -1,0 +1,13 @@
+plugins {
+    id 'eta'
+}
+
+apply plugin: 'eta'
+
+eta { etlasVersion = '1.0.2.0' }
+
+task printEtlasBinary {
+    doLast {
+        println(eta.etlasBinary)
+    }
+}

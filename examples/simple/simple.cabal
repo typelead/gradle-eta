@@ -1,0 +1,13 @@
+name:                simple
+version:             0.0.1
+license:             AllRightsReserved
+license-file:        LICENSE
+build-type:          Simple
+extra-source-files:  ChangeLog.md
+cabal-version:       >=1.10
+
+executable simple
+  build-depends:       base >=4.8 && <4.9
+  hs-source-dirs:      src/main/eta
+  java-sources:        src/main/eta/Main.java
+  default-language:    Haskell2010
