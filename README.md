@@ -1,5 +1,7 @@
 # gradle-eta
 
+[![Build Status](https://travis-ci.org/typelead/gradle-eta.svg?branch=master)](https://travis-ci.org/typelead/gradle-eta)
+
 A gradle plugin for building [Eta](http://eta-lang.org/) projects via the
 [Etlas](https://github.com/typelead/etlas) build tool.
 
