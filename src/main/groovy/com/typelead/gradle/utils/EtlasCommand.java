@@ -69,19 +69,12 @@ public class EtlasCommand {
     }
 
     public List<String> depsMaven() {
-        return linesToList(defaultCommandLine("deps", "--maven").executeAndGetStandardOutput());
+        return defaultCommandLine("deps", "--maven").executeAndGetStandardOutputLines();
     }
 
     /** This will also download dependencies via `etlas install --dependencies-only` */
     public List<String> depsClasspath() {
-        return linesToList(defaultCommandLine("deps", "--classpath").executeAndGetStandardOutput());
-    }
-
-    private List<String> linesToList(String s) {
-        return Arrays.stream(s.split("\n"))
-                .map(String::trim)
-                .filter(line -> !line.isEmpty())
-                .collect(Collectors.toList());
+        return defaultCommandLine("deps", "--classpath").executeAndGetStandardOutputLines();
     }
 
     /** If useSandbox == false or if it has already been init'd, skip; otherwise, sandbox init. */

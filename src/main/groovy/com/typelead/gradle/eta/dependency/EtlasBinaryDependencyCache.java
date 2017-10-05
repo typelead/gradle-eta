@@ -1,5 +1,6 @@
 package com.typelead.gradle.eta.dependency;
 
+import com.typelead.gradle.utils.CommandLine;
 import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
@@ -60,11 +61,19 @@ public class EtlasBinaryDependencyCache {
         if (!result.setExecutable(true)) {
             throw new GradleException("Failed to make etlas executable: " + result.getPath());
         }
+        String path;
         try {
-            return result.getCanonicalPath();
+            path = result.getCanonicalPath();
         } catch (IOException e) {
             throw new GradleException("Failed to get canonical path for: " + result.getPath());
         }
+        // This is mostly a hack to ensure we don't get stuck prompting the user
+        // in the background about sending metrics. This will, by default, not send metrics,
+        // so users will have to opt-in explicitly with etlas flags.
+        if (!new File(System.getenv("HOME"), ".etlas/config").exists()) {
+            new CommandLine(path, "user-config", "init").execute();
+        }
+        return path;
     }
 
     private String uncheckedBinaryPath(String version) {
