@@ -72,7 +72,10 @@ class EtaBasePluginTest extends PluginSpec {
         def result = gradle("foo", "bar")
 
         then:
-        result.output.contains(":foo\nFoo!\n:bar\nBar!")
+        result.output.contains(":foo")
+        result.output.contains("\nFoo!\n")
+        result.output.contains(":bar")
+        result.output.contains("\nBar!\n")
     }
 
     def testCompile() {
