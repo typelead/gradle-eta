@@ -69,12 +69,24 @@ public class EtlasCommand {
     }
 
     public List<String> depsMaven() {
-        return defaultCommandLine("deps", "--maven").executeAndGetStandardOutputLines();
+        return defaultCommandLine("deps", "--maven").executeAndGetStandardOutputLines()
+                .stream()
+                .filter(line ->
+                    !line.startsWith(" ")
+                    && !line.contains("Notice:")
+                    && line.contains(":")
+                ).collect(Collectors.toList());
     }
 
     /** This will also download dependencies via `etlas install --dependencies-only` */
     public List<String> depsClasspath() {
-        return defaultCommandLine("deps", "--classpath").executeAndGetStandardOutputLines();
+        return defaultCommandLine("deps", "--classpath").executeAndGetStandardOutputLines()
+                .stream()
+                .filter(line ->
+                    !line.startsWith(" ")
+                    && !line.contains("Notice:")
+                    && line.contains(File.separator)
+                ).collect(Collectors.toList());
     }
 
     /** If useSandbox == false or if it has already been init'd, skip; otherwise, sandbox init. */
