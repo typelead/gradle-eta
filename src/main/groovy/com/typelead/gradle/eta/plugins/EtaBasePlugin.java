@@ -84,6 +84,11 @@ public class EtaBasePlugin implements Plugin<Project> {
         EtlasCommand c = new EtlasCommand(project, extension);
         c.maybeInitSandbox();
 
+        // We must install dependencies before we can call `etlas deps`
+        // TODO: There needs to be a better way since we don't want to have to do this
+        // every time gradle is invoked, e.g. `gradle clean` doesn't need to do this.
+        c.installDependenciesOnly();
+
         DependencySet deps =
                 project.getConfigurations()
                         .getByName(EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME)

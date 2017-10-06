@@ -69,7 +69,7 @@ public class EtlasBinaryDependencyResolver {
     }
 
     private String getEtlasVersion(String etlas) {
-        return new CommandLine(etlas, "--numeric-version").executeAndGetStandardOutput();
+        return new CommandLine(etlas, "--numeric-version").executeAndGetStandardOutput().trim();
     }
 
     private String getEtlasUrlString(String repo, String version, String arch) {

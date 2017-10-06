@@ -90,8 +90,8 @@ public class CommandLine implements Log {
         );
     }
 
-    private Process executeAndConsumeOutput(Consumer<String> consumeStdOutLine,
-                                            Consumer<String> consumeStdErrLine) {
+    public Process executeAndConsumeOutput(Consumer<String> consumeStdOutLine,
+                                           Consumer<String> consumeStdErrLine) {
         Process p = start();
         IOUtils.consumeLines(p.getInputStream(), consumeStdOutLine);
         IOUtils.consumeLines(p.getErrorStream(), consumeStdErrLine);

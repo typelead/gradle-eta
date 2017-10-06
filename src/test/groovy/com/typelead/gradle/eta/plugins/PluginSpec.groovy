@@ -51,7 +51,7 @@ abstract class PluginSpec extends Specification {
     }
 
     protected BuildResult gradle(String... tasks) {
-        tasks += ['--stacktrace']
+        tasks += ['--stacktrace', '-i']
         GradleRunner.create()
                 .withProjectDir(dir.root)
                 .withPluginClasspath()

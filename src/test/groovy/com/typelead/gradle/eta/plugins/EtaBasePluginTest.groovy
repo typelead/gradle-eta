@@ -1,5 +1,9 @@
 package com.typelead.gradle.eta.plugins
 
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.stream.Collectors
+
 class EtaBasePluginTest extends PluginSpec {
 
     def download() {
@@ -7,8 +11,8 @@ class EtaBasePluginTest extends PluginSpec {
         def result = gradle("printEtlasBinary")
 
         then:
-        def etlasPath = result.output.split('\n').find { it.contains(cachesDir().path) }
-        new File(etlasPath) == new File(cachesDir(), "/etlas/1.0.2.0/etlas")
+        def etlasPath = "${cachesDir().path}/etlas/1.0.2.0/etlas"
+        result.output.split('\n').contains(etlasPath)
     }
 
     def compile() {

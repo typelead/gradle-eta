@@ -1,12 +1,11 @@
 package com.typelead.gradle.eta.dependency;
 
 import com.typelead.gradle.utils.CommandLine;
+import com.typelead.gradle.utils.Log;
 import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.invocation.Gradle;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,9 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class EtlasBinaryDependencyCache {
+public class EtlasBinaryDependencyCache implements Log {
 
-    private final Logger LOG = Logging.getLogger(EtlasBinaryDependencyCache.class);
     private final String cacheDir;
 
     public EtlasBinaryDependencyCache(Project project) {
@@ -42,7 +40,7 @@ public class EtlasBinaryDependencyCache {
 
     public String putBinaryForVersion(String version, URL url) {
         Path target = Paths.get(uncheckedBinaryPath(version));
-        LOG.info("Downloading etlas from: " + url + " ; caching to " + target);
+        logger().info("Downloading etlas from: " + url + " ; caching to " + target);
         File dir = target.getParent().toFile();
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
@@ -70,9 +68,16 @@ public class EtlasBinaryDependencyCache {
         // This is mostly a hack to ensure we don't get stuck prompting the user
         // in the background about sending metrics. This will, by default, not send metrics,
         // so users will have to opt-in explicitly with etlas flags.
-        if (!new File(System.getenv("HOME"), ".etlas/config").exists()) {
-            new CommandLine(path, "user-config", "init").execute();
+        File etlasConfig = new File(System.getProperty("user.home"), ".etlas/config");
+        if (!etlasConfig.exists()) {
+            logger().info("Initializing etlas config via: etlas user-config init");
+            new CommandLine(path, "user-config", "init").executeAndOutputToSystem();
+            if (!etlasConfig.exists()) {
+                throw new GradleException("Initialized etlas config not found");
+            }
         }
+        logger().info("Updating etlas packages via: etlas update");
+        new CommandLine(path, "update").executeAndOutputToSystem();
         return path;
     }
 
