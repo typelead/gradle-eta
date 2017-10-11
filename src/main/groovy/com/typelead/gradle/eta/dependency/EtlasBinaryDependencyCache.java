@@ -71,13 +71,13 @@ public class EtlasBinaryDependencyCache implements Log {
         File etlasConfig = new File(System.getProperty("user.home"), ".etlas/config");
         if (!etlasConfig.exists()) {
             logger().info("Initializing etlas config via: etlas user-config init");
-            new CommandLine(path, "user-config", "init").executeAndOutputToSystem();
+            new CommandLine(path, "user-config", "init").executeAndLogOutput();
             if (!etlasConfig.exists()) {
                 throw new GradleException("Initialized etlas config not found");
             }
         }
         logger().info("Updating etlas packages via: etlas update");
-        new CommandLine(path, "update").executeAndOutputToSystem();
+        new CommandLine(path, "update").executeAndLogOutput();
         return path;
     }
 

@@ -83,10 +83,15 @@ public class CommandLine implements Log {
         return stdOutLines;
     }
 
-    public void executeAndOutputToSystem() {
-        executeAndConsumeOutput(
-                System.out::println,
-                System.err::println
+    public void executeAndLogOutput() {
+        Process p = executeAndConsumeOutput(
+                x -> logger().info(x),
+                x -> logger().error(x)
+        );
+        if (p.exitValue() == 0) return;
+        throw new GradleException(
+                "Nonzero (" + p.exitValue() + ") exit code for command " + command
+                + " with workingDir " + workingDir
         );
     }
 

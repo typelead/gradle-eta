@@ -111,7 +111,7 @@ public class EtlasCommand {
         CommandLine c = initCommandLine();
         c.getCommand().add("sandbox");
         c.getCommand().add("init");
-        c.executeAndOutputToSystem();
+        c.executeAndLogOutput();
     }
 
     private void commandWithComponent(String command, List<String> commandArgs) {
@@ -150,7 +150,7 @@ public class EtlasCommand {
     }
 
     private void defaultCommand(String command, List<String> args) {
-        defaultCommandLine(command, args).executeAndOutputToSystem();
+        defaultCommandLine(command, args).executeAndLogOutput();
     }
 
     private String determineSandboxConfig() {
