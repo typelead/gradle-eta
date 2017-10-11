@@ -14,7 +14,7 @@ public class EtaTest extends AbstractEtlasTask {
     @TaskAction
     public void testEta() {
         EtlasCommand c = new EtlasCommand(this);
-        if (!getConfigureFlags().isEmpty()) c.configure(getConfigureFlags());
+        c.enableTests();
         c.test(getTestFlags());
     }
 

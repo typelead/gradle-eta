@@ -52,6 +52,14 @@ public class EtlasCommand {
         commandWithComponent("configure", flags);
     }
 
+    public void reconfigure(List<String> flags) {
+        commandWithComponent("reconfigure", flags);
+    }
+
+    public void enableTests() {
+        reconfigure(Collections.singletonList("--enable-tests"));
+    }
+
     public void clean() {
         commandWithComponent("clean");
     }
@@ -66,6 +74,10 @@ public class EtlasCommand {
 
     public void installDependenciesOnly() {
         defaultCommand("install", Collections.singletonList("--dependencies-only"));
+    }
+
+    public void installTestDependenciesOnly() {
+        defaultCommand("install", Arrays.asList("--dependencies-only", "--enable-tests"));
     }
 
     public List<String> depsMaven() {
