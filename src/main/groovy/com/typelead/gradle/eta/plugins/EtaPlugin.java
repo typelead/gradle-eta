@@ -2,7 +2,7 @@ package com.typelead.gradle.eta.plugins;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.BasePlugin;
+import org.gradle.api.plugins.JavaPlugin;
 
 /**
  * A {@link Plugin} which sets up an Eta project.
@@ -15,6 +15,7 @@ public class EtaPlugin implements Plugin<Project> {
     public static final String TASK_GROUP_NAME = "EtaPlugin";
     public static final String CLEAN_ETA_TASK_NAME = "cleanEta";
     public static final String COMPILE_ETA_TASK_NAME = "compileEta";
+    public static final String RUNTIME_ETA_TASK_NAME = "runtimeEta";
     public static final String RUN_ETA_TASK_NAME = "runEta";
     public static final String TEST_DEPS_ETA_TASK_NAME = "installTestDepsEta";
     public static final String TEST_COMPILE_ETA_TASK_NAME = "testCompileEta";
@@ -30,6 +31,6 @@ public class EtaPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         project.getPluginManager().apply(EtaBasePlugin.class);
-        project.getPluginManager().apply(BasePlugin.class);
+        project.getPluginManager().apply(JavaPlugin.class);
     }
 }

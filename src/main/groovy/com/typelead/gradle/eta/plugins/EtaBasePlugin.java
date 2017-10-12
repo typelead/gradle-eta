@@ -4,11 +4,9 @@ import com.typelead.gradle.eta.config.EtaExtension;
 import com.typelead.gradle.eta.dependency.EtlasBinaryDependency;
 import com.typelead.gradle.eta.dependency.EtlasBinaryDependencyResolver;
 import com.typelead.gradle.eta.tasks.*;
-import com.typelead.gradle.utils.EtlasCommand;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.BasePlugin;
@@ -29,9 +27,10 @@ public class EtaBasePlugin implements Plugin<Project> {
         // populated with the user `eta { .. }` configuration.
         project.afterEvaluate(p -> {
             configureOrDownloadEtlas(project, extension);
-            resolveDependencies(project, extension);
+            //resolveDependencies(project, extension);
             configureEtaCleanTask(p, extension);
             configureEtaCompileTask(p, extension);
+            configureEtaRuntimeTask(p, extension);
             configureEtaRunTask(p, extension);
             configureEtaTestDepsTask(p, extension);
             configureEtaTestCompileTask(p, extension);
@@ -80,36 +79,36 @@ public class EtaBasePlugin implements Plugin<Project> {
         }
     }
 
-    private static void resolveDependencies(Project project, EtaExtension extension) {
-        EtlasCommand c = new EtlasCommand(project, extension);
-        c.maybeInitSandbox();
-
-        // We must install dependencies before we can call `etlas deps`
-        // TODO: There needs to be a better way since we don't want to have to do this
-        // every time gradle is invoked, e.g. `gradle clean` doesn't need to do this.
-        c.installDependenciesOnly();
-
-        DependencySet deps =
-                project.getConfigurations()
-                        .getByName(EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME)
-                        .getDependencies();
-
-        for (String dep : c.depsMaven()) {
-            deps.add(project.getDependencies().create(dep));
-            project.getDependencies().add(
-                    EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME,
-                    dep
-            );
-        }
-        for (String dep : c.depsClasspath()) {
-            deps.add(
-                    project.getDependencies().add(
-                            EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME,
-                            project.files(dep)
-                    )
-            );
-        }
-    }
+//    private static void resolveDependencies(Project project, EtaExtension extension) {
+//        EtlasCommand c = new EtlasCommand(project, extension);
+//        c.maybeInitSandbox();
+//
+//        // We must install dependencies before we can call `etlas deps`
+//        // TODO: There needs to be a better way since we don't want to have to do this
+//        // every time gradle is invoked, e.g. `gradle clean` doesn't need to do this.
+//        c.installDependenciesOnly();
+//
+//        DependencySet deps =
+//                project.getConfigurations()
+//                        .getByName(EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME)
+//                        .getDependencies();
+//
+//        for (String dep : c.depsMaven()) {
+//            deps.add(project.getDependencies().create(dep));
+//            project.getDependencies().add(
+//                    EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME,
+//                    dep
+//            );
+//        }
+//        for (String dep : c.depsClasspath()) {
+//            deps.add(
+//                    project.getDependencies().add(
+//                            EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME,
+//                            project.files(dep)
+//                    )
+//            );
+//        }
+//    }
 
     private static <A extends EtlasTaskSpec> A configureEtlasTask(
             Project project, EtaExtension extension, Class<A> cls, String taskName) {
@@ -135,10 +134,18 @@ public class EtaBasePlugin implements Plugin<Project> {
         task.setDescription("Compile Eta sources via 'etlas build'");
     }
 
+    private static void configureEtaRuntimeTask(Project project, EtaExtension extension) {
+        EtaRuntime task = configureEtlasTask(project, extension, EtaRuntime.class, EtaPlugin.RUNTIME_ETA_TASK_NAME);
+        task.setDescription("Set Eta runtime dependency via 'etlas deps --classpath'");
+    }
+
     private static void configureEtaRunTask(Project project, EtaExtension extension) {
         EtaRun task = configureEtlasTask(project, extension, EtaRun.class, EtaPlugin.RUN_ETA_TASK_NAME);
         task.setDescription("Run a compiled Eta executable");
-        task.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+        task.dependsOn(
+                project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME),
+                project.getTasks().getByName(EtaPlugin.RUNTIME_ETA_TASK_NAME)
+        );
     }
 
     private static void configureEtaTestDepsTask(Project project, EtaExtension extension) {
@@ -154,6 +161,7 @@ public class EtaBasePlugin implements Plugin<Project> {
     private static void configureEtaTestTask(Project project, EtaExtension extension) {
         EtaTest task = configureEtlasTask(project, extension, EtaTest.class, EtaPlugin.TEST_ETA_TASK_NAME);
         task.setDescription("Run Eta tests");
+        task.dependsOn(project.getTasks().getByName(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME));
     }
 
     /** Update the 'clean' lifecycle task to include cleaning the Eta build. */
