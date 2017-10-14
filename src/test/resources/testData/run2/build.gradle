@@ -12,10 +12,10 @@ task foo(type: EtaRun) {
     component = "foo"
 }
 
-foo.dependsOn(':compileEta')
+foo.dependsOn(':compileEta', ':runtimeEta')
 
 task bar(type: EtaRun) {
     component = "bar"
 }
 
-bar.dependsOn(':compileEta')
+bar.dependsOn(':compileEta', ':runtimeEta')
