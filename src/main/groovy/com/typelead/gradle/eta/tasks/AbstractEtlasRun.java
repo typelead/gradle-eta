@@ -14,6 +14,8 @@ public class AbstractEtlasRun extends JavaExec implements EtlasTaskSpec {
     @Nullable private String sandboxConfig;
     @Nullable private String defaultUserConfig;
     @Nullable private String etlasBinary;
+    @Nullable private String etaBinary;
+    @Nullable private String etaPkgBinary;
     private List<String> buildFlags = new ArrayList<>();
     private String buildDir = EtaPlugin.DEFAULT_BUILD_DIR;
     private List<String> components = new ArrayList<>();
@@ -67,6 +69,26 @@ public class AbstractEtlasRun extends JavaExec implements EtlasTaskSpec {
     @Override
     public void setEtlasBinary(String etlasBinary) {
         this.etlasBinary = etlasBinary;
+    }
+
+    @Override
+    public String getEtaBinary() {
+        return etaBinary;
+    }
+
+    @Override
+    public void setEtaBinary(String etaBinary) {
+        this.etaBinary = etaBinary;
+    }
+
+    @Override
+    public String getEtaPkgBinary() {
+        return etaPkgBinary;
+    }
+
+    @Override
+    public void setEtaPkgBinary(String etaPkgBinary) {
+        this.etaPkgBinary = etaPkgBinary;
     }
 
     @Override

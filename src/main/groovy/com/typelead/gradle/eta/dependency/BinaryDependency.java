@@ -1,11 +1,11 @@
 package com.typelead.gradle.eta.dependency;
 
-public class EtlasBinaryDependency {
+public class BinaryDependency {
 
     private final String path;
     private final String version;
 
-    EtlasBinaryDependency(String path, String version) {
+    public BinaryDependency(String path, String version) {
         this.path = path;
         this.version = version;
     }
@@ -18,3 +18,4 @@ public class EtlasBinaryDependency {
         return version;
     }
 }
+

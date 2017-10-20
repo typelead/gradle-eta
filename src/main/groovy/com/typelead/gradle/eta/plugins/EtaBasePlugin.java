@@ -1,15 +1,17 @@
 package com.typelead.gradle.eta.plugins;
 
 import com.typelead.gradle.eta.config.EtaExtension;
-import com.typelead.gradle.eta.dependency.EtlasBinaryDependency;
-import com.typelead.gradle.eta.dependency.EtlasBinaryDependencyResolver;
+import com.typelead.gradle.eta.dependency.*;
 import com.typelead.gradle.eta.tasks.*;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.BasePlugin;
+
+import java.util.function.Function;
 
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
@@ -33,7 +35,7 @@ public class EtaBasePlugin implements Plugin<Project> {
         // We must run these in an `afterEvaluate` block so that `extension` has been
         // populated with the user `eta { .. }` configuration.
         project.afterEvaluate(p -> {
-            configureOrDownloadEtlas(project, extension);
+            configureBinaries(project, extension);
             configureTasksAfterEvaluate(project, extension);
             configureBaseCleanTask(p);
             configureBaseAssembleTask(p);
@@ -45,37 +47,95 @@ public class EtaBasePlugin implements Plugin<Project> {
                 .setDescription("Configuration for Eta runtime tasks");
     }
 
-    private static void configureOrDownloadEtlas(Project project, EtaExtension extension) {
-        EtlasBinaryDependencyResolver resolver = new EtlasBinaryDependencyResolver(project);
-        EtlasBinaryDependency etlasDep;
-        if (extension.getUseSystemEtlas()) {
-            if (extension.getEtlasBinary() != null) {
-                throw new GradleException("Invalid configuration, cannot set etlasBinary and useSystemEtlas together");
+    private static void configureBinaries(Project project, EtaExtension extension) {
+        setEtaPkgDefaults(extension);
+        extension.getEtlas().update(configureOrDownloadEtlas(project, extension));
+        extension.getEta().update(configureOrDownloadEta(project, extension));
+        extension.getEtaPkg().update(configureOrDownloadEtaPkg(project, extension));
+    }
+
+    private static BinaryDependency configureOrDownloadEtlas(Project project, EtaExtension extension) {
+        BinaryDependency dep = configureOrDownloadBinary(
+                "etlas",
+                extension.getEtlas(),
+                new DefaultBinaryDependencyResolver(
+                        "etlas",
+                        new EtlasBinaryDependencyCache(project),
+                        new EtlasRemoteBinaryDependencyUrlFormat(extension.getEtaRepo())
+                )
+        );
+        if (dep == null) throw new GradleException("Missing configuration for etlas");
+        return dep;
+    }
+
+    private static BinaryDependency configureOrDownloadEta(Project project, EtaExtension extension) {
+        return configureOrDownloadBinary(
+                "eta",
+                extension.getEta(),
+                new DefaultBinaryDependencyResolver(
+                        "eta",
+                        new EtaBinaryDependencyCache(project),
+                        new EtaRemoteBinaryDependencyUrlFormat(extension.getEtaRepo())
+                )
+        );
+    }
+
+    private static BinaryDependency configureOrDownloadEtaPkg(Project project, EtaExtension extension) {
+        return configureOrDownloadBinary(
+                "eta-pkg",
+                extension.getEtaPkg(),
+                new DefaultBinaryDependencyResolver(
+                        "eta-pkg",
+                        new EtaPkgBinaryDependencyCache(project),
+                        new EtaPkgRemoteBinaryDependencyUrlFormat(extension.getEtaRepo())
+                )
+        );
+    }
+
+    /** Set the default configuration for etaPkg based on eta if it is not configured. */
+    private static void setEtaPkgDefaults(EtaExtension extension) {
+        if (extension.getEtaPkg().hasConfiguration()) return;
+        if (extension.getEta().getVersion() != null) {
+            extension.getEtaPkg().setVersion(extension.getEta().getVersion());
+        } else if (extension.getEta().getUseSystem()) {
+            extension.getEtaPkg().setUseSystem(true);
+        }
+    }
+
+    private static BinaryDependency configureOrDownloadBinary(
+            String name,
+            EtaExtension.BinaryConfig binaryConfig,
+            BinaryDependencyResolver resolver
+    ) {
+        if (binaryConfig.getUseSystem()) {
+            if (binaryConfig.getPath() != null) {
+                throw new GradleException(
+                        "Invalid configuration, cannot set " + name + ".path and "
+                        + name + ".useSystem together"
+                );
             }
-            if (extension.getEtlasVersion() != null) {
-                throw new GradleException("Invalid configuration, cannot set etlasVersion and useSystemEtlas together");
+            if (binaryConfig.getVersion() != null) {
+                throw new GradleException(
+                        "Invalid configuration, cannot set " + name + ".version and "
+                        + name + ".useSystem together"
+                );
             }
-            etlasDep = resolver.resolveInSystemPath();
-            if (etlasDep == null) {
-                throw new GradleException("Could not find etlas executable on system PATH");
+            BinaryDependency dep = resolver.resolveSystemBinary();
+            if (dep == null) throw new GradleException("Could not find " + name + " executable on system PATH");
+            LOG.info("Using " + name + " version " + dep.getVersion() + " from system PATH: " + dep.getPath());
+            return dep;
+        } else if (binaryConfig.getPath() != null) {
+            if (binaryConfig.getVersion() != null) {
+                throw new GradleException(
+                        "Invalid configuration, cannot set " + name + ".version and "
+                        + name + ".path together"
+                );
             }
-            LOG.info("Using etlas " + etlasDep.getVersion() + " from system PATH: " + etlasDep.getPath());
-            extension.setEtlasBinary(etlasDep.getPath());
-            extension.setEtlasVersion(etlasDep.getVersion());
-        } else if (extension.getEtlasBinary() != null) {
-            if (extension.getEtlasVersion() != null) {
-                throw new GradleException("Invalid configuration, cannot set etlasVersion and etlasBinary together");
-            }
-            etlasDep = resolver.resolveLocalPath(extension.getEtlasBinary());
-            extension.setEtlasVersion(etlasDep.getVersion());
-        } else if (extension.getEtlasVersion() != null) {
-            if (extension.getEtlasRepo() == null) {
-                throw new GradleException("etlasVersion provided, but etlasRepo was unexpectedly null!");
-            }
-            etlasDep = resolver.resolveRemote(extension.getEtlasRepo(), extension.getEtlasVersion());
-            extension.setEtlasBinary(etlasDep.getPath());
+            return resolver.resolveLocalBinary(binaryConfig.getPath());
+        } else if (binaryConfig.getVersion() != null) {
+            return resolver.resolveRemoteBinary(binaryConfig.getVersion());
         } else {
-            throw new GradleException("Etlas not configured, please specify etlasVersion in an eta { .. } block.");
+            return null;
         }
     }
 
@@ -83,7 +143,9 @@ public class EtaBasePlugin implements Plugin<Project> {
         project.getTasks().forEach(t -> {
             if (t instanceof EtlasTaskSpec) {
                 EtlasTaskSpec task = (EtlasTaskSpec) t;
-                task.setEtlasBinary(extension.getEtlasBinary());
+                task.setEtlasBinary(extension.getEtlas().getPath());
+                task.setEtaBinary(extension.getEta().getPath());
+                task.setEtaPkgBinary(extension.getEtaPkg().getPath());
                 task.setGroup(EtaPlugin.TASK_GROUP_NAME);
                 task.setUseSandbox(extension.getUseSandbox());
                 task.setSandboxConfig(extension.getSandboxConfig());
@@ -95,45 +157,68 @@ public class EtaBasePlugin implements Plugin<Project> {
         });
     }
 
+    private static <A extends DefaultTask> A createEtaTask(
+            Project project,
+            String taskName,
+            Class<A> taskClass,
+            String description
+    ) {
+        A task = project.getTasks().create(taskName, taskClass);
+        task.setGroup(EtaPlugin.TASK_GROUP_NAME);
+        task.setDescription(description);
+        return task;
+    }
+
     private static void configureEtaCleanTask(Project project) {
-        EtaClean task = project.getTasks().create(EtaPlugin.CLEAN_ETA_TASK_NAME, EtaClean.class);
-        task.setDescription("Clean Eta build artifacts via 'etlas clean'");
+        createEtaTask(
+                project, EtaPlugin.CLEAN_ETA_TASK_NAME, EtaClean.class,
+                "Clean Eta build artifacts via 'etlas clean'"
+        );
     }
 
     private static void configureEtaCompileTask(Project project) {
-        EtaCompile task = project.getTasks().create(EtaPlugin.COMPILE_ETA_TASK_NAME, EtaCompile.class);
-        task.setDescription("Compile Eta sources via 'etlas build'");
+        createEtaTask(
+                project, EtaPlugin.COMPILE_ETA_TASK_NAME, EtaCompile.class,
+                "Compile Eta sources via 'etlas build'"
+        );
     }
 
     private static void configureEtaRuntimeTask(Project project) {
-        EtaRuntime task = project.getTasks().create(EtaPlugin.RUNTIME_ETA_TASK_NAME, EtaRuntime.class);
-        task.setDescription("Set Eta runtime dependency via 'etlas deps --classpath'");
+        createEtaTask(
+                project, EtaPlugin.RUNTIME_ETA_TASK_NAME, EtaRuntime.class,
+                "Set Eta runtime dependency via 'etlas deps --classpath'"
+        );
     }
 
     private static void configureEtaRunTask(Project project) {
-        EtaRun task = project.getTasks().create(EtaPlugin.RUN_ETA_TASK_NAME, EtaRun.class);
-        task.setDescription("Run a compiled Eta executable");
-        task.dependsOn(
+        createEtaTask(
+                project, EtaPlugin.RUN_ETA_TASK_NAME, EtaRun.class,
+                "Run a compiled Eta executable"
+        ).dependsOn(
                 project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME),
                 project.getTasks().getByName(EtaPlugin.RUNTIME_ETA_TASK_NAME)
         );
     }
 
     private static void configureEtaTestDepsTask(Project project) {
-        EtaInstallTestDeps task = project.getTasks().create(EtaPlugin.TEST_DEPS_ETA_TASK_NAME, EtaInstallTestDeps.class);
-        task.setDescription("Install dependencies for Eta tests");
+        createEtaTask(
+                project, EtaPlugin.TEST_DEPS_ETA_TASK_NAME, EtaInstallTestDeps.class,
+                "Install dependencies for Eta tests"
+        );
     }
 
     private static void configureEtaTestCompileTask(Project project) {
-        EtaTestCompile task = project.getTasks().create(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME, EtaTestCompile.class);
-        task.setDescription("Compiles Eta test sources via 'etlas build'");
-        task.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+        createEtaTask(
+                project, EtaPlugin.TEST_COMPILE_ETA_TASK_NAME, EtaTestCompile.class,
+                "Compiles Eta test sources via 'etlas build'"
+        ).dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
     }
 
     private static void configureEtaTestTask(Project project) {
-        EtaTest task = project.getTasks().create(EtaPlugin.TEST_ETA_TASK_NAME, EtaTest.class);
-        task.setDescription("Run Eta tests");
-        task.dependsOn(project.getTasks().getByName(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME));
+        createEtaTask(
+                project, EtaPlugin.TEST_ETA_TASK_NAME, EtaTest.class,
+                "Run Eta tests"
+        ).dependsOn(project.getTasks().getByName(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME));
     }
 
     /** Update the 'clean' lifecycle task to include cleaning the Eta build. */

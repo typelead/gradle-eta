@@ -19,6 +19,8 @@ public class EtlasCommand {
     private final String sandboxConfig;
     private final String defaultUserConfig;
     private final String etlasBinary;
+    private final String etaBinary;
+    private final String etaPkgBinary;
     private final List<String> etlasFlags;
     private final List<String> buildFlags;
     private final String buildDir;
@@ -29,7 +31,9 @@ public class EtlasCommand {
         this.useSandbox = extension.getUseSandbox();
         this.sandboxConfig = extension.getSandboxConfig();
         this.defaultUserConfig = extension.getDefaultUserConfig();
-        this.etlasBinary = extension.getEtlasBinary();
+        this.etlasBinary = extension.getEtlas().getPath();
+        this.etaBinary = extension.getEta().getPath();
+        this.etaPkgBinary = extension.getEtaPkg().getPath();
         this.etlasFlags = extension.getEtlasFlags();
         this.buildFlags = extension.getBuildFlags();
         this.buildDir = extension.getBuildDir();
@@ -42,6 +46,8 @@ public class EtlasCommand {
         this.sandboxConfig = task.getSandboxConfig();
         this.defaultUserConfig = task.getDefaultUserConfig();
         this.etlasBinary = task.getEtlasBinary();
+        this.etaBinary = task.getEtaBinary();
+        this.etaPkgBinary = task.getEtaPkgBinary();
         this.etlasFlags = task.getEtlasFlags();
         this.buildFlags = task.getBuildFlags();
         this.buildDir = task.getBuildDir();

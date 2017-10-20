@@ -4,10 +4,10 @@ plugins {
 
 apply plugin: 'eta'
 
-eta { etlasVersion = '1.0.2.0' }
+eta { etlas.version = '1.0.2.0' }
 
 task printEtlasBinary {
     doLast {
-        println(eta.etlasBinary)
+        println(eta.etlas.path)
     }
 }

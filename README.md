@@ -30,10 +30,10 @@ See the `examples` and `src/test/testData` directories for more examples.
 You can use the top-level `eta` extension for some basic global configurations -
 * `String etlasVersion` - Version of Etlas to use for this project. The Etlas binary
     will automatically be downloaded and installed from the Etlas repository.
-* `String etlasRepo`, defaults to standard Etlas repository. Generally, there is no
+* `String etaRepo`, defaults to standard Etlas repository. Generally, there is no
     reason to set this.
 * `String etlasBinary` - Path to locally installed Etlas binary. It is recommended to
-    use `etlasRepo` and `etlasVersion` instead, leaving this unconfigured. It will be
+    use `etaRepo` and `etlasVersion` instead, leaving this unconfigured. It will be
     dynamically set by Gradle if it was downloaded and installed.
 * `boolean useSystemEtlas` - If specified, attempts to resolve the etlas binary
     on your system `PATH`

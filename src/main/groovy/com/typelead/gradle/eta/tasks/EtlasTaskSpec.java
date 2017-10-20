@@ -22,6 +22,14 @@ public interface EtlasTaskSpec extends Task {
 
     void setEtlasBinary(String etlasBinary);
 
+    String getEtaBinary();
+
+    void setEtaBinary(String etaBinary);
+
+    String getEtaPkgBinary();
+
+    void setEtaPkgBinary(String etaPkgBinary);
+
     List<String> getEtlasFlags();
 
     void setEtlasFlags(List<String> etlasFlags);

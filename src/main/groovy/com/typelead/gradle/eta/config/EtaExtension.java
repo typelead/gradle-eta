@@ -1,5 +1,6 @@
 package com.typelead.gradle.eta.config;
 
+import com.typelead.gradle.eta.dependency.BinaryDependency;
 import com.typelead.gradle.eta.plugins.EtaPlugin;
 import org.gradle.api.Nullable;
 
@@ -11,10 +12,11 @@ import java.util.List;
  */
 public class EtaExtension {
 
-    @Nullable private String etlasBinary;
-    private String etlasRepo = EtaPlugin.DEFAULT_ETLAS_REPO;
-    @Nullable private String etlasVersion;
-    private boolean useSystemEtlas = EtaPlugin.DEFAULT_USE_SYSTEM_ETLAS;
+    private String etaRepo = EtaPlugin.DEFAULT_ETA_BINARY_REPO;
+
+    private BinaryConfig etlas = new BinaryConfig();
+    private BinaryConfig eta = new BinaryConfig();
+    private BinaryConfig etaPkg = new BinaryConfig();
 
     private boolean useSandbox = EtaPlugin.DEFAULT_USE_SANDBOX;
     @Nullable private String sandboxConfig;
@@ -23,36 +25,36 @@ public class EtaExtension {
     private List<String> buildFlags = new ArrayList<>();
     private String buildDir = EtaPlugin.DEFAULT_BUILD_DIR;
 
-    @Nullable public String getEtlasBinary() {
-        return etlasBinary;
+    @Nullable public String getEtaRepo() {
+        return etaRepo;
     }
 
-    public void setEtlasBinary(String etlasBinary) {
-        this.etlasBinary = etlasBinary;
+    public void setEtaRepo(String etaRepo) {
+        this.etaRepo = etaRepo;
     }
 
-    @Nullable public String getEtlasRepo() {
-        return etlasRepo;
+    public BinaryConfig getEtlas() {
+        return etlas;
     }
 
-    public void setEtlasRepo(String etlasRepo) {
-        this.etlasRepo = etlasRepo;
+    public void setEtlas(BinaryConfig etlas) {
+        this.etlas = etlas;
     }
 
-    @Nullable public String getEtlasVersion() {
-        return etlasVersion;
+    public BinaryConfig getEta() {
+        return eta;
     }
 
-    public void setEtlasVersion(String etlasVersion) {
-        this.etlasVersion = etlasVersion;
+    public void setEta(BinaryConfig eta) {
+        this.eta = eta;
     }
 
-    public Boolean getUseSystemEtlas() {
-        return useSystemEtlas;
+    public BinaryConfig getEtaPkg() {
+        return etaPkg;
     }
 
-    public void setUseSystemEtlas(Boolean useSystemEtlas) {
-        this.useSystemEtlas = useSystemEtlas;
+    public void setEtaPkg(BinaryConfig etaPkg) {
+        this.etaPkg = etaPkg;
     }
 
     public boolean getUseSandbox() {
@@ -101,5 +103,49 @@ public class EtaExtension {
 
     public void setBuildDir(String buildDir) {
         this.buildDir = buildDir;
+    }
+
+    public static class BinaryConfig {
+        @Nullable private String path;
+        @Nullable private String version;
+        private boolean useSystem = false;
+
+        public BinaryConfig() {}
+
+        public void update(@Nullable BinaryDependency dep) {
+            if (dep == null) return;
+            this.path = dep.getPath();
+            this.version = dep.getVersion();
+        }
+
+        public boolean hasConfiguration() {
+            return useSystem || path != null || version != null;
+        }
+
+        @Nullable
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        @Nullable
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public boolean getUseSystem() {
+            return useSystem;
+        }
+
+        public void setUseSystem(boolean useSystem) {
+            this.useSystem = useSystem;
+        }
     }
 }
