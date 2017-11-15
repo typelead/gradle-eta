@@ -1,11 +1,11 @@
 package com.typelead.gradle.eta.dependency;
 
 import com.typelead.gradle.utils.CommandLine;
+import com.typelead.gradle.utils.Either;
 import com.typelead.gradle.utils.SystemPathUtil;
 import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
-import org.gradle.internal.os.OperatingSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +30,8 @@ public class EtlasBinaryDependencyResolver {
 
     @Nullable
     public EtlasBinaryDependency resolveInSystemPath() {
-        File etlas = SystemPathUtil.findExecutable("etlas");
+        String execExt = getArch().fold(x -> "", arch -> arch.execExt);
+        File etlas = SystemPathUtil.findExecutable("etlas" + execExt);
         if (etlas == null) return null;
         String etlasPath;
         try {
@@ -50,20 +51,11 @@ public class EtlasBinaryDependencyResolver {
     }
 
     public EtlasBinaryDependency resolveRemote(String repo, String version) {
-        OperatingSystem os = OperatingSystem.current();
-        String arch;
-        if (os.isLinux()) arch = "x86_64-linux";
-        else if (os.isMacOsX()) arch = "x86_64-osx";
-        else if (os.isWindows()) arch = "x86_64-windows";
-        else {
-            throw new GradleException(
-                    "Unsupported OS type '" + os.getName() +
-                            "'; install etlas manually and configure with etlasBinary");
-        }
+        Arch arch = getArch().valueOr(e -> { throw e; });
         EtlasBinaryDependencyCache cache = new EtlasBinaryDependencyCache(project);
-        String etlasPath = cache.getBinaryPathForVersion(version);
+        String etlasPath = cache.getBinaryPathForVersion(version, arch);
         if (etlasPath == null) {
-            etlasPath = cache.putBinaryForVersion(version, getEtlasUrl(repo, version, arch));
+            etlasPath = cache.putBinaryForVersion(version, getEtlasUrl(repo, version, arch), arch);
         }
         return new EtlasBinaryDependency(etlasPath, version);
     }
@@ -72,15 +64,24 @@ public class EtlasBinaryDependencyResolver {
         return new CommandLine(etlas, "--numeric-version").executeAndGetStandardOutput().trim();
     }
 
-    private String getEtlasUrlString(String repo, String version, String arch) {
-        return repo + "/etlas-" + version + "/binaries/" + arch + "/etlas";
+    private String getEtlasUrlString(String repo, String version, Arch arch) {
+        return repo + "/etlas-" + version + "/binaries/" + arch.name + "/etlas" + arch.execExt;
     }
 
-    private URL getEtlasUrl(String repo, String version, String arch) {
+    private URL getEtlasUrl(String repo, String version, Arch arch) {
         try {
             return new URL(getEtlasUrlString(repo, version, arch));
         } catch (MalformedURLException e) {
             throw new GradleException("Malformed etlasRepo '" + repo + "'", e);
         }
+    }
+
+    private Either<GradleException, Arch> getArch() {
+        return Arch.current().leftMap(os ->
+            new GradleException(
+                "Unsupported OS '" + os + "'; " +
+                "install etlas manually and configure with etlasBinary"
+            )
+        );
     }
 }

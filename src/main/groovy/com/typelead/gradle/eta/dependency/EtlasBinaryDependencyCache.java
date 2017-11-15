@@ -25,8 +25,8 @@ public class EtlasBinaryDependencyCache implements Log {
     }
 
     @Nullable
-    public String getBinaryPathForVersion(String version) {
-        File etlas = new File(uncheckedBinaryPath(version));
+    public String getBinaryPathForVersion(String version, Arch arch) {
+        File etlas = new File(uncheckedBinaryPath(version, arch));
         if (!etlas.exists()) return null;
         if (!etlas.canExecute()) {
             throw new GradleException("Cached etlas binary is not executable: " + etlas.getPath());
@@ -38,8 +38,8 @@ public class EtlasBinaryDependencyCache implements Log {
         }
     }
 
-    public String putBinaryForVersion(String version, URL url) {
-        Path target = Paths.get(uncheckedBinaryPath(version));
+    public String putBinaryForVersion(String version, URL url, Arch arch) {
+        Path target = Paths.get(uncheckedBinaryPath(version, arch));
         logger().info("Downloading etlas from: " + url + " ; caching to " + target);
         File dir = target.getParent().toFile();
         if (!dir.exists()) {
@@ -81,7 +81,7 @@ public class EtlasBinaryDependencyCache implements Log {
         return path;
     }
 
-    private String uncheckedBinaryPath(String version) {
-        return this.cacheDir + "/" + version + "/etlas";
+    private String uncheckedBinaryPath(String version, Arch arch) {
+        return this.cacheDir + "/" + version + "/etlas" + arch.execExt;
     }
 }
