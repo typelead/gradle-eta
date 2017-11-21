@@ -20,8 +20,6 @@ public class EtaBasePlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        EtaExtension extension = project.getExtensions().create(
-                EtaPlugin.ETA_EXTENSION_NAME, EtaExtension.class);
         configureConfigurations(project);
         configureEtaCleanTask(project);
         configureEtaCompileTask(project);
@@ -30,9 +28,12 @@ public class EtaBasePlugin implements Plugin<Project> {
         configureEtaTestDepsTask(project);
         configureEtaTestCompileTask(project);
         configureEtaTestTask(project);
+        EtaExtension extension = project.getExtensions().create(
+                EtaPlugin.ETA_EXTENSION_NAME, EtaExtension.class);
         // We must run these in an `afterEvaluate` block so that `extension` has been
         // populated with the user `eta { .. }` configuration.
         project.afterEvaluate(p -> {
+            configureExtensionFromProperties(project, extension);
             configureOrDownloadEtlas(project, extension);
             configureTasksAfterEvaluate(project, extension);
             configureBaseCleanTask(p);
@@ -43,6 +44,10 @@ public class EtaBasePlugin implements Plugin<Project> {
     private static void configureConfigurations(Project project) {
         project.getConfigurations().create(EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME)
                 .setDescription("Configuration for Eta runtime tasks");
+    }
+
+    private static void configureExtensionFromProperties(Project project, EtaExtension extension) {
+        extension.setDefaultsFromProperties(project);
     }
 
     private static void configureOrDownloadEtlas(Project project, EtaExtension extension) {

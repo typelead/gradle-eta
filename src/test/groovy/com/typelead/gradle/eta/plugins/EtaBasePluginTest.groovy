@@ -2,10 +2,6 @@ package com.typelead.gradle.eta.plugins
 
 import spock.lang.Ignore
 
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.util.stream.Collectors
-
 class EtaBasePluginTest extends PluginSpec {
 
     def download() {
