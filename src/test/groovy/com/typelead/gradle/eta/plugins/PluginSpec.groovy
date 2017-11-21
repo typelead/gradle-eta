@@ -13,7 +13,7 @@ import java.nio.file.Paths
 
 abstract class PluginSpec extends Specification {
 
-    private static final String etlasVersion = "1.0.2.0"
+    protected static final String etlasVersion = "1.1.0.0"
 
     private static final String testDataPath = "src/test/resources/testData"
 

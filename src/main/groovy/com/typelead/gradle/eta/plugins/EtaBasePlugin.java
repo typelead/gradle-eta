@@ -10,6 +10,7 @@ import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.BasePlugin;
+import org.gradle.api.plugins.JavaPlugin;
 
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
@@ -20,10 +21,8 @@ public class EtaBasePlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        configureConfigurations(project);
         configureEtaCleanTask(project);
         configureEtaCompileTask(project);
-        configureEtaRuntimeTask(project);
         configureEtaRunTask(project);
         configureEtaTestDepsTask(project);
         configureEtaTestCompileTask(project);
@@ -37,13 +36,8 @@ public class EtaBasePlugin implements Plugin<Project> {
             configureOrDownloadEtlas(project, extension);
             configureTasksAfterEvaluate(project, extension);
             configureBaseCleanTask(p);
-            configureBaseAssembleTask(p);
+            configureJavaJarTask(p);
         });
-    }
-
-    private static void configureConfigurations(Project project) {
-        project.getConfigurations().create(EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME)
-                .setDescription("Configuration for Eta runtime tasks");
     }
 
     private static void configureExtensionFromProperties(Project project, EtaExtension extension) {
@@ -89,6 +83,7 @@ public class EtaBasePlugin implements Plugin<Project> {
             if (t instanceof EtlasTaskSpec) {
                 EtlasTaskSpec task = (EtlasTaskSpec) t;
                 task.setEtlasBinary(extension.getEtlasBinary());
+                task.unsafeSetEtlasVersion(extension.getEtlasVersion());
                 task.setGroup(EtaPlugin.TASK_GROUP_NAME);
                 task.setUseSandbox(extension.getUseSandbox());
                 task.setSandboxConfig(extension.getSandboxConfig());
@@ -96,6 +91,15 @@ public class EtaBasePlugin implements Plugin<Project> {
                 task.setEtlasFlags(extension.getEtlasFlags());
                 task.setBuildFlags(extension.getBuildFlags());
                 task.setBuildDir(extension.getBuildDir());
+            }
+            if (t instanceof EtaRun) {
+                t.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+            }
+            if (t instanceof EtaTestCompile) {
+                t.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+            }
+            if (t instanceof EtaTest) {
+                t.dependsOn(project.getTasks().getByName(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME));
             }
         });
     }
@@ -110,18 +114,9 @@ public class EtaBasePlugin implements Plugin<Project> {
         task.setDescription("Compile Eta sources via 'etlas build'");
     }
 
-    private static void configureEtaRuntimeTask(Project project) {
-        EtaRuntime task = project.getTasks().create(EtaPlugin.RUNTIME_ETA_TASK_NAME, EtaRuntime.class);
-        task.setDescription("Set Eta runtime dependency via 'etlas deps --classpath'");
-    }
-
     private static void configureEtaRunTask(Project project) {
         EtaRun task = project.getTasks().create(EtaPlugin.RUN_ETA_TASK_NAME, EtaRun.class);
         task.setDescription("Run a compiled Eta executable");
-        task.dependsOn(
-                project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME),
-                project.getTasks().getByName(EtaPlugin.RUNTIME_ETA_TASK_NAME)
-        );
     }
 
     private static void configureEtaTestDepsTask(Project project) {
@@ -132,13 +127,11 @@ public class EtaBasePlugin implements Plugin<Project> {
     private static void configureEtaTestCompileTask(Project project) {
         EtaTestCompile task = project.getTasks().create(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME, EtaTestCompile.class);
         task.setDescription("Compiles Eta test sources via 'etlas build'");
-        task.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
     }
 
     private static void configureEtaTestTask(Project project) {
         EtaTest task = project.getTasks().create(EtaPlugin.TEST_ETA_TASK_NAME, EtaTest.class);
         task.setDescription("Run Eta tests");
-        task.dependsOn(project.getTasks().getByName(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME));
     }
 
     /** Update the 'clean' lifecycle task to include cleaning the Eta build. */
@@ -147,9 +140,9 @@ public class EtaBasePlugin implements Plugin<Project> {
                 .dependsOn(project.getTasks().getByName(EtaPlugin.CLEAN_ETA_TASK_NAME));
     }
 
-    /** Update the 'assemble' lifecycle task to include compiling Eta sources. */
-    private static void configureBaseAssembleTask(Project project) {
-        project.getTasks().getByName(BasePlugin.ASSEMBLE_TASK_NAME)
+    /** Update the 'jar' lifecycle task to include compiling Eta sources. */
+    private static void configureJavaJarTask(Project project) {
+        project.getTasks().getByName(JavaPlugin.JAR_TASK_NAME)
                 .dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
     }
 }

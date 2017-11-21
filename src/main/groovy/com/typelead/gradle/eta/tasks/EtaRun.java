@@ -2,12 +2,14 @@ package com.typelead.gradle.eta.tasks;
 
 import com.typelead.gradle.eta.plugins.EtaPlugin;
 import com.typelead.gradle.utils.CabalInfo;
+import com.typelead.gradle.utils.EtaRuntimeUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.file.collections.SimpleFileCollection;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class EtaRun extends AbstractEtlasRun {
@@ -39,15 +41,13 @@ public class EtaRun extends AbstractEtlasRun {
     }
 
     private Set<File> getRuntimeDependencies() {
-        return getProject().getConfigurations()
-                .getByName(EtaPlugin.ETA_RUNTIME_CONFIGURATION_NAME)
-                .getFiles();
+        return EtaRuntimeUtils.getRuntimeClasspath(this, component);
     }
 
     private void setDefaultComponent() {
         if (component != null) return;
         CabalInfo cabalInfo = CabalInfo.get(getProject());
-        List<String> executables = cabalInfo.getExecutableNames();
+        List<String> executables = cabalInfo.getExecutableComponentNames();
         if (executables.size() == 0) {
             throw new GradleException("No executable found in cabal file");
         }
@@ -62,9 +62,28 @@ public class EtaRun extends AbstractEtlasRun {
 
     /** Finds compiled 'component' jar. */
     private File getCompiledJar() {
+        // Strip the "exe:" component prefix, if it exists.
+        String name;
+        if (component.contains(":")) {
+            name = component.split(":", 2)[1];
+        } else {
+            name = component;
+        }
+        try {
+            System.out.println("GOT THINGS: " + java.nio.file.Files.walk(java.nio.file.Paths.get(getProject().getRootDir().getPath(), getBuildDir(), "build")).collect(java.util.stream.Collectors.toList()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         File jar = new File(
-                getProject().getRootDir() + "/" + getBuildDir() + "/build/"
-                        + component + "/" + component + ".jar");
+            getProject().getRootDir(),
+            String.join(
+                File.separator,
+                getBuildDir(),
+                "build",
+                name,
+                name + ".jar"
+            )
+        );
         if (!jar.exists()) {
             throw new GradleException("Compiled jar does not exist: " + jar);
         }

@@ -3,6 +3,7 @@ package com.typelead.gradle.utils;
 import com.typelead.gradle.eta.config.EtaExtension;
 import com.typelead.gradle.eta.plugins.EtaPlugin;
 import com.typelead.gradle.eta.tasks.EtlasTaskSpec;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 
 import java.io.File;
@@ -19,6 +20,7 @@ public class EtlasCommand {
     private final String sandboxConfig;
     private final String defaultUserConfig;
     private final String etlasBinary;
+    private final String etlasVersion;
     private final List<String> etlasFlags;
     private final List<String> buildFlags;
     private final String buildDir;
@@ -30,6 +32,7 @@ public class EtlasCommand {
         this.sandboxConfig = extension.getSandboxConfig();
         this.defaultUserConfig = extension.getDefaultUserConfig();
         this.etlasBinary = extension.getEtlasBinary();
+        this.etlasVersion = extension.getEtlasVersion();
         this.etlasFlags = extension.getEtlasFlags();
         this.buildFlags = extension.getBuildFlags();
         this.buildDir = extension.getBuildDir();
@@ -42,6 +45,7 @@ public class EtlasCommand {
         this.sandboxConfig = task.getSandboxConfig();
         this.defaultUserConfig = task.getDefaultUserConfig();
         this.etlasBinary = task.getEtlasBinary();
+        this.etlasVersion = task.getEtlasVersion();
         this.etlasFlags = task.getEtlasFlags();
         this.buildFlags = task.getBuildFlags();
         this.buildDir = task.getBuildDir();
@@ -80,24 +84,21 @@ public class EtlasCommand {
         defaultCommand("install", Arrays.asList("--dependencies-only", "--enable-tests"));
     }
 
-    public List<String> depsMaven() {
-        return defaultCommandLine("deps", "--maven").executeAndGetStandardOutputLines()
-                .stream()
-                .filter(line ->
-                    !line.startsWith(" ")
-                    && !line.contains("Notice:")
-                    && line.contains(":")
-                ).collect(Collectors.toList());
-    }
-
     /** This will also download dependencies via `etlas install --dependencies-only` */
-    public List<String> depsClasspath() {
-        return defaultCommandLine("deps", "--classpath").executeAndGetStandardOutputLines()
+    public List<String> depsClasspath(String component) {
+        // A little hacky, but this is a quick and dirty way to support 1.0.2.0 until it is deprecated.
+        CommandLine c;
+        if (new Version(etlasVersion).isAfterOrEqualTo(new Version("1.1.0.0"))) {
+            c = defaultCommandLine("deps", component, "--classpath");
+        } else {
+            c = defaultCommandLine("deps", "--classpath");
+        }
+        return c.executeAndGetStandardOutputLines()
                 .stream()
                 .filter(line ->
-                    !line.startsWith(" ")
-                    && !line.contains("Notice:")
-                    && line.contains(File.separator)
+                        !line.startsWith(" ")
+                                && !line.contains("Notice:")
+                                && line.contains(File.separator)
                 ).collect(Collectors.toList());
     }
 

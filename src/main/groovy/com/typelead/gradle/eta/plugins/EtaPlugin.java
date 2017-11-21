@@ -11,11 +11,9 @@ import org.gradle.api.plugins.JavaPlugin;
 public class EtaPlugin implements Plugin<Project> {
 
     public static final String ETA_EXTENSION_NAME = "eta";
-    public static final String ETA_RUNTIME_CONFIGURATION_NAME = "etaRuntime";
     public static final String TASK_GROUP_NAME = "EtaPlugin";
     public static final String CLEAN_ETA_TASK_NAME = "cleanEta";
     public static final String COMPILE_ETA_TASK_NAME = "compileEta";
-    public static final String RUNTIME_ETA_TASK_NAME = "runtimeEta";
     public static final String RUN_ETA_TASK_NAME = "runEta";
     public static final String TEST_DEPS_ETA_TASK_NAME = "installTestDepsEta";
     public static final String TEST_COMPILE_ETA_TASK_NAME = "testCompileEta";

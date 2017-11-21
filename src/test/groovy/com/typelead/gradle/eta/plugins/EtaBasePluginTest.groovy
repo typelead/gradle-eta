@@ -9,7 +9,7 @@ class EtaBasePluginTest extends PluginSpec {
         def result = gradle("printEtlasBinary")
 
         then:
-        def etlasPath = "${cachesDir().path}/etlas/1.0.2.0/etlas"
+        def etlasPath = "${cachesDir().path}/etlas/$etlasVersion/etlas"
         result.output.split('\n').contains(etlasPath)
     }
 

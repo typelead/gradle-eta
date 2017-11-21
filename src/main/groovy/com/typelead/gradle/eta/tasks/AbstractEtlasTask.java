@@ -9,6 +9,7 @@ import java.util.List;
 public abstract class AbstractEtlasTask extends DefaultTask implements EtlasTaskSpec {
 
     @Nullable private String etlasBinary;
+    @Nullable private String etlasVersion;
     private boolean useSandbox;
     private List<String> etlasFlags = new ArrayList<>();
     // We leave this `null` by default; otherwise, it'll get passed to commands when
@@ -58,6 +59,16 @@ public abstract class AbstractEtlasTask extends DefaultTask implements EtlasTask
     @Override
     public void setEtlasBinary(String etlasBinary) {
         this.etlasBinary = etlasBinary;
+    }
+
+    @Override
+    public String getEtlasVersion() {
+        return etlasVersion;
+    }
+
+    @Override
+    public void unsafeSetEtlasVersion(String etlasVersion) {
+        this.etlasVersion = etlasVersion;
     }
 
     @Override

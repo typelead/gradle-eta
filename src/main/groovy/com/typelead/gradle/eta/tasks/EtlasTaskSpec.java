@@ -22,6 +22,11 @@ public interface EtlasTaskSpec extends Task {
 
     void setEtlasBinary(String etlasBinary);
 
+    String getEtlasVersion();
+
+    // This should only be used internally to set the etlas version to check compatibility.
+    void unsafeSetEtlasVersion(String etlasVersion);
+
     List<String> getEtlasFlags();
 
     void setEtlasFlags(List<String> etlasFlags);
