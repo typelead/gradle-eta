@@ -14,98 +14,98 @@ import java.util.stream.Stream;
 
 public class CabalInfo {
 
-    public static CabalInfo get(Project project) {
-        File[] arr = project.getRootDir().listFiles();
-        if (arr == null) {
-            throw new GradleException("Project root is unexpectedly empty " + project.getRootDir());
-        }
-        List<File> cabalFiles = Arrays.stream(arr)
-                .filter(f -> f.getName().endsWith(".cabal"))
-                .collect(Collectors.toList());
-        if (cabalFiles.size() == 0) {
-            throw new GradleException("Could not find cabal file in project root " + project.getRootDir());
-        }
-        if (cabalFiles.size() > 1) {
-            throw new GradleException(
-                    "Found more than one cabal file in project root "
-                            + project.getRootDir() + " " + cabalFiles);
-        }
-        File cabalFile = cabalFiles.get(0);
-        List<String> lines;
-        try {
-            lines = Files.readAllLines(cabalFiles.get(0).toPath());
-        } catch (IOException e) {
-            throw new GradleException("Failed to read cabal file " + cabalFile);
-        }
-        return CabalInfoParser.parse(lines);
+  public static CabalInfo get(Project project) {
+    File[] arr = project.getRootDir().listFiles();
+    if (arr == null) {
+      throw new GradleException("Project root is unexpectedly empty " + project.getRootDir());
     }
-
-    private final String name;
-    private final boolean hasLibrary;
-    private final List<String> executableNames;
-    private final List<String> executableComponentNames;
-    private final List<String> testNames;
-    private final List<String> testComponentNames;
-    private final List<String> benchmarkNames;
-    private final List<String> benchmarkComponentNames;
-    private final List<String> productionComponentNames;
-
-    CabalInfo(String name,
-              boolean hasLibrary,
-              List<String> executableNames,
-              List<String> testNames,
-              List<String> benchmarkNames) {
-        this.name = name;
-        this.hasLibrary = hasLibrary;
-        this.executableNames = Collections.unmodifiableList(executableNames);
-        this.executableComponentNames = applyComponentPrefix("exe", executableNames);
-        this.testNames = Collections.unmodifiableList(testNames);
-        this.testComponentNames = applyComponentPrefix("test", testNames);
-        this.benchmarkNames = Collections.unmodifiableList(benchmarkNames);
-        this.benchmarkComponentNames = applyComponentPrefix("bench", benchmarkNames);
-        this.productionComponentNames = Collections.unmodifiableList(
-            Stream.concat(
-                hasLibrary ? Stream.of("lib:" + name) : Stream.empty(),
-                executableComponentNames.stream()
-            ).collect(Collectors.toList())
-        );
+    List<File> cabalFiles = Arrays.stream(arr)
+      .filter(f -> f.getName().endsWith(".cabal"))
+      .collect(Collectors.toList());
+    if (cabalFiles.size() == 0) {
+      throw new GradleException("Could not find cabal file in project root " + project.getRootDir());
     }
-
-    private static List<String> applyComponentPrefix(String prefix, List<String> names) {
-        return Collections.unmodifiableList(
-            names.stream().map(x -> prefix + ':' + x).collect(Collectors.toList())
-        );
+    if (cabalFiles.size() > 1) {
+      throw new GradleException(
+        "Found more than one cabal file in project root "
+          + project.getRootDir() + " " + cabalFiles);
     }
-
-    public List<String> getProductionComponentNames() {
-        return productionComponentNames;
+    File cabalFile = cabalFiles.get(0);
+    List<String> lines;
+    try {
+      lines = Files.readAllLines(cabalFiles.get(0).toPath());
+    } catch (IOException e) {
+      throw new GradleException("Failed to read cabal file " + cabalFile);
     }
+    return CabalInfoParser.parse(lines);
+  }
 
-    public List<String> getExecutableComponentNames() {
-        return executableComponentNames;
-    }
+  private final String name;
+  private final boolean hasLibrary;
+  private final List<String> executableNames;
+  private final List<String> executableComponentNames;
+  private final List<String> testNames;
+  private final List<String> testComponentNames;
+  private final List<String> benchmarkNames;
+  private final List<String> benchmarkComponentNames;
+  private final List<String> productionComponentNames;
 
-    public List<String> getTestComponentNames() {
-        return testComponentNames;
-    }
+  CabalInfo(String name,
+            boolean hasLibrary,
+            List<String> executableNames,
+            List<String> testNames,
+            List<String> benchmarkNames) {
+    this.name = name;
+    this.hasLibrary = hasLibrary;
+    this.executableNames = Collections.unmodifiableList(executableNames);
+    this.executableComponentNames = applyComponentPrefix("exe", executableNames);
+    this.testNames = Collections.unmodifiableList(testNames);
+    this.testComponentNames = applyComponentPrefix("test", testNames);
+    this.benchmarkNames = Collections.unmodifiableList(benchmarkNames);
+    this.benchmarkComponentNames = applyComponentPrefix("bench", benchmarkNames);
+    this.productionComponentNames = Collections.unmodifiableList(
+      Stream.concat(
+        hasLibrary ? Stream.of("lib:" + name) : Stream.empty(),
+        executableComponentNames.stream()
+      ).collect(Collectors.toList())
+    );
+  }
 
-    public String getName() {
-        return name;
-    }
+  private static List<String> applyComponentPrefix(String prefix, List<String> names) {
+    return Collections.unmodifiableList(
+      names.stream().map(x -> prefix + ':' + x).collect(Collectors.toList())
+    );
+  }
 
-    public boolean hasLibrary() {
-        return hasLibrary;
-    }
+  public List<String> getProductionComponentNames() {
+    return productionComponentNames;
+  }
 
-    public List<String> getExecutableNames() {
-        return executableNames;
-    }
+  public List<String> getExecutableComponentNames() {
+    return executableComponentNames;
+  }
 
-    public List<String> getTestNames() {
-        return testNames;
-    }
+  public List<String> getTestComponentNames() {
+    return testComponentNames;
+  }
 
-    public List<String> getBenchmarkNames() {
-        return benchmarkNames;
-    }
+  public String getName() {
+    return name;
+  }
+
+  public boolean hasLibrary() {
+    return hasLibrary;
+  }
+
+  public List<String> getExecutableNames() {
+    return executableNames;
+  }
+
+  public List<String> getTestNames() {
+    return testNames;
+  }
+
+  public List<String> getBenchmarkNames() {
+    return benchmarkNames;
+  }
 }

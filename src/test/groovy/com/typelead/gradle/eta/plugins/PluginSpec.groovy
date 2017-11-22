@@ -17,8 +17,10 @@ abstract class PluginSpec extends Specification {
 
     private static final String testDataPath = "src/test/resources/testData"
 
-    @Rule final TemporaryFolder dir = new TemporaryFolder()
-    @Rule final TestName name = new TestName()
+    @Rule
+    final TemporaryFolder dir = new TemporaryFolder()
+    @Rule
+    final TestName name = new TestName()
 
     def setup() {
         copyTestData(name.methodName)
@@ -65,6 +67,6 @@ abstract class PluginSpec extends Specification {
         dir.root.parentFile.listFiles()
                 .find { it.path.contains(".gradle-test-kit") }
                 .with { new File(it, "caches").canonicalFile }
-                .with { assert(it != null) ; it }
+                .with { assert (it != null); it }
     }
 }
