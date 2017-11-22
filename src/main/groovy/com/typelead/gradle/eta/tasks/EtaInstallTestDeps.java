@@ -5,9 +5,9 @@ import org.gradle.api.tasks.TaskAction;
 
 public class EtaInstallTestDeps extends AbstractEtlasTask {
 
-    @TaskAction
-    public void installTestDepsEta() {
-        EtlasCommand c = new EtlasCommand(this);
-        c.installTestDependenciesOnly();
-    }
+  @TaskAction
+  public void installTestDepsEta() {
+    EtlasCommand c = new EtlasCommand(this);
+    c.installTestDependenciesOnly();
+  }
 }

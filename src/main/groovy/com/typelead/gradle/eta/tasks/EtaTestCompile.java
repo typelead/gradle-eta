@@ -8,19 +8,19 @@ import java.util.List;
 
 public class EtaTestCompile extends AbstractEtlasTask {
 
-    @TaskAction
-    public void testCompileEta() {
-        EtlasCommand c = new EtlasCommand(this);
-        c.maybeInitSandbox();
-        c.installTestDependenciesOnly();
-        c.enableTests();
-        c.build();
-    }
+  @TaskAction
+  public void testCompileEta() {
+    EtlasCommand c = new EtlasCommand(this);
+    c.maybeInitSandbox();
+    c.installTestDependenciesOnly();
+    c.enableTests();
+    c.build();
+  }
 
-    @Override
-    public final List<String> getComponents() {
-        if (!super.getComponents().isEmpty()) return super.getComponents();
-        CabalInfo cabalInfo = CabalInfo.get(getProject());
-        return cabalInfo.getTestComponentNames();
-    }
+  @Override
+  public final List<String> getComponents() {
+    if (!super.getComponents().isEmpty()) return super.getComponents();
+    CabalInfo cabalInfo = CabalInfo.get(getProject());
+    return cabalInfo.getTestComponentNames();
+  }
 }

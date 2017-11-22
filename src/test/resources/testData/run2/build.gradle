@@ -1,5 +1,5 @@
 plugins {
-    id 'eta'
+  id 'eta'
 }
 
 apply plugin: 'eta'
@@ -7,9 +7,9 @@ apply plugin: 'eta'
 import com.typelead.gradle.eta.tasks.EtaRun
 
 task foo(type: EtaRun) {
-    component = "foo"
+  component = "foo"
 }
 
 task bar(type: EtaRun) {
-    component = "bar"
+  component = "bar"
 }

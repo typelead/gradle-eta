@@ -6,44 +6,44 @@ import java.util.List;
 
 public interface EtlasTaskSpec extends Task {
 
-    boolean getUseSandbox();
+  boolean getUseSandbox();
 
-    void setUseSandbox(boolean useSandbox);
+  void setUseSandbox(boolean useSandbox);
 
-    String getSandboxConfig();
+  String getSandboxConfig();
 
-    void setSandboxConfig(String sandboxConfig);
+  void setSandboxConfig(String sandboxConfig);
 
-    String getDefaultUserConfig();
+  String getDefaultUserConfig();
 
-    void setDefaultUserConfig(String defaultUserConfig);
+  void setDefaultUserConfig(String defaultUserConfig);
 
-    String getEtlasBinary();
+  String getEtlasBinary();
 
-    void setEtlasBinary(String etlasBinary);
+  void setEtlasBinary(String etlasBinary);
 
-    String getEtlasVersion();
+  String getEtlasVersion();
 
-    // This should only be used internally to set the etlas version to check compatibility.
-    void unsafeSetEtlasVersion(String etlasVersion);
+  // This should only be used internally to set the etlas version to check compatibility.
+  void unsafeSetEtlasVersion(String etlasVersion);
 
-    List<String> getEtlasFlags();
+  List<String> getEtlasFlags();
 
-    void setEtlasFlags(List<String> etlasFlags);
+  void setEtlasFlags(List<String> etlasFlags);
 
-    List<String> getBuildFlags();
+  List<String> getBuildFlags();
 
-    void setBuildFlags(List<String> buildFlags);
+  void setBuildFlags(List<String> buildFlags);
 
-    String getBuildDir();
+  String getBuildDir();
 
-    void setBuildDir(String buildDir);
+  void setBuildDir(String buildDir);
 
-    List<String> getComponents();
+  List<String> getComponents();
 
-    void setComponents(List<String> component);
+  void setComponents(List<String> component);
 
-    List<String> getConfigureFlags();
+  List<String> getConfigureFlags();
 
-    void setConfigureFlags(List<String> configureFlags);
+  void setConfigureFlags(List<String> configureFlags);
 }
