@@ -4,18 +4,12 @@ plugins {
 
 apply plugin: 'eta'
 
-eta { etlasVersion = '1.0.2.0' }
-
 import com.typelead.gradle.eta.tasks.EtaRun
 
 task foo(type: EtaRun) {
     component = "foo"
 }
 
-foo.dependsOn(compileEta, runtimeEta)
-
 task bar(type: EtaRun) {
     component = "bar"
 }
-
-bar.dependsOn(compileEta, runtimeEta)

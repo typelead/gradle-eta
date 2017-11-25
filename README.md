@@ -19,7 +19,7 @@ plugins {
 apply plugin: 'com.typelead.eta'
 
 eta {
-    etlasVersion = '1.0.2.0'
+    etlasVersion = '1.1.0.0'
 }
 ```
 
@@ -79,13 +79,9 @@ task foo(type: EtaRun) {
     component = "foo"
 }
 
-foo.dependsOn(':compileEta')
-
 task bar(type: EtaRun) {
     component = "bar"
 }
-
-bar.dependsOn(':compileEta')
 ```
 
 ## Development Notes

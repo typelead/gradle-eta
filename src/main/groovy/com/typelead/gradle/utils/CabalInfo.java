@@ -6,10 +6,11 @@ import org.gradle.api.Project;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CabalInfo {
 
@@ -42,8 +43,12 @@ public class CabalInfo {
     private final String name;
     private final boolean hasLibrary;
     private final List<String> executableNames;
+    private final List<String> executableComponentNames;
     private final List<String> testNames;
+    private final List<String> testComponentNames;
     private final List<String> benchmarkNames;
+    private final List<String> benchmarkComponentNames;
+    private final List<String> productionComponentNames;
 
     CabalInfo(String name,
               boolean hasLibrary,
@@ -52,26 +57,36 @@ public class CabalInfo {
               List<String> benchmarkNames) {
         this.name = name;
         this.hasLibrary = hasLibrary;
-        this.executableNames = executableNames;
-        this.testNames = testNames;
-        this.benchmarkNames = benchmarkNames;
+        this.executableNames = Collections.unmodifiableList(executableNames);
+        this.executableComponentNames = applyComponentPrefix("exe", executableNames);
+        this.testNames = Collections.unmodifiableList(testNames);
+        this.testComponentNames = applyComponentPrefix("test", testNames);
+        this.benchmarkNames = Collections.unmodifiableList(benchmarkNames);
+        this.benchmarkComponentNames = applyComponentPrefix("bench", benchmarkNames);
+        this.productionComponentNames = Collections.unmodifiableList(
+            Stream.concat(
+                hasLibrary ? Stream.of("lib:" + name) : Stream.empty(),
+                executableComponentNames.stream()
+            ).collect(Collectors.toList())
+        );
+    }
+
+    private static List<String> applyComponentPrefix(String prefix, List<String> names) {
+        return Collections.unmodifiableList(
+            names.stream().map(x -> prefix + ':' + x).collect(Collectors.toList())
+        );
     }
 
     public List<String> getProductionComponentNames() {
-        List<String> result = new ArrayList<>();
-        if (hasLibrary) result.add("lib:" + name);
-        for (String exe : executableNames) {
-            result.add("exe:" + exe);
-        }
-        return result;
+        return productionComponentNames;
+    }
+
+    public List<String> getExecutableComponentNames() {
+        return executableComponentNames;
     }
 
     public List<String> getTestComponentNames() {
-        List<String> result = new ArrayList<>();
-        for (String test : testNames) {
-            result.add("test:" + test);
-        }
-        return result;
+        return testComponentNames;
     }
 
     public String getName() {

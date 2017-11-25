@@ -5,5 +5,5 @@ plugins {
 apply plugin: 'eta'
 
 eta {
-    etlasVersion = '1.0.2.0'
+    etlasVersion = '1.1.0.0'
 }

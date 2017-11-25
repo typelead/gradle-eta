@@ -13,6 +13,8 @@ import java.nio.file.Paths
 
 abstract class PluginSpec extends Specification {
 
+    protected static final String etlasVersion = "1.1.0.0"
+
     private static final String testDataPath = "src/test/resources/testData"
 
     @Rule final TemporaryFolder dir = new TemporaryFolder()
@@ -51,7 +53,7 @@ abstract class PluginSpec extends Specification {
     }
 
     protected BuildResult gradle(String... tasks) {
-        tasks += ['--stacktrace', '-i']
+        tasks += ['--stacktrace', '-i', "-Peta.etlasVersion=$etlasVersion"]
         GradleRunner.create()
                 .withProjectDir(dir.root)
                 .withPluginClasspath()
