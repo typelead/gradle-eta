@@ -1,7 +1,5 @@
 package com.typelead.gradle.eta.plugins
 
-import spock.lang.Ignore
-
 class EtaBasePluginTest extends PluginSpec {
 
     def download() {
