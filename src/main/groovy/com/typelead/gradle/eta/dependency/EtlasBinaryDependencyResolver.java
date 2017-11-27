@@ -15,73 +15,75 @@ import java.net.URL;
 /**
  * Manages resolving an Etlas binary by either
  * <ul>
- *     <li>Locating one on the system PATH</li>
- *     <li>Using a configured local installation</li>
- *     <li>Downloading one from the repository</li>
+ * <li>Locating one on the system PATH</li>
+ * <li>Using a configured local installation</li>
+ * <li>Downloading one from the repository</li>
  * </ul>
  */
 public class EtlasBinaryDependencyResolver {
 
-    private final Project project;
+  private final Project project;
 
-    public EtlasBinaryDependencyResolver(Project project) {
-        this.project = project;
-    }
+  public EtlasBinaryDependencyResolver(Project project) {
+    this.project = project;
+  }
 
-    @Nullable
-    public EtlasBinaryDependency resolveInSystemPath() {
-        String execExt = getArch().fold(x -> "", arch -> arch.execExt);
-        File etlas = SystemPathUtil.findExecutable("etlas" + execExt);
-        if (etlas == null) return null;
-        String etlasPath;
-        try {
-            etlasPath = etlas.getCanonicalPath();
-        } catch (IOException e) {
-            throw new GradleException("Failed to get canonical path for etlas '" + etlas.getPath() + "'", e);
-        }
-        return new EtlasBinaryDependency(etlasPath, getEtlasVersion(etlasPath));
+  @Nullable
+  public EtlasBinaryDependency resolveInSystemPath() {
+    String execExt = getArch().fold(x -> "", arch -> arch.execExt);
+    File etlas = SystemPathUtil.findExecutable("etlas" + execExt);
+    if (etlas == null) return null;
+    String etlasPath;
+    try {
+      etlasPath = etlas.getCanonicalPath();
+    } catch (IOException e) {
+      throw new GradleException("Failed to get canonical path for etlas '" + etlas.getPath() + "'", e);
     }
+    return new EtlasBinaryDependency(etlasPath, getEtlasVersion(etlasPath));
+  }
 
-    public EtlasBinaryDependency resolveLocalPath(String etlasPath) {
-        File etlas = new File(etlasPath);
-        if (!etlas.canExecute()) {
-            throw new GradleException("Provided etlas binary is not executable: " + etlasPath);
-        }
-        return new EtlasBinaryDependency(etlasPath, getEtlasVersion(etlasPath));
+  public EtlasBinaryDependency resolveLocalPath(String etlasPath) {
+    File etlas = new File(etlasPath);
+    if (!etlas.canExecute()) {
+      throw new GradleException("Provided etlas binary is not executable: " + etlasPath);
     }
+    return new EtlasBinaryDependency(etlasPath, getEtlasVersion(etlasPath));
+  }
 
-    public EtlasBinaryDependency resolveRemote(String repo, String version) {
-        Arch arch = getArch().valueOr(e -> { throw e; });
-        EtlasBinaryDependencyCache cache = new EtlasBinaryDependencyCache(project);
-        String etlasPath = cache.getBinaryPathForVersion(version, arch);
-        if (etlasPath == null) {
-            etlasPath = cache.putBinaryForVersion(version, getEtlasUrl(repo, version, arch), arch);
-        }
-        return new EtlasBinaryDependency(etlasPath, version);
+  public EtlasBinaryDependency resolveRemote(String repo, String version) {
+    Arch arch = getArch().valueOr(e -> {
+      throw e;
+    });
+    EtlasBinaryDependencyCache cache = new EtlasBinaryDependencyCache(project);
+    String etlasPath = cache.getBinaryPathForVersion(version, arch);
+    if (etlasPath == null) {
+      etlasPath = cache.putBinaryForVersion(version, getEtlasUrl(repo, version, arch), arch);
     }
+    return new EtlasBinaryDependency(etlasPath, version);
+  }
 
-    private String getEtlasVersion(String etlas) {
-        return new CommandLine(etlas, "--numeric-version").executeAndGetStandardOutput().trim();
-    }
+  private String getEtlasVersion(String etlas) {
+    return new CommandLine(etlas, "--numeric-version").executeAndGetStandardOutput().trim();
+  }
 
-    private String getEtlasUrlString(String repo, String version, Arch arch) {
-        return repo + "/etlas-" + version + "/binaries/" + arch.name + "/etlas" + arch.execExt;
-    }
+  private String getEtlasUrlString(String repo, String version, Arch arch) {
+    return repo + "/etlas-" + version + "/binaries/" + arch.name + "/etlas" + arch.execExt;
+  }
 
-    private URL getEtlasUrl(String repo, String version, Arch arch) {
-        try {
-            return new URL(getEtlasUrlString(repo, version, arch));
-        } catch (MalformedURLException e) {
-            throw new GradleException("Malformed etlasRepo '" + repo + "'", e);
-        }
+  private URL getEtlasUrl(String repo, String version, Arch arch) {
+    try {
+      return new URL(getEtlasUrlString(repo, version, arch));
+    } catch (MalformedURLException e) {
+      throw new GradleException("Malformed etlasRepo '" + repo + "'", e);
     }
+  }
 
-    private Either<GradleException, Arch> getArch() {
-        return Arch.current().leftMap(os ->
-            new GradleException(
-                "Unsupported OS '" + os + "'; " +
-                "install etlas manually and configure with etlasBinary"
-            )
-        );
-    }
+  private Either<GradleException, Arch> getArch() {
+    return Arch.current().leftMap(os ->
+      new GradleException(
+        "Unsupported OS '" + os + "'; " +
+          "install etlas manually and configure with etlasBinary"
+      )
+    );
+  }
 }

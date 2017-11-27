@@ -8,19 +8,19 @@ import java.util.List;
 
 public class EtaCompile extends AbstractEtlasTask {
 
-    @TaskAction
-    public void compileEta() {
-        EtlasCommand c = new EtlasCommand(this);
-        c.maybeInitSandbox();
-        c.installDependenciesOnly();
-        if (!getConfigureFlags().isEmpty()) c.configure(getConfigureFlags());
-        c.build();
-    }
+  @TaskAction
+  public void compileEta() {
+    EtlasCommand c = new EtlasCommand(this);
+    c.maybeInitSandbox();
+    c.installDependenciesOnly();
+    if (!getConfigureFlags().isEmpty()) c.configure(getConfigureFlags());
+    c.build();
+  }
 
-    @Override
-    public final List<String> getComponents() {
-        if (!super.getComponents().isEmpty()) return super.getComponents();
-        CabalInfo cabalInfo = CabalInfo.get(getProject());
-        return cabalInfo.getProductionComponentNames();
-    }
+  @Override
+  public final List<String> getComponents() {
+    if (!super.getComponents().isEmpty()) return super.getComponents();
+    CabalInfo cabalInfo = CabalInfo.get(getProject());
+    return cabalInfo.getProductionComponentNames();
+  }
 }

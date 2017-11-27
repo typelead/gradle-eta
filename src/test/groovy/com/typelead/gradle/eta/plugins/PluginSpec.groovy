@@ -13,58 +13,60 @@ import java.nio.file.Paths
 
 abstract class PluginSpec extends Specification {
 
-    protected static final String etlasVersion = "1.1.0.0"
+  protected static final String etlasVersion = "1.1.0.0"
 
-    private static final String testDataPath = "src/test/resources/testData"
+  private static final String testDataPath = "src/test/resources/testData"
 
-    @Rule final TemporaryFolder dir = new TemporaryFolder()
-    @Rule final TestName name = new TestName()
+  @Rule
+  final TemporaryFolder dir = new TemporaryFolder()
+  @Rule
+  final TestName name = new TestName()
 
-    def setup() {
-        copyTestData(name.methodName)
+  def setup() {
+    copyTestData(name.methodName)
+  }
+
+  /**
+   * Copies testData/$methodName files to current temp directory for testing.
+   * If the testData/$methodName dir does not exist, use testData/default instead.
+   */
+  protected void copyTestData(String methodName) {
+    def base = new File(testDataPath, methodName)
+    if (!base.exists()) {
+      base = new File(testDataPath, "default")
     }
-
-    /**
-     * Copies testData/$methodName files to current temp directory for testing.
-     * If the testData/$methodName dir does not exist, use testData/default instead.
-     */
-    protected void copyTestData(String methodName) {
-        def base = new File(testDataPath, methodName)
-        if (!base.exists()) {
-            base = new File(testDataPath, "default")
+    Files.walk(base.toPath()).iterator().each {
+      if (it.toFile().isFile()) {
+        def target = Paths.get(dir.root.getPath(), base.toPath().relativize(it).toString())
+        def parent = target.parent.toFile()
+        if (!parent.exists()) {
+          if (!parent.mkdirs()) {
+            throw new GradleException("Failed to mkdirs: $parent")
+          }
         }
-        Files.walk(base.toPath()).iterator().each {
-            if (it.toFile().isFile()) {
-                def target = Paths.get(dir.root.getPath(), base.toPath().relativize(it).toString())
-                def parent = target.parent.toFile()
-                if (!parent.exists()) {
-                    if (!parent.mkdirs()) {
-                        throw new GradleException("Failed to mkdirs: $parent")
-                    }
-                }
-                try {
-                    Files.copy(it, target)
-                } catch (IOException e) {
-                    def parentExists = target.toFile().getParentFile().exists()
-                    throw new GradleException("Failed to copy '$it' to '$target'; parentExists: $parentExists", e)
-                }
-            }
+        try {
+          Files.copy(it, target)
+        } catch (IOException e) {
+          def parentExists = target.toFile().getParentFile().exists()
+          throw new GradleException("Failed to copy '$it' to '$target'; parentExists: $parentExists", e)
         }
+      }
     }
+  }
 
-    protected BuildResult gradle(String... tasks) {
-        tasks += ['--stacktrace', '-i', "-Peta.etlasVersion=$etlasVersion"]
-        GradleRunner.create()
-                .withProjectDir(dir.root)
-                .withPluginClasspath()
-                .withArguments(tasks)
-                .build()
-    }
+  protected BuildResult gradle(String... tasks) {
+    tasks += ['--stacktrace', '-i', "-Peta.etlasVersion=$etlasVersion"]
+    GradleRunner.create()
+      .withProjectDir(dir.root)
+      .withPluginClasspath()
+      .withArguments(tasks)
+      .build()
+  }
 
-    protected File cachesDir() {
-        dir.root.parentFile.listFiles()
-                .find { it.path.contains(".gradle-test-kit") }
-                .with { new File(it, "caches").canonicalFile }
-                .with { assert(it != null) ; it }
-    }
+  protected File cachesDir() {
+    dir.root.parentFile.listFiles()
+      .find { it.path.contains(".gradle-test-kit") }
+      .with { new File(it, "caches").canonicalFile }
+      .with { assert (it != null); it }
+  }
 }

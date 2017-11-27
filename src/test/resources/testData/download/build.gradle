@@ -1,11 +1,11 @@
 plugins {
-    id 'eta'
+  id 'eta'
 }
 
 apply plugin: 'eta'
 
 task printEtlasBinary {
-    doLast {
-        println(eta.etlasBinary)
-    }
+  doLast {
+    println(eta.etlasBinary)
+  }
 }
