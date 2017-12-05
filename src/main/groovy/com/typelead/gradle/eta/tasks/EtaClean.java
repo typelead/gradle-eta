@@ -7,6 +7,8 @@ public class EtaClean extends AbstractEtlasTask implements EtlasTaskSpec {
 
   @TaskAction
   public void cleanEta() {
-    new EtlasCommand(this).clean();
+    EtlasCommand c = new EtlasCommand(this);
+    c.clean();
+    c.deleteSandbox();
   }
 }

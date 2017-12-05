@@ -22,6 +22,9 @@ public class EtaBasePlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
     configureEtaCleanTask(project);
+    configureEtaSandboxInitTask(project);
+    configureEtaSandboxAddSourcesTask(project);
+    configureEtaInstallDepsTask(project);
     configureEtaCompileTask(project);
     configureEtaRunTask(project);
     configureEtaTestDepsTask(project);
@@ -92,6 +95,15 @@ public class EtaBasePlugin implements Plugin<Project> {
         task.setBuildFlags(extension.getBuildFlags());
         task.setBuildDir(extension.getBuildDir());
       }
+      if (t instanceof EtaSandboxAddSources) {
+        t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_INIT_ETA_TASK_NAME));
+      }
+      if (t instanceof EtaInstallDeps) {
+        t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME));
+      }
+      if (t instanceof EtaCompile) {
+        t.dependsOn(project.getTasks().getByName(EtaPlugin.INSTALL_DEPS_ETA_TASK_NAME));
+      }
       if (t instanceof EtaRun) {
         t.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
       }
@@ -107,6 +119,21 @@ public class EtaBasePlugin implements Plugin<Project> {
   private static void configureEtaCleanTask(Project project) {
     EtaClean task = project.getTasks().create(EtaPlugin.CLEAN_ETA_TASK_NAME, EtaClean.class);
     task.setDescription("Clean Eta build artifacts via 'etlas clean'");
+  }
+
+  private static void configureEtaSandboxInitTask(Project project) {
+    EtaSandboxInit task = project.getTasks().create(EtaPlugin.SANDBOX_INIT_ETA_TASK_NAME, EtaSandboxInit.class);
+    task.setDescription("Initialize an Etlas sandbox if useSandbox=true (default); otherwise, do nothing.");
+  }
+
+  private static void configureEtaSandboxAddSourcesTask(Project project) {
+    EtaSandboxAddSources task = project.getTasks().create(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME, EtaSandboxAddSources.class);
+    task.setDescription("Make local packages available in the sandbox via 'etlas sandbox add-source'");
+  }
+
+  private static void configureEtaInstallDepsTask(Project project) {
+    EtaInstallDeps task = project.getTasks().create(EtaPlugin.INSTALL_DEPS_ETA_TASK_NAME, EtaInstallDeps.class);
+    task.setDescription("Install project dependencies via 'etlas install --dependencies-only'");
   }
 
   private static void configureEtaCompileTask(Project project) {
