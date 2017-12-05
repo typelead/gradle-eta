@@ -3,7 +3,32 @@ plugins {
 }
 
 group "com.typelead"
-version "0.0.1-SNAPSHOT"
+
+static def getGitRev() {
+    def proc = "git rev-parse --short HEAD".execute()
+    proc.waitFor()
+    return proc.text.trim()
+}
+
+static def isGitDirty() {
+    return "git diff-index --quiet HEAD".execute().waitFor() != 0
+}
+
+version = file('version.txt').text.trim().with {
+    if (it.endsWith("SNAPSHOT")) {
+        if (isGitDirty()) {
+            "$it-${getGitRev()}-dirty"
+        } else {
+            "$it-${getGitRev()}"
+        }
+    } else {
+        it
+    }
+}
+
+task printVersion {
+    println(version)
+}
 
 apply plugin: 'java'
 apply plugin: 'groovy'
