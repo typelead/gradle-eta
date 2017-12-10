@@ -27,7 +27,15 @@ version = file('version.txt').text.trim().with {
 }
 
 task printVersion {
-    println(version)
+    doLast {
+        println("gradle-eta version: $version")
+    }
+}
+
+project.afterEvaluate {
+    publishToMavenLocal {
+        dependsOn printVersion
+    }
 }
 
 apply plugin: 'java'
