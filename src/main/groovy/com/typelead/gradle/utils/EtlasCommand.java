@@ -124,6 +124,7 @@ public class EtlasCommand {
   }
 
   public void sandboxAddSources(List<String> sources) {
+    if (sources == null) return;
     sources.forEach(s -> {
       CommandLine c = initCommandLine();
       c.getCommand().addAll(Arrays.asList("sandbox", "add-source", s));
