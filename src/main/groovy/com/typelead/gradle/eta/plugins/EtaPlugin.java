@@ -7,7 +7,7 @@ import org.gradle.api.Project;
  * A {@link Plugin} which sets up an Eta project.
  */
 @SuppressWarnings("WeakerAccess")
-public class EtaPlugin implements Plugin<Project> {
+public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
 
   public static final String ETA_EXTENSION_NAME = "eta";
   public static final String TASK_GROUP_NAME = "EtaPlugin";
@@ -30,6 +30,9 @@ public class EtaPlugin implements Plugin<Project> {
 
   @Override
   public void apply(Project project) {
-    project.getPluginManager().apply(EtaBasePlugin.class);
+      super.apply(project);
   }
+
+  @Override
+  public void configureAfterEvaluate(Project project) {}
 }

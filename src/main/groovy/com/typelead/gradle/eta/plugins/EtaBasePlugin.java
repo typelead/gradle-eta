@@ -16,11 +16,12 @@ import org.gradle.api.UnknownTaskException;
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
  */
-public class EtaBasePlugin implements Plugin<Project> {
+public abstract class EtaBasePlugin {
 
   private static final Logger LOG = Logging.getLogger(EtaBasePlugin.class);
 
-  @Override
+  public abstract void configureAfterEvaluate(Project project);
+
   public void apply(Project project) {
     configureEtaCleanTask(project);
     configureEtaSandboxInitTask(project);
@@ -41,6 +42,7 @@ public class EtaBasePlugin implements Plugin<Project> {
       configureTasksAfterEvaluate(project, extension);
       configureBaseCleanTask(p);
       configureJavaJarTask(p);
+      configureAfterEvaluate(p);
     });
   }
 

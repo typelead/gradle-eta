@@ -77,12 +77,12 @@ public class EtaRun extends AbstractEtlasRun {
       name = component;
     }
     try {
-      System.out.println("GOT THINGS: " + java.nio.file.Files.walk(java.nio.file.Paths.get(getProject().getRootDir().getPath(), getBuildDir(), "build")).collect(java.util.stream.Collectors.toList()));
+      System.out.println("GOT THINGS: " + java.nio.file.Files.walk(java.nio.file.Paths.get(getProject().getProjectDir().getAbsolutePath(), getBuildDir(), "build")).collect(java.util.stream.Collectors.toList()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
     File jar = new File(
-      getProject().getRootDir(),
+      getProject().getProjectDir(),
       String.join(
         File.separator,
         getBuildDir(),

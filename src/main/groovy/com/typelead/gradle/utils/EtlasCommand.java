@@ -110,7 +110,7 @@ public class EtlasCommand {
     if (!useSandbox) return;
     // Check if sandbox has been init'd by seeing if the config already exists.
     boolean sandboxConfigExists =
-      new File(project.getRootDir(), determineSandboxConfig()).exists();
+      new File(project.getProjectDir(), determineSandboxConfig()).exists();
     if (sandboxConfigExists) return;
     CommandLine c = initCommandLine();
     c.getCommand().addAll(Arrays.asList("sandbox", "init"));
@@ -144,7 +144,7 @@ public class EtlasCommand {
 
   private CommandLine initCommandLine() {
     CommandLine c = new CommandLine(etlasBinary);
-    c.setWorkingDir(project.getRootDir().getPath());
+    c.setWorkingDir(project.getProjectDir().getAbsolutePath());
     c.getCommand().addAll(etlasFlags);
     return c;
   }

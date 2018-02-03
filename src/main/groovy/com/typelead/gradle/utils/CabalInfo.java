@@ -15,20 +15,21 @@ import java.util.stream.Stream;
 public class CabalInfo {
 
   public static CabalInfo get(Project project) {
-    File[] arr = project.getRootDir().listFiles();
+    File projectDir = project.getProjectDir();
+    File[] arr      = projectDir.listFiles();
     if (arr == null) {
-      throw new GradleException("Project root is unexpectedly empty " + project.getRootDir());
+      throw new GradleException("Project root is unexpectedly empty " + projectDir);
     }
     List<File> cabalFiles = Arrays.stream(arr)
       .filter(f -> f.getName().endsWith(".cabal"))
       .collect(Collectors.toList());
     if (cabalFiles.size() == 0) {
-      throw new GradleException("Could not find cabal file in project root " + project.getRootDir());
+      throw new GradleException("Could not find cabal file in project root " + projectDir);
     }
     if (cabalFiles.size() > 1) {
       throw new GradleException(
         "Found more than one cabal file in project root "
-          + project.getRootDir() + " " + cabalFiles);
+          + projectDir + " " + cabalFiles);
     }
     File cabalFile = cabalFiles.get(0);
     List<String> lines;

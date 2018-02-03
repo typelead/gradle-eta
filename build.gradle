@@ -45,13 +45,25 @@ apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.8
 
+configurations {
+    provided
+}
+
+sourceSets {
+    main { compileClasspath += configurations.provided }
+}
+
 repositories {
     mavenCentral()
+    maven { url 'https://maven.google.com' }
+    jcenter()
 }
 
 dependencies {
     compile gradleApi()
     compile localGroovy()
+
+    provided 'com.android.tools.build:gradle:3.0.0'
 
     testCompile gradleTestKit()
     testCompile 'junit:junit:4.12'
