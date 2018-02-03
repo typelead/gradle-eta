@@ -113,9 +113,23 @@ public class EtlasCommand {
       new File(project.getRootDir(), determineSandboxConfig()).exists();
     if (sandboxConfigExists) return;
     CommandLine c = initCommandLine();
-    c.getCommand().add("sandbox");
-    c.getCommand().add("init");
+    c.getCommand().addAll(Arrays.asList("sandbox", "init"));
     c.executeAndLogOutput();
+  }
+
+  public void deleteSandbox() {
+    CommandLine c = initCommandLine();
+    c.getCommand().addAll(Arrays.asList("sandbox", "delete"));
+    c.executeAndLogOutput();
+  }
+
+  public void sandboxAddSources(List<String> sources) {
+    if (sources == null) return;
+    sources.forEach(s -> {
+      CommandLine c = initCommandLine();
+      c.getCommand().addAll(Arrays.asList("sandbox", "add-source", s));
+      c.executeAndLogOutput();
+    });
   }
 
   private void commandWithComponent(String command, List<String> commandArgs) {
