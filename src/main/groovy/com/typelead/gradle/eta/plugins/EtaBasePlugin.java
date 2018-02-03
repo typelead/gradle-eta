@@ -11,6 +11,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.UnknownTaskException;
 
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
@@ -173,7 +174,12 @@ public class EtaBasePlugin implements Plugin<Project> {
    * Update the 'jar' lifecycle task to include compiling Eta sources.
    */
   private static void configureJavaJarTask(Project project) {
-    project.getTasks().getByName(JavaPlugin.JAR_TASK_NAME)
-      .dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+      try {
+        project.getTasks().getByName(JavaPlugin.JAR_TASK_NAME)
+            .dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+      } catch (UnknownTaskException e) {
+          /* If the 'jar' task doesn't exist, do nothing,
+             this occurs with Android. */
+      }
   }
 }

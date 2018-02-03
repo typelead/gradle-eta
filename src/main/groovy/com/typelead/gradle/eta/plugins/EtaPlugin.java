@@ -2,7 +2,6 @@ package com.typelead.gradle.eta.plugins;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.JavaPlugin;
 
 /**
  * A {@link Plugin} which sets up an Eta project.
@@ -23,7 +22,7 @@ public class EtaPlugin implements Plugin<Project> {
   public static final String TEST_ETA_TASK_NAME = "testEta";
 
   public static final boolean DEFAULT_USE_SYSTEM_ETLAS = false;
-  public static final String DEFAULT_ETLAS_REPO = "http://binaries.eta-lang.org";
+  public static final String DEFAULT_ETLAS_REPO = "http://cdnverify.eta-lang.org/eta-binaries";
   public static final boolean DEFAULT_USE_SANDBOX = true;
   public static final String DEFAULT_BUILD_DIR = "build/etlas/dist";
   public static final String DEFAULT_SANDBOX_CONFIG = "cabal.sandbox.config";
@@ -32,6 +31,5 @@ public class EtaPlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
     project.getPluginManager().apply(EtaBasePlugin.class);
-    project.getPluginManager().apply(JavaPlugin.class);
   }
 }
