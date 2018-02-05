@@ -25,6 +25,7 @@ public abstract class EtaBasePlugin {
 
   public void apply(Project project) {
     project.getPlugins().apply(BasePlugin.class);
+    project.getPlugins().apply(JavaPlugin.class);
     configureEtaCleanTask(project);
     configureEtaSandboxInitTask(project);
     configureEtaSandboxAddSourcesTask(project);
