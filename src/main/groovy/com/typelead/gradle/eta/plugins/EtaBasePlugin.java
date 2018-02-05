@@ -11,6 +11,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.UnknownTaskException;
 
 /**
@@ -23,6 +24,7 @@ public abstract class EtaBasePlugin {
   public abstract void configureAfterEvaluate(Project project);
 
   public void apply(Project project) {
+    project.getPlugins().apply(BasePlugin.class);
     configureEtaCleanTask(project);
     configureEtaSandboxInitTask(project);
     configureEtaSandboxAddSourcesTask(project);
@@ -168,20 +170,33 @@ public abstract class EtaBasePlugin {
    * Update the 'clean' lifecycle task to include cleaning the Eta build.
    */
   private static void configureBaseCleanTask(Project project) {
-    project.getTasks().getByName(BasePlugin.CLEAN_TASK_NAME)
-      .dependsOn(project.getTasks().getByName(EtaPlugin.CLEAN_ETA_TASK_NAME));
+      final TaskContainer tc = project.getTasks();
+      try {
+          tc.getByName(BasePlugin.CLEAN_TASK_NAME)
+            .dependsOn(tc.getByName(EtaPlugin.CLEAN_ETA_TASK_NAME));
+      } catch (UnknownTaskException e) {
+          tc.whenObjectAdded(task -> {
+                  if (task.getName().equals(BasePlugin.CLEAN_TASK_NAME)) {
+                      task.dependsOn(tc.getByName(EtaPlugin.CLEAN_ETA_TASK_NAME));
+                  }
+              });
+      }
   }
 
   /**
    * Update the 'jar' lifecycle task to include compiling Eta sources.
    */
   private static void configureJavaJarTask(Project project) {
+      final TaskContainer tc = project.getTasks();
       try {
-        project.getTasks().getByName(JavaPlugin.JAR_TASK_NAME)
-            .dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+          tc.getByName(JavaPlugin.JAR_TASK_NAME)
+            .dependsOn(tc.getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
       } catch (UnknownTaskException e) {
-          /* If the 'jar' task doesn't exist, do nothing,
-             this occurs with Android. */
+          tc.whenObjectAdded(task -> {
+                  if (task.getName().equals(JavaPlugin.JAR_TASK_NAME)) {
+                      task.dependsOn(tc.getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+                  }
+              });
       }
   }
 }
