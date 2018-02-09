@@ -3,6 +3,8 @@ package com.typelead.gradle.eta.plugins;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
+import org.gradle.api.plugins.JavaPlugin;
+
 /**
  * A {@link Plugin} which sets up an Eta project.
  */
@@ -34,5 +36,12 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
   }
 
   @Override
-  public void configureAfterEvaluate(Project project) {}
+  public void configureBeforeEvaluate() {
+      project.getPlugins().apply(JavaPlugin.class);
+  }
+
+  @Override
+  public void configureAfterEvaluate() {}
+
+
 }
