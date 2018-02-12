@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public class AndroidUtil {
+public class AndroidHelper {
     public static Optional<BasePlugin> getAndroidPlugin(Project project) {
         String[] androidPluginIds =
             { "com.android.application"

@@ -28,7 +28,7 @@ import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.typelead.gradle.utils.EtaRuntimeUtils;
 import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.eta.tasks.EtaCompile;
-import com.typelead.gradle.eta.android.AndroidUtil;
+import com.typelead.gradle.eta.android.AndroidHelper;
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.eta.api.EtaSourceSet;
 import com.typelead.gradle.eta.api.EtaConfiguration;
@@ -69,9 +69,9 @@ public class EtaAndroidPlugin extends EtaBasePlugin implements Plugin<Project> {
     public void apply(Project project) {
         super.apply(project);
         androidPlugin =
-            AndroidUtil.getAndroidPlugin(project)
+            AndroidHelper.getAndroidPlugin(project)
             .orElseThrow(() -> new ProjectConfigurationException("Please apply an Android plugin before applying the 'eta-android' plugin.", null));
-        androidExtension = AndroidUtil.getAndroidExtension(project);
+        androidExtension = AndroidHelper.getAndroidExtension(project);
 
         configureEtaSourceSetConvention();
         addEtaExtensionForConfigurations();
