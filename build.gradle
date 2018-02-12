@@ -39,7 +39,6 @@ project.afterEvaluate {
 }
 
 apply plugin: 'java'
-apply plugin: 'groovy'
 apply plugin: 'java-gradle-plugin'
 apply plugin: 'maven-publish'
 

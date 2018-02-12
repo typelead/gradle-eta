@@ -89,7 +89,7 @@ public class EtlasCommand {
   public List<String> depsClasspath(String component) {
     // A little hacky, but this is a quick and dirty way to support 1.0.2.0 until it is deprecated.
     CommandLine c;
-    if (new Version(etlasVersion).isAfterOrEqualTo(new Version("1.1.0.0"))) {
+    if (Version.create(etlasVersion).isAfterOrEqualTo(Version.create("1.1.0.0"))) {
       c = defaultCommandLine("deps", component, "--classpath");
     } else {
       c = defaultCommandLine("deps", "--classpath");
