@@ -1,6 +1,5 @@
-package com.typelead.gradle.eta.dependency;
+package com.typelead.gradle.utils;
 
-import com.typelead.gradle.utils.Either;
 import org.gradle.api.Nullable;
 import org.gradle.internal.os.OperatingSystem;
 

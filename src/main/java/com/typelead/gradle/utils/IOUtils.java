@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Scanner;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.function.Function;
 
 public abstract class IOUtils {
 
@@ -18,20 +20,48 @@ public abstract class IOUtils {
     return s.hasNext() ? s.next() : "";
   }
 
+  public static void supplyInput(OutputStream os, Supplier<String> f) {
+      String input = f.get();
+      if (input != null && input.length() > 0) {
+          BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os));
+          try {
+              writer.write(input);
+              writer.flush();
+              writer.close();
+          } catch(IOException e) {
+              throw new RuntimeException("Failed to write to OutputStream", e);
+          }
+      }
+  }
+
   public static void consumeLines(InputStream is, Consumer<String> f) {
     new Thread(() -> {
-      BufferedReader in = new BufferedReader(new InputStreamReader(is));
-      String line = null;
-      StringBuilder sb = new StringBuilder();
-      try {
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        String line = null;
+        try {
         while ((line = in.readLine()) != null) {
-          f.accept(line);
+            f.accept(line);
         }
-      } catch (IOException e) {
+        } catch (IOException e) {
         throw new RuntimeException("Failed to read line from InputStream", e);
-      }
+        }
     }).start();
   }
+
+    public static void consumeLinesIgnoreFailure(InputStream is, Function<String, Boolean> f) {
+        new Thread(() -> {
+            BufferedReader in = new BufferedReader(new InputStreamReader(is));
+            String line = null;
+            try {
+                while ((line = in.readLine()) != null) {
+                    Boolean shouldContinue = f.apply(line);
+                    if (shouldContinue.equals(Boolean.FALSE)) {
+                        return;
+                    }
+                }
+            } catch (IOException e) {}
+        }).start();
+    }
 
   public static String readFile(File file) {
     try {

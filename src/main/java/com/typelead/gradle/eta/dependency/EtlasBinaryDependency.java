@@ -2,19 +2,29 @@ package com.typelead.gradle.eta.dependency;
 
 public class EtlasBinaryDependency {
 
-  private final String path;
-  private final String version;
+    private final String path;
+    private final String version;
+    private final boolean fresh;
 
-  EtlasBinaryDependency(String path, String version) {
-    this.path = path;
-    this.version = version;
-  }
+    EtlasBinaryDependency(String path, String version) {
+        this(path, version, false);
+    }
 
-  public String getPath() {
-    return path;
-  }
+    EtlasBinaryDependency(String path, String version, boolean fresh) {
+        this.path    = path;
+        this.version = version;
+        this.fresh   = fresh;
+    }
 
-  public String getVersion() {
-    return version;
-  }
+    public String getPath() {
+        return path;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public boolean isFresh() {
+        return fresh;
+    }
 }

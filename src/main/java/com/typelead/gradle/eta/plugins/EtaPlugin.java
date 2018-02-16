@@ -5,43 +5,135 @@ import org.gradle.api.Project;
 
 import org.gradle.api.plugins.JavaPlugin;
 
+import com.typelead.gradle.eta.tasks.*;
+import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.plugins.BasePlugin;
+import org.gradle.api.UnknownTaskException;
+
 /**
  * A {@link Plugin} which sets up an Eta project.
  */
 @SuppressWarnings("WeakerAccess")
 public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
 
-  public static final String ETA_EXTENSION_NAME = "eta";
-  public static final String TASK_GROUP_NAME = "EtaPlugin";
-  public static final String CLEAN_ETA_TASK_NAME = "cleanEta";
-  public static final String SANDBOX_INIT_ETA_TASK_NAME = "sandboxInitEta";
-  public static final String SANDBOX_ADD_SOURCES_ETA_TASK_NAME = "sandboxAddSourcesEta";
-  public static final String INSTALL_DEPS_ETA_TASK_NAME = "installDepsEta";
-  public static final String COMPILE_ETA_TASK_NAME = "compileEta";
-  public static final String RUN_ETA_TASK_NAME = "runEta";
-  public static final String TEST_DEPS_ETA_TASK_NAME = "installTestDepsEta";
-  public static final String TEST_COMPILE_ETA_TASK_NAME = "testCompileEta";
-  public static final String TEST_ETA_TASK_NAME = "testEta";
+    public static final String CLEAN_ETA_TASK_NAME = "cleanEta";
+    public static final String SANDBOX_INIT_ETA_TASK_NAME = "sandboxInitEta";
+    public static final String SANDBOX_ADD_SOURCES_ETA_TASK_NAME = "sandboxAddSourcesEta";
+    public static final String INSTALL_DEPS_ETA_TASK_NAME = "installDepsEta";
+    public static final String COMPILE_ETA_TASK_NAME = "compileEta";
+    public static final String RUN_ETA_TASK_NAME = "runEta";
+    public static final String TEST_DEPS_ETA_TASK_NAME = "installTestDepsEta";
+    public static final String TEST_COMPILE_ETA_TASK_NAME = "testCompileEta";
+    public static final String TEST_ETA_TASK_NAME = "testEta";
 
-  public static final boolean DEFAULT_USE_SYSTEM_ETLAS = false;
-  public static final String DEFAULT_ETLAS_REPO = "http://cdnverify.eta-lang.org/eta-binaries";
-  public static final boolean DEFAULT_USE_SANDBOX = true;
-  public static final String DEFAULT_BUILD_DIR = "build/etlas/dist";
-  public static final String DEFAULT_SANDBOX_CONFIG = "cabal.sandbox.config";
-  public static final String DEFAULT_ETA_MAIN_CLASS = "eta.main";
+    @Override
+    public void configureBeforeEvaluate() {
+        project.getPlugins().apply(JavaPlugin.class);
 
-  @Override
-  public void apply(Project project) {
-      super.apply(project);
-  }
+        configureEtaCleanTask();
+        configureEtaSandboxInitTask();
+        configureEtaSandboxAddSourcesTask();
+        configureEtaInstallDepsTask();
+        configureEtaCompileTask();
+        configureEtaRunTask();
+        configureEtaTestDepsTask();
+        configureEtaTestCompileTask();
+        configureEtaTestTask();
+    }
 
-  @Override
-  public void configureBeforeEvaluate() {
-      project.getPlugins().apply(JavaPlugin.class);
-  }
+    @Override
+    public void configureAfterEvaluate() {
+        configureTasksAfterEvaluate();
+        configureBaseCleanTask();
+        configureJavaJarTask();
+    }
 
-  @Override
-  public void configureAfterEvaluate() {}
+    private void configureTasksAfterEvaluate() {
+        project.getTasks().forEach(t -> {
+                if (t instanceof AbstractEtlasTask) {
+                    ((AbstractEtlasTask)t).configureWithExtension(extension);
+                }
+                if (t instanceof EtaSandboxAddSources) {
+                    t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_INIT_ETA_TASK_NAME));
+                }
+                if (t instanceof EtaInstallDeps) {
+                    t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME));
+                }
+                if (t instanceof EtaCompile) {
+                    t.dependsOn(project.getTasks().getByName(EtaPlugin.INSTALL_DEPS_ETA_TASK_NAME));
+                }
+                if (t instanceof EtaRun) {
+                    t.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+                }
+                if (t instanceof EtaTestCompile) {
+                    t.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+                }
+                if (t instanceof EtaTest) {
+                    t.dependsOn(project.getTasks().getByName(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME));
+                }
+            });
+    }
 
+    private void configureEtaCleanTask() {
+        EtaClean task = project.getTasks().create(EtaPlugin.CLEAN_ETA_TASK_NAME, EtaClean.class);
+        task.setDescription("Clean Eta build artifacts via 'etlas clean'");
+    }
 
+    private void configureEtaSandboxInitTask() {
+        EtaSandboxInit task = project.getTasks().create(EtaPlugin.SANDBOX_INIT_ETA_TASK_NAME, EtaSandboxInit.class);
+        task.setDescription("Initialize an Etlas sandbox if useSandbox=true (default); otherwise, do nothing.");
+    }
+
+    private void configureEtaSandboxAddSourcesTask() {
+        EtaSandboxAddSources task = project.getTasks().create(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME, EtaSandboxAddSources.class);
+        task.setDescription("Make local packages available in the sandbox via 'etlas sandbox add-source'");
+    }
+
+    private void configureEtaInstallDepsTask() {
+        EtaInstallDeps task = project.getTasks().create(EtaPlugin.INSTALL_DEPS_ETA_TASK_NAME, EtaInstallDeps.class);
+        task.setDescription("Install project dependencies via 'etlas install --dependencies-only'");
+    }
+
+    private void configureEtaCompileTask() {
+        EtaCompile task = project.getTasks().create(EtaPlugin.COMPILE_ETA_TASK_NAME, EtaCompile.class);
+        task.setDescription("Compile Eta sources via 'etlas build'");
+    }
+
+    private void configureEtaRunTask() {
+        EtaRun task = project.getTasks().create(EtaPlugin.RUN_ETA_TASK_NAME, EtaRun.class);
+        task.setDescription("Run a compiled Eta executable");
+    }
+
+    private void configureEtaTestDepsTask() {
+        EtaInstallTestDeps task = project.getTasks().create(EtaPlugin.TEST_DEPS_ETA_TASK_NAME, EtaInstallTestDeps.class);
+        task.setDescription("Install dependencies for Eta tests");
+    }
+
+    private void configureEtaTestCompileTask() {
+        EtaTestCompile task = project.getTasks().create(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME, EtaTestCompile.class);
+        task.setDescription("Compiles Eta test sources via 'etlas build'");
+    }
+
+    private void configureEtaTestTask() {
+        EtaTest task = project.getTasks().create(EtaPlugin.TEST_ETA_TASK_NAME, EtaTest.class);
+        task.setDescription("Run Eta tests");
+    }
+
+    /**
+     * Update the 'clean' lifecycle task to include cleaning the Eta build.
+     */
+    private void configureBaseCleanTask() {
+        final TaskContainer tc = project.getTasks();
+        tc.getByName(BasePlugin.CLEAN_TASK_NAME)
+          .dependsOn(tc.getByName(EtaPlugin.CLEAN_ETA_TASK_NAME));
+    }
+
+    /**
+     * Update the 'jar' lifecycle task to include compiling Eta sources.
+     */
+    private void configureJavaJarTask() {
+        final TaskContainer tc = project.getTasks();
+        tc.getByName(JavaPlugin.JAR_TASK_NAME)
+          .dependsOn(tc.getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
+    }
 }
