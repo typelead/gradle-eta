@@ -3,11 +3,12 @@ package com.typelead.gradle.eta.tasks;
 import com.typelead.gradle.utils.EtlasCommand;
 import org.gradle.api.tasks.TaskAction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class EtaSandboxAddSources extends AbstractEtlasTask {
 
-  private List<String> sources;
+  private List<String> sources = new ArrayList<>();
 
   @TaskAction
   public void sandboxAddSourcesEta() {
