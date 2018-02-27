@@ -11,7 +11,7 @@ public class EtaCompile extends AbstractEtlasTask {
   @TaskAction
   public void compileEta() {
     EtlasCommand c = new EtlasCommand(this);
-    c.maybeInitSandbox();
+    // c.maybeInitSandbox();
     c.installDependenciesOnly();
     if (!getConfigureFlags().isEmpty()) c.configure(getConfigureFlags());
     c.build();

@@ -8,6 +8,9 @@ import org.gradle.api.Project;
 import org.gradle.api.GradleException;
 
 import java.io.File;
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,42 +26,53 @@ public class EtlasCommand {
     private final String defaultUserConfig;
     private final String etlasBinary;
     private String etlasVersion;
+    private String etaVersion;
     private final List<String> etlasFlags;
     private final List<String> buildFlags;
     private final String buildDir;
+    private final String sandboxRootDir;
     private final List<String> components;
     private final Optional<Boolean> sendMetrics;
 
     public EtlasCommand(Project project, EtaExtension extension) {
-        this.project = project;
-        this.useSandbox = extension.getUseSandbox();
-        this.sandboxConfig = extension.getSandboxConfig();
+        this.project           = project;
+        this.useSandbox        = extension.getUseSandbox();
+        this.sandboxConfig     = extension.getSandboxConfig();
         this.defaultUserConfig = extension.getDefaultUserConfig();
-        this.etlasBinary = extension.getEtlasBinary();
-        this.etlasVersion = extension.getEtlasVersion();
-        this.etlasFlags = extension.getEtlasFlags();
-        this.buildFlags = extension.getBuildFlags();
-        this.buildDir = extension.getBuildDir();
-        this.components = Collections.emptyList();
-        this.sendMetrics = readSendMetricsProperty(project);
+        this.etlasBinary       = extension.getEtlasBinary();
+        this.etlasVersion      = extension.getEtlasVersion();
+        this.etaVersion        = extension.getVersion();
+        this.etlasFlags        = extension.getEtlasFlags();
+        this.buildFlags        = extension.getBuildFlags();
+        /* TODO: Is this correct? */
+        this.buildDir          = null;
+        this.sandboxRootDir    = null;
+        this.components        = Collections.emptyList();
+        this.sendMetrics       = readSendMetricsProperty(project);
     }
 
     public EtlasCommand(EtlasTaskSpec task) {
-        this.project = task.getProject();
-        this.useSandbox = task.getUseSandbox();
-        this.sandboxConfig = task.getSandboxConfig();
+        this.project           = task.getProject();
+        this.useSandbox        = task.getUseSandbox();
+        this.sandboxConfig     = task.getSandboxConfig();
         this.defaultUserConfig = task.getDefaultUserConfig();
-        this.etlasBinary = task.getEtlasBinary();
-        this.etlasVersion = task.getEtlasVersion();
-        this.etlasFlags = task.getEtlasFlags();
-        this.buildFlags = task.getBuildFlags();
-        this.buildDir = task.getBuildDir();
-        this.components = task.getComponents();
-        this.sendMetrics = readSendMetricsProperty(project);
+        this.etlasBinary       = task.getEtlasBinary();
+        this.etlasVersion      = task.getEtlasVersion();
+        this.etaVersion        = task.getEtaVersion();
+        this.etlasFlags        = task.getEtlasFlags();
+        this.buildFlags        = task.getBuildFlags();
+        this.buildDir          = task.getBuildDir();
+        this.sandboxRootDir    = task.getSandboxRootDir();
+        this.components        = task.getComponents();
+        this.sendMetrics       = readSendMetricsProperty(project);
     }
 
     public void setEtlasVersion(String etlasVersion) {
         this.etlasVersion = etlasVersion;
+    }
+
+    public void setEtaVersion(String etaVersion) {
+        this.etaVersion = etaVersion;
     }
 
     public void configure(List<String> flags) {
@@ -87,6 +101,13 @@ public class EtlasCommand {
         c.executeAndLogOutput();
     }
 
+    public void installEta(String version) {
+        CommandLine c = initCommandLine();
+        c.getCommand().addAll(Arrays.asList(new String[] {"--select-eta=" + version,
+                                                          "update"}));
+        c.executeAndLogOutput();
+    }
+
     public String getWelcomeMessage() {
         final StringBuffer output = new StringBuffer();
         final StringBuffer error  = new StringBuffer();
@@ -111,6 +132,17 @@ public class EtlasCommand {
         CommandLine c = initCommandLine();
         c.getCommand().add("--numeric-version");
         return c.executeAndGetStandardOutput().trim();
+    }
+
+    public String getLatestEtaVersion() {
+        CommandLine c = initCommandLine();
+        c.getCommand().addAll(Arrays.asList(new String[] {"select", "--list"}));
+        String last = c.executeAndGetStandardOutputLines()
+                       .stream().reduce((a, b) -> b).orElse(null);
+        if (last == null || last.length() <= 0) {
+            throw new GradleException("Unable to get the latest available binary version of Eta.");
+        }
+        return last;
     }
 
     public void test(List<String> testFlags) {
@@ -141,13 +173,13 @@ public class EtlasCommand {
     /**
      * If useSandbox == false or if it has already been init'd, skip; otherwise, sandbox init.
      */
-    public void maybeInitSandbox() {
+    public void initSandbox(String workingDir) {
         if (!useSandbox) return;
-        // Check if sandbox has been init'd by seeing if the config already exists.
-        boolean sandboxConfigExists =
-            new File(project.getProjectDir(), determineSandboxConfig()).exists();
-        if (sandboxConfigExists) return;
+        File sandboxDir = new File(sandboxRootDir);
+        FileUtil.removeDirectoryRecursive(sandboxDir);
+        sandboxDir.mkdirs();
         CommandLine c = initCommandLine();
+        c.setWorkingDir(sandboxRootDir);
         c.getCommand().addAll(Arrays.asList("sandbox", "init"));
         c.executeAndLogOutput();
     }
@@ -218,7 +250,7 @@ public class EtlasCommand {
     private String determineSandboxConfig() {
         return sandboxConfig != null
             ? sandboxConfig
-            : EtaPlugin.DEFAULT_SANDBOX_CONFIG;
+            : EtaBasePlugin.DEFAULT_SANDBOX_CONFIG;
     }
 
     public Optional<Boolean> getSendMetrics() {

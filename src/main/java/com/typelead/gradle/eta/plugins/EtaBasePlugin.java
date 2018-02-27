@@ -3,6 +3,8 @@ package com.typelead.gradle.eta.plugins;
 import com.typelead.gradle.eta.config.EtaExtension;
 import com.typelead.gradle.eta.dependency.EtlasBinaryDependency;
 import com.typelead.gradle.eta.dependency.EtlasBinaryDependencyResolver;
+import com.typelead.gradle.eta.tasks.EtaSandboxInit;
+import com.typelead.gradle.eta.tasks.EtaInstall;
 import com.typelead.gradle.utils.EtlasCommand;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -23,21 +25,25 @@ public abstract class EtaBasePlugin {
 
     private static final Logger LOG = Logging.getLogger(EtaBasePlugin.class);
 
+    /* Constants */
     public static final String ETA_EXTENSION_NAME = "eta";
     public static final String TASK_GROUP_NAME = "EtaPlugin";
 
-    public static final boolean DEFAULT_USE_SYSTEM_ETLAS = false;
-    public static final String DEFAULT_ETLAS_REPO = "http://cdnverify.eta-lang.org/eta-binaries";
-    public static final boolean DEFAULT_USE_SANDBOX = true;
-    public static final String DEFAULT_BUILD_DIR = "build/etlas/dist";
     public static final String DEFAULT_SANDBOX_CONFIG = "cabal.sandbox.config";
     public static final String DEFAULT_ETA_MAIN_CLASS = "eta.main";
 
+    /* Properties */
     public static final String ETA_SEND_METRICS_PROPERTY = "etaSendMetrics";
 
+    /* Tasks */
+    public static final String SANDBOX_INIT_ETA_TASK_NAME = "initializeSandboxEta";
+    public static final String INSTALL_ETA_TASK_NAME = "installEta";
+
+    /* Abstract Methods */
     public abstract void configureBeforeEvaluate();
     public abstract void configureAfterEvaluate();
 
+    /* Protected Fields */
     protected Project project;
     protected EtaExtension extension;
     protected EtlasCommand etlasCommand;
@@ -59,6 +65,7 @@ public abstract class EtaBasePlugin {
                 /* WARNING: The ordering of statements below is very important. */
                 extension.setDefaultsFromProperties(project);
 
+                /* Download Etlas binary if necessary */
                 EtlasBinaryDependency etlasDep = configureOrDownloadEtlas();
 
                 this.etlasCommand = new EtlasCommand(project, extension);
@@ -72,7 +79,12 @@ public abstract class EtaBasePlugin {
                 extension.setEtlasVersion(etlasVersion);
                 etlasCommand.setEtlasVersion(etlasVersion);
 
+                configureEtaVersion();
+
+                /* Make sure telemetry preference is asked for if necessary. */
                 ensureTelemetryPreferencesAndUpdate(etlasDep, etlasCommand.getSendMetrics());
+
+                configureEtaSandboxInitTask();
 
                 configureAfterEvaluate();
             });
@@ -105,7 +117,7 @@ public abstract class EtaBasePlugin {
             etlasDep = resolver.resolveRemote(extension.getEtlasRepo(), extension.getEtlasVersion());
             extension.setEtlasBinary(etlasDep.getPath());
         } else {
-            throw new GradleException("Etlas not configured, please specify etlasVersion in an eta { .. } block.");
+            throw new GradleException("Etlas not configured, please supply a value for the 'etlasVersion' property in an eta { .. } block.");
         }
         return etlasDep;
     }
@@ -125,6 +137,31 @@ public abstract class EtaBasePlugin {
                 throw new GradleException(etlasCommand.getWelcomeMessage() +
                                           "\nPlease re-run this command with:\n * `-PetaSendMetrics=true` for yes\n * `-PetaSendMetrics=false` for no.\n\nThis only needs to be done once.");
             }
+        }
+    }
+
+    private void configureEtaVersion() {
+        if (extension.getVersion() == null) {
+            String etaVersion = etlasCommand.getLatestEtaVersion();
+            extension.setVersion(etaVersion);
+            etlasCommand.setEtaVersion(etaVersion);
+            project.getLogger().lifecycle("WARNING: You have not explicitly set the version of Eta to be used, so the latest available version, " + etaVersion + ", will be used. This is not recommended since it will make the builds non-reproducible. Please supply a value for the 'version' property in an eta { .. } block.");
+        }
+    }
+
+    private void configureEtaSandboxInitTask() {
+        /* The sandbox initialization must be done in the root project. */
+        if (extension.getUseSandbox() && project == project.getRootProject()) {
+            EtaInstall installTask =
+                project.getTasks().create(INSTALL_ETA_TASK_NAME, EtaInstall.class);
+            installTask.setDescription("Install the Eta version specified.");
+            installTask.configureWithExtension(extension);
+
+            EtaSandboxInit sandboxInitTask = project.getTasks().create(SANDBOX_INIT_ETA_TASK_NAME, EtaSandboxInit.class);
+            sandboxInitTask.setDescription("Initialize an Eta sandbox that is shared among all the projects in a multi-project build.");
+            sandboxInitTask.configureWithExtension(extension);
+
+            sandboxInitTask.dependsOn(installTask);
         }
     }
 }

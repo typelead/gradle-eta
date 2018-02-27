@@ -10,7 +10,7 @@ import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.eta.config.EtaExtension;
 import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 
-public class EtaSandboxInit extends AbstractEtlasTask {
+public class EtaInstall extends AbstractEtlasTask {
 
     private File sandboxConfigFile;
 
@@ -23,27 +23,19 @@ public class EtaSandboxInit extends AbstractEtlasTask {
     }
 
     @Input
-    public String getEtlasVersion() {
-        return super.getEtlasVersion();
-    }
-
-    @Input
     public String getEtaVersion() {
         return super.getEtaVersion();
     }
 
-    @Input
-    public String getSandboxRootDir() {
-        return super.getSandboxRootDir();
-    }
-
+    /* TODO: This is a really bad hack. Fix with something better, like an
+       `etlas select --paths` command. */
     @OutputFile
     public File getSandboxConfigFile() {
         return sandboxConfigFile;
     }
 
     @TaskAction
-    public void sandboxInitEta() {
-        new EtlasCommand(this).initSandbox(getSandboxRootDir());
+    public void installEta() {
+        new EtlasCommand(this).installEta(getEtaVersion());
     }
 }

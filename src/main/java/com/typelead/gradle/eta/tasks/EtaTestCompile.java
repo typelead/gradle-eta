@@ -11,7 +11,7 @@ public class EtaTestCompile extends AbstractEtlasTask {
   @TaskAction
   public void testCompileEta() {
     EtlasCommand c = new EtlasCommand(this);
-    c.maybeInitSandbox();
+    // c.maybeInitSandbox();
     c.installTestDependenciesOnly();
     c.enableTests();
     c.build();

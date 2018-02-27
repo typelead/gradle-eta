@@ -17,7 +17,6 @@ import org.gradle.api.UnknownTaskException;
 public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
 
     public static final String CLEAN_ETA_TASK_NAME = "cleanEta";
-    public static final String SANDBOX_INIT_ETA_TASK_NAME = "sandboxInitEta";
     public static final String SANDBOX_ADD_SOURCES_ETA_TASK_NAME = "sandboxAddSourcesEta";
     public static final String INSTALL_DEPS_ETA_TASK_NAME = "installDepsEta";
     public static final String COMPILE_ETA_TASK_NAME = "compileEta";
@@ -30,31 +29,31 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
     public void configureBeforeEvaluate() {
         project.getPlugins().apply(JavaPlugin.class);
 
-        configureEtaCleanTask();
-        configureEtaSandboxInitTask();
-        configureEtaSandboxAddSourcesTask();
-        configureEtaInstallDepsTask();
-        configureEtaCompileTask();
-        configureEtaRunTask();
-        configureEtaTestDepsTask();
-        configureEtaTestCompileTask();
-        configureEtaTestTask();
+        // configureEtaCleanTask();
+        // configureEtaSandboxInitTask();
+        // configureEtaSandboxAddSourcesTask();
+        // configureEtaInstallDepsTask();
+        // configureEtaCompileTask();
+        // configureEtaRunTask();
+        // configureEtaTestDepsTask();
+        // configureEtaTestCompileTask();
+        // configureEtaTestTask();
     }
 
     @Override
     public void configureAfterEvaluate() {
         configureTasksAfterEvaluate();
-        configureBaseCleanTask();
-        configureJavaJarTask();
+        // configureBaseCleanTask();
+        // configureJavaJarTask();
     }
 
     private void configureTasksAfterEvaluate() {
         project.getTasks().forEach(t -> {
                 if (t instanceof AbstractEtlasTask) {
-                    ((AbstractEtlasTask)t).configureWithExtension(extension);
+                    ((AbstractEtlasTask)t).configureWithExtension(extension, "default");
                 }
                 if (t instanceof EtaSandboxAddSources) {
-                    t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_INIT_ETA_TASK_NAME));
+                    t.dependsOn(project.getTasks().getByName(EtaBasePlugin.SANDBOX_INIT_ETA_TASK_NAME));
                 }
                 if (t instanceof EtaInstallDeps) {
                     t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME));
@@ -74,16 +73,6 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
             });
     }
 
-    private void configureEtaCleanTask() {
-        EtaClean task = project.getTasks().create(EtaPlugin.CLEAN_ETA_TASK_NAME, EtaClean.class);
-        task.setDescription("Clean Eta build artifacts via 'etlas clean'");
-    }
-
-    private void configureEtaSandboxInitTask() {
-        EtaSandboxInit task = project.getTasks().create(EtaPlugin.SANDBOX_INIT_ETA_TASK_NAME, EtaSandboxInit.class);
-        task.setDescription("Initialize an Etlas sandbox if useSandbox=true (default); otherwise, do nothing.");
-    }
-
     private void configureEtaSandboxAddSourcesTask() {
         EtaSandboxAddSources task = project.getTasks().create(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME, EtaSandboxAddSources.class);
         task.setDescription("Make local packages available in the sandbox via 'etlas sandbox add-source'");
@@ -99,10 +88,10 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
         task.setDescription("Compile Eta sources via 'etlas build'");
     }
 
-    private void configureEtaRunTask() {
-        EtaRun task = project.getTasks().create(EtaPlugin.RUN_ETA_TASK_NAME, EtaRun.class);
-        task.setDescription("Run a compiled Eta executable");
-    }
+    // private void configureEtaRunTask() {
+    //     EtaRun task = project.getTasks().create(EtaPlugin.RUN_ETA_TASK_NAME, EtaRun.class);
+    //     task.setDescription("Run a compiled Eta executable");
+    // }
 
     private void configureEtaTestDepsTask() {
         EtaInstallTestDeps task = project.getTasks().create(EtaPlugin.TEST_DEPS_ETA_TASK_NAME, EtaInstallTestDeps.class);

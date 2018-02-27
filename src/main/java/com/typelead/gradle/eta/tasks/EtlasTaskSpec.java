@@ -6,44 +6,52 @@ import java.util.List;
 
 public interface EtlasTaskSpec extends Task {
 
-  boolean getUseSandbox();
+    boolean getUseSandbox();
 
-  void setUseSandbox(boolean useSandbox);
+    void setUseSandbox(boolean useSandbox);
 
-  String getSandboxConfig();
+    String getSandboxConfig();
 
-  void setSandboxConfig(String sandboxConfig);
+    void setSandboxConfig(String sandboxConfig);
 
-  String getDefaultUserConfig();
+    String getDefaultUserConfig();
 
-  void setDefaultUserConfig(String defaultUserConfig);
+    void setDefaultUserConfig(String defaultUserConfig);
 
-  String getEtlasBinary();
+    String getEtlasBinary();
 
-  void setEtlasBinary(String etlasBinary);
+    void setEtlasBinary(String etlasBinary);
 
-  String getEtlasVersion();
+    String getEtlasVersion();
 
-  // This should only be used internally to set the etlas version to check compatibility.
-  void unsafeSetEtlasVersion(String etlasVersion);
+    // This should only be used internally to set the etlas version to check compatibility.
+    void unsafeSetEtlasVersion(String etlasVersion);
 
-  List<String> getEtlasFlags();
+    String getEtaVersion();
 
-  void setEtlasFlags(List<String> etlasFlags);
+    void setEtaVersion(String etaVersion);
 
-  List<String> getBuildFlags();
+    List<String> getEtlasFlags();
 
-  void setBuildFlags(List<String> buildFlags);
+    void setEtlasFlags(List<String> etlasFlags);
 
-  String getBuildDir();
+    List<String> getBuildFlags();
 
-  void setBuildDir(String buildDir);
+    void setBuildFlags(List<String> buildFlags);
 
-  List<String> getComponents();
+    String getBuildDir();
 
-  void setComponents(List<String> component);
+    void setBuildDir(String buildDir);
 
-  List<String> getConfigureFlags();
+    String getSandboxRootDir();
 
-  void setConfigureFlags(List<String> configureFlags);
+    void setSandboxRootDir(String sandboxRootDir);
+
+    List<String> getComponents();
+
+    void setComponents(List<String> component);
+
+    List<String> getConfigureFlags();
+
+    void setConfigureFlags(List<String> configureFlags);
 }
