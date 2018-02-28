@@ -101,10 +101,9 @@ public class EtlasCommand {
         c.executeAndLogOutput();
     }
 
-    public void installEta(String version) {
+    public void installEta() {
         CommandLine c = initCommandLine();
-        c.getCommand().addAll(Arrays.asList(new String[] {"--select-eta=" + version,
-                                                          "update"}));
+        c.getCommand().addAll(Arrays.asList("--select-eta=" + etaVersion, "update"));
         c.executeAndLogOutput();
     }
 
@@ -136,7 +135,7 @@ public class EtlasCommand {
 
     public String getLatestEtaVersion() {
         CommandLine c = initCommandLine();
-        c.getCommand().addAll(Arrays.asList(new String[] {"select", "--list"}));
+        c.getCommand().addAll(Arrays.asList("select", "--list"));
         String last = c.executeAndGetStandardOutputLines()
                        .stream().reduce((a, b) -> b).orElse(null);
         if (last == null || last.length() <= 0) {
@@ -180,7 +179,8 @@ public class EtlasCommand {
         sandboxDir.mkdirs();
         CommandLine c = initCommandLine();
         c.setWorkingDir(sandboxRootDir);
-        c.getCommand().addAll(Arrays.asList("sandbox", "init"));
+        c.getCommand().addAll(Arrays.asList("--select-eta=" + etaVersion, "sandbox",
+                                            "init"));
         c.executeAndLogOutput();
     }
 

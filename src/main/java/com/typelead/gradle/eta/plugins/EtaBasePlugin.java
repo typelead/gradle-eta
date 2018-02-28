@@ -1,11 +1,9 @@
 package com.typelead.gradle.eta.plugins;
 
-import com.typelead.gradle.eta.config.EtaExtension;
-import com.typelead.gradle.eta.dependency.EtlasBinaryDependency;
-import com.typelead.gradle.eta.dependency.EtlasBinaryDependencyResolver;
-import com.typelead.gradle.eta.tasks.EtaSandboxInit;
-import com.typelead.gradle.eta.tasks.EtaInstall;
-import com.typelead.gradle.utils.EtlasCommand;
+import java.io.File;
+import java.util.Optional;
+import java.nio.file.Paths;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -14,9 +12,15 @@ import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 
-import java.util.Optional;
-import java.io.File;
-import java.nio.file.Paths;
+import com.typelead.gradle.utils.EtlasCommand;
+import com.typelead.gradle.utils.ExtensionHelper;
+import com.typelead.gradle.eta.tasks.EtaSandboxInit;
+import com.typelead.gradle.eta.tasks.EtaInstall;
+import com.typelead.gradle.eta.config.EtaExtension;
+import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
+import com.typelead.gradle.eta.internal.DefaultEtaDependencyHandler;
+import com.typelead.gradle.eta.dependency.EtlasBinaryDependency;
+import com.typelead.gradle.eta.dependency.EtlasBinaryDependencyResolver;
 
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
@@ -31,6 +35,9 @@ public abstract class EtaBasePlugin {
 
     public static final String DEFAULT_SANDBOX_CONFIG = "cabal.sandbox.config";
     public static final String DEFAULT_ETA_MAIN_CLASS = "eta.main";
+
+    public static final String ETA_DEPENDENCY_HANDLER_DSL_NAME  = "eta";
+    public static final String ETA_CONFIGURATION_EXTENSION_NAME  = "eta";
 
     /* Properties */
     public static final String ETA_SEND_METRICS_PROPERTY = "etaSendMetrics";
@@ -85,6 +92,8 @@ public abstract class EtaBasePlugin {
                 ensureTelemetryPreferencesAndUpdate(etlasDep, etlasCommand.getSendMetrics());
 
                 configureEtaSandboxInitTask();
+
+                addEtaExtensionForConfigurations();
 
                 configureAfterEvaluate();
             });
@@ -164,4 +173,17 @@ public abstract class EtaBasePlugin {
             sandboxInitTask.dependsOn(installTask);
         }
     }
+
+    private void addEtaExtensionForConfigurations() {
+        ExtensionHelper.createExtension(project.getDependencies(),
+                                        ETA_DEPENDENCY_HANDLER_DSL_NAME,
+                                        DefaultEtaDependencyHandler.class,
+                                        project.getConfigurations());
+        project.getConfigurations()
+            .all(configuration ->
+                 ExtensionHelper.createExtension(configuration,
+                                                 ETA_CONFIGURATION_EXTENSION_NAME,
+                                                 DefaultEtaConfiguration.class));
+    }
+
 }

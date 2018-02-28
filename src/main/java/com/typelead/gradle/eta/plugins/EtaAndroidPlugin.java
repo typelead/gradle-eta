@@ -35,9 +35,7 @@ import com.typelead.gradle.eta.api.EtaConfiguration;
 import com.typelead.gradle.eta.api.EtaOptions;
 import com.typelead.gradle.eta.api.Language;
 import com.typelead.gradle.eta.api.LanguageExtension;
-import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
 import com.typelead.gradle.eta.internal.DefaultEtaSourceSet;
-import com.typelead.gradle.eta.internal.DefaultEtaDependencyHandler;
 
 import org.gradle.api.artifacts.ResolutionStrategy;
 import org.gradle.api.artifacts.ModuleVersionSelector;
@@ -51,14 +49,10 @@ public class EtaAndroidPlugin extends EtaBasePlugin implements Plugin<Project> {
     public static final String ETA_SOURCE_SET_NAME              = "eta";
     public static final String ETA_SOURCE_SET_DSL_NAME          = "eta";
     public static final String ETA_OPTIONS_DSL_NAME             = "etaOptions";
-    public static final String ETA_DEPENDENCY_HANDLER_DSL_NAME  = "eta";
-    public static final String ETA_CONFIGURATION_EXTENSION_NAME = "eta";
 
     private final SourceDirectorySetFactory sourceDirectorySetFactory;
     private BasePlugin androidPlugin;
     private BaseExtension androidExtension;
-    private Configuration etaImpl;
-    private FileCollection etaDeps;
 
     @Inject
     public EtaAndroidPlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
@@ -66,17 +60,18 @@ public class EtaAndroidPlugin extends EtaBasePlugin implements Plugin<Project> {
     }
 
     @Override
-    public void apply(Project project) {
-        super.apply(project);
+    public void configureBeforeEvaluate() {
         androidPlugin =
             AndroidHelper.getAndroidPlugin(project)
             .orElseThrow(() -> new ProjectConfigurationException("Please apply an Android plugin before applying the 'eta-android' plugin.", null));
         androidExtension = AndroidHelper.getAndroidExtension(project);
 
         configureEtaSourceSetConvention();
-        addEtaExtensionForConfigurations();
         addEtaOptionsToDefaultConfig();
     }
+
+    @Override
+    public void configureAfterEvaluate() {}
 
     private void configureEtaSourceSetConvention() {
         androidExtension.getSourceSets().all(sourceSet -> {
@@ -91,29 +86,10 @@ public class EtaAndroidPlugin extends EtaBasePlugin implements Plugin<Project> {
             });
     }
 
-    private void addEtaExtensionForConfigurations() {
-        ExtensionHelper.createExtension(project.getDependencies(),
-                                        ETA_DEPENDENCY_HANDLER_DSL_NAME,
-                                        DefaultEtaDependencyHandler.class,
-                                        project.getConfigurations());
-        project.getConfigurations().all(configuration ->
-            ExtensionHelper.createExtension(configuration,
-                ETA_CONFIGURATION_EXTENSION_NAME, DefaultEtaConfiguration.class)
-        );
-    }
-
     private void addEtaOptionsToDefaultConfig() {
         ExtensionHelper.createExtension(androidExtension, ETA_OPTIONS_DSL_NAME,
                                         EtaOptions.class,
                                         project.container(Language.class),
                                         project.container(LanguageExtension.class));
-    }
-
-    @Override
-    public void configureBeforeEvaluate() {
-    }
-
-    @Override
-    public void configureAfterEvaluate() {
     }
 }

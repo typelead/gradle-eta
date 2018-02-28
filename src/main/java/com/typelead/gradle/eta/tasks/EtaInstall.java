@@ -36,6 +36,7 @@ public class EtaInstall extends AbstractEtlasTask {
 
     @TaskAction
     public void installEta() {
-        new EtlasCommand(this).installEta(getEtaVersion());
+        getProject().getLogger().lifecycle("Installing Eta v" + getEtaVersion() + ". This may take several minutes...");
+        new EtlasCommand(this).installEta();
     }
 }
