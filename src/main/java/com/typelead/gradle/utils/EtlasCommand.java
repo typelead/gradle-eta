@@ -1,12 +1,5 @@
 package com.typelead.gradle.utils;
 
-import com.typelead.gradle.eta.config.EtaExtension;
-import com.typelead.gradle.eta.plugins.EtaPlugin;
-import com.typelead.gradle.eta.plugins.EtaBasePlugin;
-import com.typelead.gradle.eta.tasks.EtlasTaskSpec;
-import org.gradle.api.Project;
-import org.gradle.api.GradleException;
-
 import java.io.File;
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -16,29 +9,33 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.gradle.api.Project;
+import org.gradle.api.GradleException;
+
+import com.typelead.gradle.eta.api.SourceRepository;
+import com.typelead.gradle.eta.tasks.EtlasTaskSpec;
+import com.typelead.gradle.eta.api.EtaExtension;
+import com.typelead.gradle.eta.plugins.EtaPlugin;
+import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 
 public class EtlasCommand {
 
     private final Project project;
-    private final boolean useSandbox;
-    private final String sandboxConfig;
-    private final String defaultUserConfig;
     private final String etlasBinary;
     private String etlasVersion;
     private String etaVersion;
     private final List<String> etlasFlags;
     private final List<String> buildFlags;
     private final String buildDir;
-    private final String sandboxRootDir;
     private final List<String> components;
     private final Optional<Boolean> sendMetrics;
+    private final String workingDir;
 
     public EtlasCommand(Project project, EtaExtension extension) {
         this.project           = project;
-        this.useSandbox        = extension.getUseSandbox();
-        this.sandboxConfig     = extension.getSandboxConfig();
-        this.defaultUserConfig = extension.getDefaultUserConfig();
         this.etlasBinary       = extension.getEtlasBinary();
         this.etlasVersion      = extension.getEtlasVersion();
         this.etaVersion        = extension.getVersion();
@@ -46,25 +43,26 @@ public class EtlasCommand {
         this.buildFlags        = extension.getBuildFlags();
         /* TODO: Is this correct? */
         this.buildDir          = null;
-        this.sandboxRootDir    = null;
         this.components        = Collections.emptyList();
         this.sendMetrics       = readSendMetricsProperty(project);
+        this.workingDir        = null;
     }
 
     public EtlasCommand(EtlasTaskSpec task) {
+        this(task, null);
+    }
+
+    public EtlasCommand(EtlasTaskSpec task, String workingDir) {
         this.project           = task.getProject();
-        this.useSandbox        = task.getUseSandbox();
-        this.sandboxConfig     = task.getSandboxConfig();
-        this.defaultUserConfig = task.getDefaultUserConfig();
         this.etlasBinary       = task.getEtlasBinary();
         this.etlasVersion      = task.getEtlasVersion();
         this.etaVersion        = task.getEtaVersion();
         this.etlasFlags        = task.getEtlasFlags();
         this.buildFlags        = task.getBuildFlags();
         this.buildDir          = task.getBuildDir();
-        this.sandboxRootDir    = task.getSandboxRootDir();
         this.components        = task.getComponents();
         this.sendMetrics       = readSendMetricsProperty(project);
+        this.workingDir        = workingDir;
     }
 
     public void setEtlasVersion(String etlasVersion) {
@@ -144,6 +142,21 @@ public class EtlasCommand {
         return last;
     }
 
+    public void newFreeze(Set<String>           dependencyConstraints,
+                          Set<SourceRepository> sourceRepositories) {
+        String projectName    = project.getName();
+        String projectVersion = project.getVersion().toString();
+
+        CabalHelper.generateCabalFile(projectName, projectVersion,
+                                      dependencyConstraints, workingDir);
+
+        CabalHelper.generateCabalProjectFile(sourceRepositories, workingDir);
+
+        CommandLine c = initCommandLine();
+        c.getCommand().addAll(Arrays.asList("new-freeze"));
+        c.executeAndLogOutput();
+    }
+
     public void test(List<String> testFlags) {
         commandWithComponent("test", testFlags);
     }
@@ -169,36 +182,6 @@ public class EtlasCommand {
                   .collect(Collectors.toList());
     }
 
-    /**
-     * If useSandbox == false or if it has already been init'd, skip; otherwise, sandbox init.
-     */
-    public void initSandbox(String workingDir) {
-        if (!useSandbox) return;
-        File sandboxDir = new File(sandboxRootDir);
-        FileUtil.removeDirectoryRecursive(sandboxDir);
-        sandboxDir.mkdirs();
-        CommandLine c = initCommandLine();
-        c.setWorkingDir(sandboxRootDir);
-        c.getCommand().addAll(Arrays.asList("--select-eta=" + etaVersion, "sandbox",
-                                            "init"));
-        c.executeAndLogOutput();
-    }
-
-    public void deleteSandbox() {
-        CommandLine c = initCommandLine();
-        c.getCommand().addAll(Arrays.asList("sandbox", "delete"));
-        c.executeAndLogOutput();
-    }
-
-    public void sandboxAddSources(List<String> sources) {
-        if (sources == null) return;
-        sources.forEach(s -> {
-                CommandLine c = initCommandLine();
-                c.getCommand().addAll(Arrays.asList("sandbox", "add-source", s));
-                c.executeAndLogOutput();
-            });
-    }
-
     private void commandWithComponent(String command, List<String> commandArgs) {
         List<String> args = new ArrayList<>(commandArgs);
         args.addAll(components);
@@ -211,7 +194,8 @@ public class EtlasCommand {
 
     private CommandLine initCommandLine() {
         CommandLine c = new CommandLine(etlasBinary);
-        c.setWorkingDir(project.getProjectDir().getAbsolutePath());
+        c.setWorkingDir(workingDir == null? project.getProjectDir().getAbsolutePath()
+                                          : workingDir);
         c.getCommand().addAll(etlasFlags);
         String sendMetrics = getSendMetricsFlag();
         if (sendMetrics != null) {
@@ -222,11 +206,6 @@ public class EtlasCommand {
 
     private CommandLine defaultCommandLine(String command, List<String> args) {
         CommandLine c = initCommandLine();
-        if (useSandbox) {
-            if (sandboxConfig != null) c.getCommand().add("--sandbox-config-file=" + sandboxConfig);
-            if (defaultUserConfig != null)
-                c.getCommand().add("--default-user-config=" + defaultUserConfig);
-        }
         c.getCommand().add(command);
         List<String> commandArgs = new ArrayList<>(args);
         commandArgs.addAll(buildFlags);
@@ -245,12 +224,6 @@ public class EtlasCommand {
 
     private void defaultCommand(String command, List<String> args) {
         defaultCommandLine(command, args).executeAndLogOutput();
-    }
-
-    private String determineSandboxConfig() {
-        return sandboxConfig != null
-            ? sandboxConfig
-            : EtaBasePlugin.DEFAULT_SANDBOX_CONFIG;
     }
 
     public Optional<Boolean> getSendMetrics() {

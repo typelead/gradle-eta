@@ -1,4 +1,4 @@
-package com.typelead.gradle.eta.dependency;
+package com.typelead.gradle.eta.internal;
 
 import com.typelead.gradle.utils.Arch;
 import com.typelead.gradle.utils.CommandLine;

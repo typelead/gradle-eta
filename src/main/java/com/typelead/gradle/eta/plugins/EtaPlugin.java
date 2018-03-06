@@ -17,7 +17,6 @@ import org.gradle.api.UnknownTaskException;
 public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
 
     public static final String CLEAN_ETA_TASK_NAME = "cleanEta";
-    public static final String SANDBOX_ADD_SOURCES_ETA_TASK_NAME = "sandboxAddSourcesEta";
     public static final String INSTALL_DEPS_ETA_TASK_NAME = "installDepsEta";
     public static final String COMPILE_ETA_TASK_NAME = "compileEta";
     public static final String RUN_ETA_TASK_NAME = "runEta";
@@ -30,8 +29,6 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
         project.getPlugins().apply(JavaPlugin.class);
 
         // configureEtaCleanTask();
-        // configureEtaSandboxInitTask();
-        // configureEtaSandboxAddSourcesTask();
         // configureEtaInstallDepsTask();
         // configureEtaCompileTask();
         // configureEtaRunTask();
@@ -42,6 +39,7 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
 
     @Override
     public void configureAfterEvaluate() {
+
         configureTasksAfterEvaluate();
         // configureBaseCleanTask();
         // configureJavaJarTask();
@@ -51,12 +49,6 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
         project.getTasks().forEach(t -> {
                 if (t instanceof AbstractEtlasTask) {
                     ((AbstractEtlasTask)t).configureWithExtension(extension, "default");
-                }
-                if (t instanceof EtaSandboxAddSources) {
-                    t.dependsOn(project.getTasks().getByName(EtaBasePlugin.SANDBOX_INIT_ETA_TASK_NAME));
-                }
-                if (t instanceof EtaInstallDeps) {
-                    t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME));
                 }
                 if (t instanceof EtaCompile) {
                     t.dependsOn(project.getTasks().getByName(EtaPlugin.INSTALL_DEPS_ETA_TASK_NAME));
@@ -71,11 +63,6 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
                     t.dependsOn(project.getTasks().getByName(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME));
                 }
             });
-    }
-
-    private void configureEtaSandboxAddSourcesTask() {
-        EtaSandboxAddSources task = project.getTasks().create(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME, EtaSandboxAddSources.class);
-        task.setDescription("Make local packages available in the sandbox via 'etlas sandbox add-source'");
     }
 
     private void configureEtaInstallDepsTask() {

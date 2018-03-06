@@ -6,18 +6,6 @@ import java.util.List;
 
 public interface EtlasTaskSpec extends Task {
 
-    boolean getUseSandbox();
-
-    void setUseSandbox(boolean useSandbox);
-
-    String getSandboxConfig();
-
-    void setSandboxConfig(String sandboxConfig);
-
-    String getDefaultUserConfig();
-
-    void setDefaultUserConfig(String defaultUserConfig);
-
     String getEtlasBinary();
 
     void setEtlasBinary(String etlasBinary);
@@ -42,10 +30,6 @@ public interface EtlasTaskSpec extends Task {
     String getBuildDir();
 
     void setBuildDir(String buildDir);
-
-    String getSandboxRootDir();
-
-    void setSandboxRootDir(String sandboxRootDir);
 
     List<String> getComponents();
 

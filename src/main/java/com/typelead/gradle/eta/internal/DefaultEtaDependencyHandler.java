@@ -7,6 +7,7 @@ import groovy.lang.MissingMethodException;
 import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.eta.api.EtaDependencyHandler;
 import com.typelead.gradle.eta.api.EtaDependency;
+import com.typelead.gradle.eta.api.EtaDirectDependency;
 import com.typelead.gradle.eta.api.EtaConfiguration;
 
 import org.gradle.api.artifacts.Configuration;
@@ -15,41 +16,34 @@ import org.gradle.api.artifacts.ConfigurationContainer;
 public class DefaultEtaDependencyHandler implements EtaDependencyHandler {
 
     private final ConfigurationContainer configurationContainer;
-    // private final DynamicConfigurationMethods dynamicConfigurationMethods
-    //     = new DynamicConfigurationMethods();
 
     public DefaultEtaDependencyHandler(ConfigurationContainer configurationContainer) {
         this.configurationContainer = configurationContainer;
     }
 
-    // @Override
-    // public MethodAccess getAdditionalMethods() {
-    //     return dynamicConfigurationMethods;
-    // }
-
     @Override
     public EtaDependency add(String configurationName, String dependencyConstraint) {
-        return add(configurationName, DefaultEtaDependency.create(dependencyConstraint));
+        return add(configurationName, DefaultEtaDirectDependency.create(dependencyConstraint));
     }
 
     public EtaDependency add(Configuration targetConfiguration, String dependencyConstraint) {
-        return add(targetConfiguration, DefaultEtaDependency.create(dependencyConstraint));
+        return add(targetConfiguration, DefaultEtaDirectDependency.create(dependencyConstraint));
     }
 
     @Override
     public EtaDependency add(String configurationName, Map<String, String> dependencyConstraintAttributes) {
-        return add(configurationName, DefaultEtaDependency.create(dependencyConstraintAttributes));
+        return add(configurationName, DefaultEtaDirectDependency.create(dependencyConstraintAttributes));
     }
 
     public EtaDependency add(Configuration targetConfiguration, Map<String, String> dependencyConstraintAttributes) {
-        return add(targetConfiguration, DefaultEtaDependency.create(dependencyConstraintAttributes));
+        return add(targetConfiguration, DefaultEtaDirectDependency.create(dependencyConstraintAttributes));
     }
 
-    private EtaDependency add(String configurationName, DefaultEtaDependency dependency) {
+    public EtaDependency add(String configurationName, EtaDependency dependency) {
         return add(configurationContainer.findByName(configurationName), dependency);
     }
 
-    private EtaDependency add(Configuration targetConfiguration, DefaultEtaDependency dependency) {
+    public EtaDependency add(Configuration targetConfiguration, EtaDependency dependency) {
         ExtensionHelper.getExtension(targetConfiguration, EtaConfiguration.class)
             .getDependencies().add(dependency);
         return dependency;
@@ -72,37 +66,4 @@ public class DefaultEtaDependencyHandler implements EtaDependencyHandler {
         }
         throw new MissingMethodException(configurationName, getClass(), configurationParameters);
     }
-
-    // private class DynamicConfigurationMethods implements MethodAccess {
-
-    //     public DynamicConfigurationMethods() {}
-
-    //     @Override
-    //     public boolean hasMethod(String configurationName, Object... configurationParameters) {
-    //         int numConfigurationParameters = configurationParameters.length;
-    //         return numConfigurationParameters == 1
-    //             && configurationContainer.findByName(configurationName) != null;
-    //     }
-
-    //     @Override
-    //     public DynamicInvokeResult tryInvokeMethod(String configurationName, Object... configurationParameters) {
-    //         int numConfigurationParameters = configurationParameters.length;
-    //         if (numConfigurationParameters != 1) {
-    //             return DynamicInvokeResult.notFound();
-    //         }
-    //         Configuration targetConfiguration = configurationContainer.findByName(configurationName);
-    //         if (targetConfiguration == null) {
-    //             return DynamicInvokeResult.notFound();
-    //         }
-
-    //         Object argument = configurationArguments[0];
-    //         if (argument instanceof Map) {
-    //             DynamicInvokeResult.found(add(targetConfiguration, (Map<String,String>)argument));
-    //         } else if (argument instanceof String) {
-    //             DynamicInvokeResult.found(add(targetConfiguration, (String)argument));
-    //         } else {
-    //             return DynamicInvokeResult.notFound();
-    //         }
-    //     }
-    // }
 }

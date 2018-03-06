@@ -1,6 +1,6 @@
 package com.typelead.gradle.utils;
 
-import com.typelead.gradle.eta.config.EtaExtension;
+import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.tasks.EtlasTaskSpec;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;

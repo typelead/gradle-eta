@@ -1,4 +1,4 @@
-package com.typelead.gradle.eta.dependency;
+package com.typelead.gradle.eta.internal;
 
 public class EtlasBinaryDependency {
 

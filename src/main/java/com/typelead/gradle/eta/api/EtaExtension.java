@@ -1,14 +1,15 @@
-package com.typelead.gradle.eta.config;
+package com.typelead.gradle.eta.api;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+
+import org.gradle.api.Project;
+import org.gradle.api.Nullable;
+import org.gradle.api.GradleException;
 
 import com.typelead.gradle.eta.plugins.EtaPlugin;
-import org.gradle.api.GradleException;
-import org.gradle.api.Nullable;
-import org.gradle.api.Project;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * Configuration options for the {@link EtaPlugin}
@@ -18,10 +19,9 @@ public class EtaExtension {
     private static final String DEFAULT_ETLAS_REPO =
         "http://cdnverify.eta-lang.org/eta-binaries";
     private static final boolean DEFAULT_USE_SYSTEM_ETLAS = false;
-    private static final boolean DEFAULT_USE_SANDBOX = true;
+    private static final boolean DEFAULT_USE_SYSTEM_ETA   = false;
     /* This is relative to the default Gradle build directory. */
     private static final String DEFAULT_BUILD_DIR = "eta";
-    private static final String DEFAULT_SANDBOX_ROOT_DIR = "eta-sandbox";
 
     @Nullable
     private String etlasBinary;
@@ -32,25 +32,19 @@ public class EtaExtension {
 
     @Nullable
     private String etaVersion;
+    private boolean useSystemEta = DEFAULT_USE_SYSTEM_ETA;
 
-    private boolean useSandbox = DEFAULT_USE_SANDBOX;
     @Nullable
-    private String sandboxConfig;
-    @Nullable
-    private String sandboxDir;
-    @Nullable
-    private String defaultUserConfig;
     private List<String> etlasFlags = new ArrayList<>();
     private List<String> buildFlags = new ArrayList<>();
     private String buildDir = DEFAULT_BUILD_DIR;
-    private String sandboxRootDir = DEFAULT_SANDBOX_ROOT_DIR;
 
     /**
      * Sets default values based on properties; does not overwrite existing values.
      */
     public void setDefaultsFromProperties(Project project) {
-        /* Helper for setting String properties. */
 
+        /* Helper for setting String properties. */
         BiConsumer<String, Consumer<String>> setStrProp = (k, setter) -> {
             Object v = project.findProperty("eta." + k);
             if (v == null) return;
@@ -62,14 +56,16 @@ public class EtaExtension {
             setStrProp.accept(k, s -> {
                     if (s.equalsIgnoreCase("true")) setter.accept(true);
                     if (s.equalsIgnoreCase("false")) setter.accept(false);
-                    else throw new GradleException("Invalid property value for eta." + k + ": " + s);
+                    else throw new GradleException("Invalid property value for eta."
+                                                   + k + ": " + s);
                 });
         };
 
         /* Helper for throwing exceptions when non-String properties are set. */
         Consumer<String> notSupported = k -> {
             if (project.findProperty("eta." + k) != null) {
-                throw new GradleException("Setting eta." + k + " via a property is not supported");
+                throw new GradleException("Setting eta." + k +
+                                          " via a property is not supported");
             }
         };
 
@@ -93,12 +89,8 @@ public class EtaExtension {
             setStrProp.accept("version", this::setVersion);
         }
 
-        if (getSandboxConfig() == null) {
-            setStrProp.accept("sandboxConfig", this::setSandboxConfig);
-        }
-
-        if (getDefaultUserConfig() == null) {
-            setStrProp.accept("defaultUserConfig", this::setDefaultUserConfig);
+        if (getUseSystemEta() == DEFAULT_USE_SYSTEM_ETA) {
+            setBoolProp.accept("useSystemEta", this::setUseSystemEta);
         }
 
         notSupported.accept("etlasFlags");
@@ -106,10 +98,6 @@ public class EtaExtension {
 
         if (getBuildDir() == DEFAULT_BUILD_DIR) {
             setStrProp.accept("buildDir", this::setBuildDir);
-        }
-
-        if (getSandboxRootDir() == DEFAULT_SANDBOX_ROOT_DIR) {
-            setStrProp.accept("sandboxRootDir", this::setSandboxRootDir);
         }
     }
 
@@ -157,36 +145,12 @@ public class EtaExtension {
         this.etaVersion = etaVersion;
     }
 
-    public boolean getUseSandbox() {
-        return useSandbox;
+    public Boolean getUseSystemEta() {
+        return useSystemEta;
     }
 
-    public void setUseSandbox(boolean useSandbox) {
-        this.useSandbox = useSandbox;
-    }
-
-    public String getSandboxConfig() {
-        return sandboxConfig;
-    }
-
-    public void setSandboxConfig(String sandboxConfig) {
-        this.sandboxConfig = sandboxConfig;
-    }
-
-    public String getSandboxDir() {
-        return sandboxDir;
-    }
-
-    public void setSandboxDir(String sandboxDir) {
-        this.sandboxDir = sandboxDir;
-    }
-
-    public String getDefaultUserConfig() {
-        return defaultUserConfig;
-    }
-
-    public void setDefaultUserConfig(String defaultUserConfig) {
-        this.defaultUserConfig = defaultUserConfig;
+    public void setUseSystemEta(Boolean useSystemEta) {
+        this.useSystemEta = useSystemEta;
     }
 
     public List<String> getEtlasFlags() {
@@ -211,13 +175,5 @@ public class EtaExtension {
 
     public void setBuildDir(String buildDir) {
         this.buildDir = buildDir;
-    }
-
-    public String getSandboxRootDir() {
-        return sandboxRootDir;
-    }
-
-    public void setSandboxRootDir(String sandboxRootDir) {
-        this.sandboxRootDir = sandboxRootDir;
     }
 }

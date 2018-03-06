@@ -14,13 +14,13 @@ import org.gradle.api.plugins.JavaPlugin;
 
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.ExtensionHelper;
-import com.typelead.gradle.eta.tasks.EtaSandboxInit;
 import com.typelead.gradle.eta.tasks.EtaInstall;
-import com.typelead.gradle.eta.config.EtaExtension;
+import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
+import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
 import com.typelead.gradle.eta.internal.DefaultEtaDependencyHandler;
-import com.typelead.gradle.eta.dependency.EtlasBinaryDependency;
-import com.typelead.gradle.eta.dependency.EtlasBinaryDependencyResolver;
+import com.typelead.gradle.eta.internal.EtlasBinaryDependency;
+import com.typelead.gradle.eta.internal.EtlasBinaryDependencyResolver;
 
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
@@ -33,7 +33,6 @@ public abstract class EtaBasePlugin {
     public static final String ETA_EXTENSION_NAME = "eta";
     public static final String TASK_GROUP_NAME = "EtaPlugin";
 
-    public static final String DEFAULT_SANDBOX_CONFIG = "cabal.sandbox.config";
     public static final String DEFAULT_ETA_MAIN_CLASS = "eta.main";
 
     public static final String ETA_DEPENDENCY_HANDLER_DSL_NAME  = "eta";
@@ -43,8 +42,8 @@ public abstract class EtaBasePlugin {
     public static final String ETA_SEND_METRICS_PROPERTY = "etaSendMetrics";
 
     /* Tasks */
-    public static final String SANDBOX_INIT_ETA_TASK_NAME = "initializeSandboxEta";
     public static final String INSTALL_ETA_TASK_NAME = "installEta";
+    public static final String ETA_RESOLVE_DEPENDENCIES_TASK_NAME= "resolveDependenciesEta";
 
     /* Abstract Methods */
     public abstract void configureBeforeEvaluate();
@@ -91,7 +90,7 @@ public abstract class EtaBasePlugin {
                 /* Make sure telemetry preference is asked for if necessary. */
                 ensureTelemetryPreferencesAndUpdate(etlasDep, etlasCommand.getSendMetrics());
 
-                configureEtaSandboxInitTask();
+                configureEtaResolveDependenciesTask();
 
                 addEtaExtensionForConfigurations();
 
@@ -158,19 +157,22 @@ public abstract class EtaBasePlugin {
         }
     }
 
-    private void configureEtaSandboxInitTask() {
-        /* The sandbox initialization must be done in the root project. */
-        if (extension.getUseSandbox() && project == project.getRootProject()) {
+    private void configureEtaResolveDependenciesTask() {
+        /* The global, consistent dependency resolution must be done in the
+           root project. */
+        if (project == project.getRootProject()) {
             EtaInstall installTask =
                 project.getTasks().create(INSTALL_ETA_TASK_NAME, EtaInstall.class);
             installTask.setDescription("Install the Eta version specified.");
             installTask.configureWithExtension(extension);
 
-            EtaSandboxInit sandboxInitTask = project.getTasks().create(SANDBOX_INIT_ETA_TASK_NAME, EtaSandboxInit.class);
-            sandboxInitTask.setDescription("Initialize an Eta sandbox that is shared among all the projects in a multi-project build.");
-            sandboxInitTask.configureWithExtension(extension);
+            EtaResolveDependencies resolveDependenciesTask =
+                project.getTasks().create(ETA_RESOLVE_DEPENDENCIES_TASK_NAME,
+                                          EtaResolveDependencies.class);
+            resolveDependenciesTask.setDescription("Resolve dependencies all the projects in a multi-project build to get a consistent snapshot.");
+            resolveDependenciesTask.configureWithExtension(extension);
 
-            sandboxInitTask.dependsOn(installTask);
+            resolveDependenciesTask.dependsOn(installTask);
         }
     }
 
@@ -183,7 +185,8 @@ public abstract class EtaBasePlugin {
             .all(configuration ->
                  ExtensionHelper.createExtension(configuration,
                                                  ETA_CONFIGURATION_EXTENSION_NAME,
-                                                 DefaultEtaConfiguration.class));
+                                                 DefaultEtaConfiguration.class,
+                                                 configuration));
     }
 
 }
