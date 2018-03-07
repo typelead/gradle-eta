@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.Optional;
+import java.io.Serializable;
 
 import com.typelead.gradle.eta.api.EtaDirectDependency;
 
@@ -12,7 +13,9 @@ import com.typelead.gradle.utils.Version;
 import com.typelead.gradle.utils.VersionRange;
 import com.typelead.gradle.utils.PrintHelper;
 
-public class DefaultEtaDirectDependency implements EtaDirectDependency {
+public class DefaultEtaDirectDependency implements EtaDirectDependency, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public static final String PACKAGE_ATTRIBUTE = "package";
     public static final String LOWER_ATTRIBUTE   = "lower";

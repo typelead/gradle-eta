@@ -18,13 +18,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class EtlasBinaryDependencyCache implements Log {
+public class EtlasCache implements Log {
 
     private final String cacheDir;
 
-    public EtlasBinaryDependencyCache(Project project) {
-        Gradle gradle = project.getGradle();
-        this.cacheDir = gradle.getGradleUserHomeDir() + "/caches/etlas";
+    public EtlasCache(String cacheDir) {
+        this.cacheDir = cacheDir;
     }
 
     @Nullable

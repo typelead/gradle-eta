@@ -24,4 +24,13 @@ public class PrintHelper {
         result.append("}");
         return result.toString();
     }
+
+    public static String friendlyVersion(String version) {
+        String[] versions = version.split("\\.");
+        int newLen = versions.length - 1;
+        String last = versions[newLen];
+        String[] newVersions = new String[newLen];
+        System.arraycopy(versions, 0, newVersions, 0, newLen);
+        return String.join(".", newVersions) + "b" + last;
+    }
 }

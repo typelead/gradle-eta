@@ -7,6 +7,8 @@ import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.concurrent.Callable;
 
+import javax.inject.Inject;
+
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.DirectoryProperty;
@@ -34,25 +36,23 @@ public class EtaResolveDependencies extends AbstractEtlasTask {
     public static final String DEFAULT_FREEZE_CONFIG_FILENAME = "cabal.project.freeze";
     public static final String DEFAULT_DESTINATION_DIR = "eta-freeze";
 
-    private final ProviderFactory providerFactory;
-    private final ProjectLayout   projectLayout;
     private DirectoryProperty destinationDir;
     private Provider<Set<EtaDependency>> dependencies;
 
-    public EtaResolveDependencies(ProviderFactory providerFactory,
-                                  ProjectLayout projectLayout) {
-        this.providerFactory = providerFactory;
-        this.projectLayout   = projectLayout;
-
+    public EtaResolveDependencies() {
         this.dependencies   = getDefaultDependencyProvider(getProject());
-        this.destinationDir = projectLayout.directoryProperty();
+        this.destinationDir = getProject().getLayout().directoryProperty();
 
-        destinationDir.set(destinationDir.dir(DEFAULT_DESTINATION_DIR));
+        destinationDir.set
+            (getProject().getLayout().getBuildDirectory().dir(DEFAULT_DESTINATION_DIR));
+
+        setDescription("Resolve dependencies all the projects in a multi-project build"
+                     + " to get a consistent snapshot.");
     }
 
     public Provider<Set<EtaDependency>>
         getDefaultDependencyProvider(final Project project) {
-        return providerFactory.provider(new Callable<Set<EtaDependency>>() {
+        return project.provider(new Callable<Set<EtaDependency>>() {
                 @Override
                 public Set<EtaDependency> call() {
                     Set<EtaDependency> allDependencies = new LinkedHashSet<>();
@@ -79,8 +79,12 @@ public class EtaResolveDependencies extends AbstractEtlasTask {
     }
 
     @Input
-    public DirectoryProperty getDestinationDirectory() {
-        return destinationDir;
+    public Provider<File> getDestinationDirectory() {
+        return destinationDir.getAsFile();
+    }
+
+    public void setDestinationDirectory(Object dir) {
+        destinationDir.set(getProject().file(dir));
     }
 
     @OutputFile
@@ -90,9 +94,6 @@ public class EtaResolveDependencies extends AbstractEtlasTask {
 
     @TaskAction
     public void resolveDependencies() {
-        // TODO: Replace EtlasCommand API to take a File instead?
-        String workingDir = destinationDir.getAsFile().get().getAbsolutePath();
-
         Stream.Builder<EtaGitDependency>    gitDependenciesBuilder
             = Stream.builder();
         Stream.Builder<EtaDirectDependency> directDependenciesBuilder
@@ -116,7 +117,26 @@ public class EtaResolveDependencies extends AbstractEtlasTask {
             .map(EtaGitDependency::getSourceRepository)
             .collect(Collectors.toSet());
 
-        new EtlasCommand(this, workingDir)
-            .newFreeze(dependencyConstraints, sourceRepositories);
+        /* Create the destination directory if it doesn't exist. */
+
+        File workingDir = destinationDir.getAsFile().get();
+
+        if (!workingDir.exists()) {
+            workingDir.mkdirs();
+        }
+
+        /* Remove the cabal.project.freeze file from a previous run, if it exists. */
+
+        File existingFreezeFile =
+            getDependencyConfigurationFile().get().getAsFile();
+
+        if (existingFreezeFile.exists()) {
+            existingFreezeFile.delete();
+        }
+
+        // TODO: Replace EtlasCommand API to take a File instead?
+        etlas.getWorkingDirectory()
+            .set(workingDir.getAbsolutePath());
+        etlas.newFreeze(dependencyConstraints, sourceRepositories);
     }
 }

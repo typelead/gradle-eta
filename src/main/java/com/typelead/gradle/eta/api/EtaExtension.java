@@ -2,13 +2,20 @@ package com.typelead.gradle.eta.api;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.function.Consumer;
-import java.util.function.BiConsumer;
+import java.util.concurrent.Callable;
 
 import org.gradle.api.Project;
 import org.gradle.api.Nullable;
 import org.gradle.api.GradleException;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Property;
 
+import com.typelead.gradle.utils.ExecutableSpec;
+import com.typelead.gradle.utils.NoSpec;
+import com.typelead.gradle.utils.PathSpec;
+import com.typelead.gradle.utils.ResolvedExecutable;
+import com.typelead.gradle.utils.SystemSpec;
+import com.typelead.gradle.utils.VersionSpec;
 import com.typelead.gradle.eta.plugins.EtaPlugin;
 
 /**
@@ -23,157 +30,160 @@ public class EtaExtension {
     /* This is relative to the default Gradle build directory. */
     private static final String DEFAULT_BUILD_DIR = "eta";
 
-    @Nullable
-    private String etlasBinary;
-    private String etlasRepo = DEFAULT_ETLAS_REPO;
-    @Nullable
-    private String etlasVersion;
-    private boolean useSystemEtlas = DEFAULT_USE_SYSTEM_ETLAS;
+    private final Project project;
 
-    @Nullable
-    private String etaVersion;
-    private boolean useSystemEta = DEFAULT_USE_SYSTEM_ETA;
+    private Property<ExecutableSpec> etaSpec;
+    private Property<ExecutableSpec> etlasSpec;
+    private Property<String> etlasRepository;
 
-    @Nullable
-    private List<String> etlasFlags = new ArrayList<>();
-    private List<String> buildFlags = new ArrayList<>();
-    private String buildDir = DEFAULT_BUILD_DIR;
+    private Property<String> buildDirectory;
 
-    /**
-     * Sets default values based on properties; does not overwrite existing values.
-     */
-    public void setDefaultsFromProperties(Project project) {
+    private Property<ResolvedExecutable> resolvedEta;
+    private Property<ResolvedExecutable> resolvedEtlas;
 
-        /* Helper for setting String properties. */
-        BiConsumer<String, Consumer<String>> setStrProp = (k, setter) -> {
-            Object v = project.findProperty("eta." + k);
-            if (v == null) return;
-            setter.accept(v.toString());
-        };
+    public EtaExtension(final Project project) {
+        this.project = project;
 
-        /* Helper for setting boolean properties */
-        BiConsumer<String, Consumer<Boolean>> setBoolProp = (k, setter) -> {
-            setStrProp.accept(k, s -> {
-                    if (s.equalsIgnoreCase("true")) setter.accept(true);
-                    if (s.equalsIgnoreCase("false")) setter.accept(false);
-                    else throw new GradleException("Invalid property value for eta."
-                                                   + k + ": " + s);
-                });
-        };
+        final ObjectFactory objectFactory = project.getObjects();
 
-        /* Helper for throwing exceptions when non-String properties are set. */
-        Consumer<String> notSupported = k -> {
-            if (project.findProperty("eta." + k) != null) {
-                throw new GradleException("Setting eta." + k +
-                                          " via a property is not supported");
-            }
-        };
+        etaSpec = objectFactory.property(ExecutableSpec.class);
+        etaSpec.set
+            (project.provider(() -> {
+                    String etaVersion = parseStringProperty("version");
+                    boolean useSystemEta =
+                        parseBooleanProperty("useSystemEta",
+                                             DEFAULT_USE_SYSTEM_ETA);
+                    if (useSystemEta) {
+                        return SystemSpec.getInstance();
+                    } else if (etaVersion != null) {
+                        return new VersionSpec(etaVersion);
+                    } else {
+                        return NoSpec.getInstance();
+                    }
+                }));
 
-        if (getEtlasBinary() == null) {
-            setStrProp.accept("etlasBinary", this::setEtlasBinary);
+        etlasSpec = objectFactory.property(ExecutableSpec.class);
+        etlasSpec.set
+            (project.provider(() -> {
+                    String etlasPath = parseStringProperty("etlasPath");
+                    String etlasVersion = parseStringProperty("etlasVersion");
+                    boolean useSystemEtlas =
+                        parseBooleanProperty("useSystemEtlas",
+                                             DEFAULT_USE_SYSTEM_ETLAS);
+                    if (etlasPath != null) {
+                        return new PathSpec(etlasPath);
+                    } else if (useSystemEtlas) {
+                        return SystemSpec.getInstance();
+                    } else if (etlasVersion != null) {
+                        return new VersionSpec(etlasVersion);
+                    } else {
+                        return NoSpec.getInstance();
+                    }
+                }));
+
+        buildDirectory = objectFactory.property(String.class);
+        buildDirectory.set
+            (project.provider
+             (() -> parseStringProperty("buildDirectory", DEFAULT_BUILD_DIR)));
+
+        etlasRepository = objectFactory.property(String.class);
+        etlasRepository.set
+            (project.provider
+             (() -> parseStringProperty("etlasRepository", DEFAULT_ETLAS_REPO)));
+
+        resolvedEta   = objectFactory.property(ResolvedExecutable.class);
+        resolvedEtlas = objectFactory.property(ResolvedExecutable.class);
+    }
+
+
+    private String parseStringProperty(final String name) {
+        return parseStringProperty(name, null);
+    }
+
+    private String parseStringProperty(final String name, final String def) {
+        Object v = project.findProperty("eta." + name);
+        String value;
+        if (v == null) {
+            value = def;
+        } else {
+            value = v.toString();
         }
+        return value;
+    }
 
-        if (getEtlasRepo().equals(DEFAULT_ETLAS_REPO)) {
-            setStrProp.accept("etlasRepo", this::setEtlasRepo);
+    private boolean parseBooleanProperty(final String name, final boolean def) {
+        Object v = project.findProperty("eta." + name);
+        boolean value;
+        if (v == null) {
+            value = def;
+        } else {
+            String booleanString = v.toString();
+            if (booleanString.equalsIgnoreCase("true")) {
+                value = true;
+            } else if (booleanString.equalsIgnoreCase("false")) {
+                value = false;
+            } else throw new GradleException("Invalid property value for eta."
+                                             + name + ": " + booleanString);
         }
+        return value;
+    }
 
-        if (getEtlasVersion() == null) {
-            setStrProp.accept("etlasVersion", this::setEtlasVersion);
-        }
+    public Property<ExecutableSpec> getEtaSpec() {
+        return etaSpec;
+    }
 
-        if (getUseSystemEtlas() == DEFAULT_USE_SYSTEM_ETLAS) {
-            setBoolProp.accept("useSystemEtlas", this::setUseSystemEtlas);
-        }
+    public Property<ExecutableSpec> getEtlasSpec() {
+        return etlasSpec;
+    }
 
-        if (getVersion() == null) {
-            setStrProp.accept("version", this::setVersion);
-        }
+    public Property<String> getBuildDirectory() {
+        return buildDirectory;
+    }
 
-        if (getUseSystemEta() == DEFAULT_USE_SYSTEM_ETA) {
-            setBoolProp.accept("useSystemEta", this::setUseSystemEta);
-        }
+    public void setBuildDirectory(String buildDirectory) {
+        this.buildDirectory.set(buildDirectory);
+    }
 
-        notSupported.accept("etlasFlags");
-        notSupported.accept("buildFlags");
+    public Property<ResolvedExecutable> getEta() {
+        return resolvedEta;
+    }
 
-        if (getBuildDir() == DEFAULT_BUILD_DIR) {
-            setStrProp.accept("buildDir", this::setBuildDir);
+    public Property<ResolvedExecutable> getEtlas() {
+        return resolvedEtlas;
+    }
+
+    public Property<String> getEtlasRepository() {
+        return etlasRepository;
+    }
+
+    /* Setters so that users can conveniently specify property values. */
+
+    public void setVersion(String etaVersion) {
+        this.etaSpec.set(new VersionSpec(etaVersion));
+    }
+
+    public void setUseSystemEta(boolean useSystemEta) {
+        if (useSystemEta) {
+            this.etaSpec.set(SystemSpec.getInstance());
         }
     }
 
-    @Nullable
-    public String getEtlasBinary() {
-        return etlasBinary;
-    }
-
-    public void setEtlasBinary(String etlasBinary) {
-        this.etlasBinary = etlasBinary;
-    }
-
-    @Nullable
-    public String getEtlasRepo() {
-        return etlasRepo;
-    }
-
-    public void setEtlasRepo(String etlasRepo) {
-        this.etlasRepo = etlasRepo;
-    }
-
-    @Nullable
-    public String getEtlasVersion() {
-        return etlasVersion;
+    public void setEtlasPath(String etlasPath) {
+        this.etlasSpec.set(new PathSpec(etlasPath));
     }
 
     public void setEtlasVersion(String etlasVersion) {
-        this.etlasVersion = etlasVersion;
+        this.etlasSpec.set(new VersionSpec(etlasVersion));
     }
 
-    public Boolean getUseSystemEtlas() {
-        return useSystemEtlas;
+    public void setUseSystemEtlas(boolean useSystemEtlas) {
+        if (useSystemEtlas) {
+            this.etlasSpec.set(SystemSpec.getInstance());
+        }
     }
 
-    public void setUseSystemEtlas(Boolean useSystemEtlas) {
-        this.useSystemEtlas = useSystemEtlas;
+    public void setEtlasRepository(String etlasRepository) {
+        this.etlasRepository.set(etlasRepository);
     }
 
-    @Nullable
-    public String getVersion() {
-        return etaVersion;
-    }
-
-    public void setVersion(String etaVersion) {
-        this.etaVersion = etaVersion;
-    }
-
-    public Boolean getUseSystemEta() {
-        return useSystemEta;
-    }
-
-    public void setUseSystemEta(Boolean useSystemEta) {
-        this.useSystemEta = useSystemEta;
-    }
-
-    public List<String> getEtlasFlags() {
-        return etlasFlags;
-    }
-
-    public void setEtlasFlags(List<String> etlasFlags) {
-        this.etlasFlags = etlasFlags;
-    }
-
-    public List<String> getBuildFlags() {
-        return buildFlags;
-    }
-
-    public void setBuildFlags(List<String> buildFlags) {
-        this.buildFlags = buildFlags;
-    }
-
-    public String getBuildDir() {
-        return buildDir;
-    }
-
-    public void setBuildDir(String buildDir) {
-        this.buildDir = buildDir;
-    }
 }

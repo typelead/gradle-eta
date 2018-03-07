@@ -14,13 +14,11 @@ import org.gradle.api.plugins.JavaPlugin;
 
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.ExtensionHelper;
-import com.typelead.gradle.eta.tasks.EtaInstall;
-import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.api.EtaExtension;
+import com.typelead.gradle.eta.tasks.EtaSetupEnvironment;
+import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
 import com.typelead.gradle.eta.internal.DefaultEtaDependencyHandler;
-import com.typelead.gradle.eta.internal.EtlasBinaryDependency;
-import com.typelead.gradle.eta.internal.EtlasBinaryDependencyResolver;
 
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
@@ -42,137 +40,38 @@ public abstract class EtaBasePlugin {
     public static final String ETA_SEND_METRICS_PROPERTY = "etaSendMetrics";
 
     /* Tasks */
-    public static final String INSTALL_ETA_TASK_NAME = "installEta";
+    public static final String ETA_SETUP_ENVIRONMENT_TASK_NAME = "setupEnvironmentEta";
     public static final String ETA_RESOLVE_DEPENDENCIES_TASK_NAME= "resolveDependenciesEta";
-
-    /* Abstract Methods */
-    public abstract void configureBeforeEvaluate();
-    public abstract void configureAfterEvaluate();
 
     /* Protected Fields */
     protected Project project;
     protected EtaExtension extension;
-    protected EtlasCommand etlasCommand;
-    protected EtlasBinaryDependencyResolver resolver;
 
     public void apply(Project project) {
         this.project   = project;
         this.extension = project.getExtensions()
-            .create(EtaPlugin.ETA_EXTENSION_NAME, EtaExtension.class);
-        this.resolver = new EtlasBinaryDependencyResolver(project);
+            .create(EtaPlugin.ETA_EXTENSION_NAME, EtaExtension.class, project);
 
         project.getPlugins().apply(BasePlugin.class);
 
-        configureBeforeEvaluate();
+        addEtaExtensionForConfigurations();
 
-        /* We must run these in an `afterEvaluate` block so that `extension` has been
-           populated with the user `eta { .. }` configuration. */
-        project.afterEvaluate(p -> {
-                /* WARNING: The ordering of statements below is very important. */
-                extension.setDefaultsFromProperties(project);
-
-                /* Download Etlas binary if necessary */
-                EtlasBinaryDependency etlasDep = configureOrDownloadEtlas();
-
-                this.etlasCommand = new EtlasCommand(project, extension);
-
-                String etlasVersion = extension.getEtlasVersion();
-
-                if (etlasVersion == null) {
-                    etlasVersion = etlasCommand.numericVersion();
-                }
-
-                extension.setEtlasVersion(etlasVersion);
-                etlasCommand.setEtlasVersion(etlasVersion);
-
-                configureEtaVersion();
-
-                /* Make sure telemetry preference is asked for if necessary. */
-                ensureTelemetryPreferencesAndUpdate(etlasDep, etlasCommand.getSendMetrics());
-
-                configureEtaResolveDependenciesTask();
-
-                addEtaExtensionForConfigurations();
-
-                configureAfterEvaluate();
-            });
-    }
-
-    private EtlasBinaryDependency configureOrDownloadEtlas() {
-        EtlasBinaryDependency etlasDep = null;
-        if (extension.getUseSystemEtlas()) {
-            if (extension.getEtlasBinary() != null) {
-                throw new GradleException("Invalid configuration, cannot set etlasBinary and useSystemEtlas together");
-            }
-            if (extension.getEtlasVersion() != null) {
-                throw new GradleException("Invalid configuration, cannot set etlasVersion and useSystemEtlas together");
-            }
-            etlasDep = resolver.resolveInSystemPath();
-            if (etlasDep == null) {
-                throw new GradleException("Could not find etlas executable on system PATH");
-            }
-            LOG.info("Using etlas from system PATH: " + etlasDep.getPath());
-            extension.setEtlasBinary(etlasDep.getPath());
-        } else if (extension.getEtlasBinary() != null) {
-            if (extension.getEtlasVersion() != null) {
-                throw new GradleException("Invalid configuration, cannot set etlasVersion and etlasBinary together");
-            }
-            etlasDep = resolver.resolveLocalPath(extension.getEtlasBinary());
-        } else if (extension.getEtlasVersion() != null) {
-            if (extension.getEtlasRepo() == null) {
-                throw new GradleException("etlasVersion provided, but etlasRepo was unexpectedly null!");
-            }
-            etlasDep = resolver.resolveRemote(extension.getEtlasRepo(), extension.getEtlasVersion());
-            extension.setEtlasBinary(etlasDep.getPath());
-        } else {
-            throw new GradleException("Etlas not configured, please supply a value for the 'etlasVersion' property in an eta { .. } block.");
-        }
-        return etlasDep;
-    }
-
-    private void ensureTelemetryPreferencesAndUpdate(EtlasBinaryDependency etlasDep, Optional<Boolean> sendMetrics) {
-        checkForSendMetrics(sendMetrics);
-        if (etlasDep.isFresh()) {
-            project.getLogger().info("Updating etlas packages via 'etlas update'");
-            etlasCommand.update();
-        }
-    }
-
-    private void checkForSendMetrics(Optional<Boolean> sendMetrics) {
-        File etlasConfig = project.file(Paths.get(System.getProperty("user.home"), ".etlas", "config"));
-        if (!etlasConfig.exists()) {
-            if(!sendMetrics.isPresent()) {
-                throw new GradleException(etlasCommand.getWelcomeMessage() +
-                                          "\nPlease re-run this command with:\n * `-PetaSendMetrics=true` for yes\n * `-PetaSendMetrics=false` for no.\n\nThis only needs to be done once.");
-            }
-        }
-    }
-
-    private void configureEtaVersion() {
-        if (extension.getVersion() == null) {
-            String etaVersion = etlasCommand.getLatestEtaVersion();
-            extension.setVersion(etaVersion);
-            etlasCommand.setEtaVersion(etaVersion);
-            project.getLogger().lifecycle("WARNING: You have not explicitly set the version of Eta to be used, so the latest available version, " + etaVersion + ", will be used. This is not recommended since it will make the builds non-reproducible. Please supply a value for the 'version' property in an eta { .. } block.");
-        }
+        configureEtaResolveDependenciesTask();
     }
 
     private void configureEtaResolveDependenciesTask() {
         /* The global, consistent dependency resolution must be done in the
            root project. */
         if (project == project.getRootProject()) {
-            EtaInstall installTask =
-                project.getTasks().create(INSTALL_ETA_TASK_NAME, EtaInstall.class);
-            installTask.setDescription("Install the Eta version specified.");
-            installTask.configureWithExtension(extension);
+            EtaSetupEnvironment setupEnvironmentTask =
+                project.getTasks().create(ETA_SETUP_ENVIRONMENT_TASK_NAME,
+                                          EtaSetupEnvironment.class);
 
             EtaResolveDependencies resolveDependenciesTask =
                 project.getTasks().create(ETA_RESOLVE_DEPENDENCIES_TASK_NAME,
                                           EtaResolveDependencies.class);
-            resolveDependenciesTask.setDescription("Resolve dependencies all the projects in a multi-project build to get a consistent snapshot.");
-            resolveDependenciesTask.configureWithExtension(extension);
 
-            resolveDependenciesTask.dependsOn(installTask);
+            resolveDependenciesTask.dependsOn(setupEnvironmentTask);
         }
     }
 
@@ -188,5 +87,4 @@ public abstract class EtaBasePlugin {
                                                  DefaultEtaConfiguration.class,
                                                  configuration));
     }
-
 }

@@ -1,22 +1,26 @@
 package com.typelead.gradle.utils;
 
+import java.io.Serializable;
 import java.util.Optional;
 
-public class VersionRange {
-    private Optional<Version> lowerBound;
+public class VersionRange implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private Version lowerBound;
     private boolean lowerStrict;
-    private Optional<Version> upperBound;
+    private Version upperBound;
     private boolean upperStrict;
 
     public VersionRange(Version lowerBound, Version upperBound) {
-        this.lowerBound = Optional.ofNullable(lowerBound);
-        this.upperBound = Optional.ofNullable(upperBound);
+        this.lowerBound = lowerBound;
+        this.upperBound = upperBound;
     }
 
     public VersionRange(Version lowerBound, boolean lowerStrict, Version upperBound, boolean upperStrict) {
-        this.lowerBound  = Optional.ofNullable(lowerBound);
+        this.lowerBound  = lowerBound;
         this.lowerStrict = lowerStrict;
-        this.upperBound  = Optional.ofNullable(upperBound);
+        this.upperBound  = upperBound;
         this.upperStrict = upperStrict;
     }
 
@@ -93,15 +97,17 @@ public class VersionRange {
     }
 
     public Version getLowerBound() {
-        return lowerBound.orElse(null);
+        return lowerBound;
     }
 
     public Version getUpperBound() {
-        return upperBound.orElse(null);
+        return upperBound;
     }
 
     @Override
     public String toString() {
+        Optional<Version> lowerBound = Optional.ofNullable(this.lowerBound);
+        Optional<Version> upperBound = Optional.ofNullable(this.upperBound);
         if (lowerBound.equals(upperBound)) {
             if (lowerBound.isPresent()) {
                 return "== " + lowerBound.get().toString();
