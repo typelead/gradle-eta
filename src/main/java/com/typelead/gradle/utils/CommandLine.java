@@ -33,8 +33,8 @@ public class CommandLine implements Log {
         return workingDir;
     }
 
-    public void setWorkingDir(String workingDir) {
-        this.workingDir = workingDir;
+    public void setWorkingDir(File workingDir) {
+        this.workingDir = workingDir.getAbsolutePath();
     }
 
     public void execute() {

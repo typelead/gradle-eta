@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
-import java.util.concurrent.Callable;
 
 import javax.inject.Inject;
 
@@ -52,19 +51,16 @@ public class EtaResolveDependencies extends AbstractEtlasTask {
 
     public Provider<Set<EtaDependency>>
         getDefaultDependencyProvider(final Project project) {
-        return project.provider(new Callable<Set<EtaDependency>>() {
-                @Override
-                public Set<EtaDependency> call() {
-                    Set<EtaDependency> allDependencies = new LinkedHashSet<>();
-                    for (Project p: project.getAllprojects()) {
-                        for (Configuration c: p.getConfigurations()) {
-                            final EtaConfiguration etaConfiguration =
-                                ExtensionHelper.getExtension(c, EtaConfiguration.class);
-                            allDependencies.addAll(etaConfiguration.getAllDependencies());
-                        }
+        return project.provider(() -> {
+                Set<EtaDependency> allDependencies = new LinkedHashSet<>();
+                for (Project p: project.getAllprojects()) {
+                    for (Configuration c: p.getConfigurations()) {
+                        final EtaConfiguration etaConfiguration =
+                            ExtensionHelper.getExtension(c, EtaConfiguration.class);
+                        allDependencies.addAll(etaConfiguration.getAllDependencies());
                     }
-                    return allDependencies;
                 }
+                return allDependencies;
             });
     }
 
@@ -134,9 +130,7 @@ public class EtaResolveDependencies extends AbstractEtlasTask {
             existingFreezeFile.delete();
         }
 
-        // TODO: Replace EtlasCommand API to take a File instead?
-        etlas.getWorkingDirectory()
-            .set(workingDir.getAbsolutePath());
+        etlas.getWorkingDirectory().set(workingDir);
         etlas.newFreeze(dependencyConstraints, sourceRepositories);
     }
 }

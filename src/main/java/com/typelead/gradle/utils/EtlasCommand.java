@@ -34,7 +34,7 @@ public class EtlasCommand {
     private final Provider<ResolvedExecutable> resolvedEtlas;
     private final Provider<ResolvedExecutable> resolvedEta;
     private final Provider<String> buildDirectory;
-    private final Property<String> workingDirectory;
+    private final Property<File>   workingDirectory;
     private final Provider<Optional<Boolean>> sendMetrics;
 
     public EtlasCommand(EtlasTaskSpec task) {
@@ -47,7 +47,7 @@ public class EtlasCommand {
         this.resolvedEta      = task.getEta();
         this.resolvedEtlas    = task.getEtlas();
         this.buildDirectory   = task.getBuildDirectory();
-        this.workingDirectory = project.getObjects().property(String.class);
+        this.workingDirectory = project.getObjects().property(File.class);
         this.sendMetrics      = sendMetricsPropertyProvider(project);
     }
 
@@ -72,7 +72,7 @@ public class EtlasCommand {
             });
     }
 
-    public Property<String> getWorkingDirectory() {
+    public Property<File> getWorkingDirectory() {
         return workingDirectory;
     }
 
@@ -195,7 +195,7 @@ public class EtlasCommand {
         CommandLine c = new CommandLine(resolvedEtlas.get().getPath());
         // TODO: Remove this workingDir business
         c.setWorkingDir(workingDirectory.getOrNull() == null?
-                        projectLayout.getProjectDirectory().getAsFile().getAbsolutePath()
+                        projectLayout.getProjectDirectory().getAsFile()
                         : workingDirectory.get());
         String sendMetrics = getSendMetricsFlag();
         if (sendMetrics != null) {

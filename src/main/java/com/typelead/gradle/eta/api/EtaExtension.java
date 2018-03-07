@@ -2,7 +2,6 @@ package com.typelead.gradle.eta.api;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 
 import org.gradle.api.Project;
 import org.gradle.api.Nullable;

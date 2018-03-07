@@ -10,7 +10,7 @@ public class CabalHelper {
     public static void generateCabalFile(String projectName,
                                          String projectVersion,
                                          Set<String> dependencyConstraints,
-                                         String workingDir) {
+                                         File workingDir) {
         StringBuilder sb = new StringBuilder();
         println(sb, "name: " + projectName);
         println(sb, "version: " + fixVersion(projectVersion));
@@ -25,7 +25,7 @@ public class CabalHelper {
     }
 
     public static void generateCabalProjectFile
-        (Set<SourceRepository> sourceRepositories, String workingDir) {
+        (Set<SourceRepository> sourceRepositories, File workingDir) {
         StringBuilder sb = new StringBuilder();
         println(sb, "packages: .");
         for (SourceRepository sourceRepository : sourceRepositories) {
