@@ -44,7 +44,7 @@ public class DefaultEtaDependencyHandler implements EtaDependencyHandler {
     }
 
     public EtaDependency add(Configuration targetConfiguration, EtaDependency dependency) {
-        ExtensionHelper.getExtension(targetConfiguration, EtaConfiguration.class)
+        ConfigurationUtils.getEtaConfiguration(targetConfiguration)
             .getDependencies().add(dependency);
         return dependency;
     }

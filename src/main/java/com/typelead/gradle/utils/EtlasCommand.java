@@ -1,52 +1,34 @@
 package com.typelead.gradle.utils;
 
 import java.io.File;
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.BiConsumer;
 
 import org.gradle.api.Project;
 import org.gradle.api.GradleException;
-import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.Property;
 
 import com.typelead.gradle.utils.ResolvedExecutable;
 import com.typelead.gradle.eta.api.EtaExtension;
-import com.typelead.gradle.eta.api.SourceRepository;
-import com.typelead.gradle.eta.plugins.EtaBasePlugin;
-import com.typelead.gradle.eta.plugins.EtaPlugin;
-import com.typelead.gradle.eta.tasks.EtlasTaskSpec;
 
 public class EtlasCommand {
 
-    private final String projectName;
-    private final String projectVersion;
-    private final ProjectLayout projectLayout;
+    public static final String ETA_SEND_METRICS_PROPERTY = "etaSendMetrics";
 
     private final Provider<ResolvedExecutable> resolvedEtlas;
     private final Provider<ResolvedExecutable> resolvedEta;
-    private final Provider<String> buildDirectory;
-    private final Property<File>   workingDirectory;
+    private final Property<File> workingDirectory;
     private final Provider<Optional<Boolean>> sendMetrics;
 
-    public EtlasCommand(EtlasTaskSpec task) {
-        final Project project = task.getProject();
+    public EtlasCommand(final Project project) {
+        final EtaExtension extension =
+            project.getExtensions().findByType(EtaExtension.class);
 
-        this.projectName    = project.getName();
-        this.projectVersion = project.getVersion().toString();
-        this.projectLayout  = project.getLayout();
-
-        this.resolvedEta      = task.getEta();
-        this.resolvedEtlas    = task.getEtlas();
-        this.buildDirectory   = task.getBuildDirectory();
+        this.resolvedEta      = extension.getEta();
+        this.resolvedEtlas    = extension.getEtlas();
         this.workingDirectory = project.getObjects().property(File.class);
         this.sendMetrics      = sendMetricsPropertyProvider(project);
     }
@@ -55,7 +37,7 @@ public class EtlasCommand {
         (final Project project) {
         return project.provider(() -> {
                 Object value = project.findProperty
-                    (EtaBasePlugin.ETA_SEND_METRICS_PROPERTY);
+                    (ETA_SEND_METRICS_PROPERTY);
                 if (value == null) {
                     return Optional.empty();
                 } else {
@@ -151,78 +133,69 @@ public class EtlasCommand {
     }
 
     public void installEta() {
-        CommandLine c = initCommandLine();
-        String versionFlag = getEtaVersionFlag();
-        if (versionFlag != null) {
-            c.getCommand().add(versionFlag);
-        }
+        CommandLine c = initCommandLineWithEtaVersion();
         c.getCommand().add("update");
         c.executeAndLogOutput();
     }
 
-    public void newFreeze(Set<String>           dependencyConstraints,
-                          Set<SourceRepository> sourceRepositories) {
-
-        CabalHelper.generateCabalFile(projectName, projectVersion,
-                                      dependencyConstraints, workingDirectory.get());
-
-        CabalHelper.generateCabalProjectFile(sourceRepositories, workingDirectory.get());
-
-        CommandLine c = initCommandLine();
-
-        String versionFlag = getEtaVersionFlag();
-        if (versionFlag != null) {
-            c.getCommand().add(versionFlag);
-        }
+    public void newFreeze() {
+        CommandLine c = initCommandLineWithEtaVersion();
         c.getCommand().add( "new-freeze");
         c.executeAndLogOutput();
     }
 
-    /**
-     * This will also download dependencies via `etlas install --dependencies-only`
-     */
-    public List<String> depsClasspath(String component) {
-        return defaultCommandLine("deps", component, "--classpath")
-                  .executeAndGetStandardOutputLines()
-                  .stream()
-                  .filter(line -> !line.startsWith(" ")
-                               && !line.contains("Notice:")
-                               && line.contains(File.separator))
-                  .collect(Collectors.toList());
+    public void newBuildDependenciesOnly() {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().addAll(Arrays.asList("new-build", "--dependencies-only"));
+        c.executeAndLogOutput();
     }
+
+    public void newDeps(BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().addAll(Arrays.asList("new-deps"));
+        /* TODO: Finish */
+        // c.executeAndGetStandardOutputLines().stream()
+        //     .filter(line -> !line.startsWith(" ")
+        //             && !line.contains("Notice:")
+        //             && line.contains(File.separator))
+        //     .collect(Collectors.toList());
+    }
+
+    public void newBuild() {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().addAll(Arrays.asList("new-build"));
+        c.executeAndLogOutput();
+    }
+
+
+    public CommandLine initCommandLineWithEtaVersion() {
+        CommandLine c = initCommandLine();
+        String versionFlag = getEtaVersionFlag();
+        if (versionFlag != null) {
+            c.getCommand().add(versionFlag);
+        }
+        return c;
+    }
+
+    // /**
+    //  * This will also download dependencies via `etlas install --dependencies-only`
+    //  */
+    // public List<String> depsClasspath(String component) {
+    //     return defaultCommandLine("deps", component, "--classpath")
+    //               .executeAndGetStandardOutputLines()
+    //               .stream()
+    //               .filter(line -> !line.startsWith(" ")
+    //                            && !line.contains("Notice:")
+    //                            && line.contains(File.separator))
+    //               .collect(Collectors.toList());
+    // }
 
     private CommandLine initCommandLine() {
         CommandLine c = new CommandLine(resolvedEtlas.get().getPath());
-        // TODO: Remove this workingDir business
-        c.setWorkingDir(workingDirectory.getOrNull() == null?
-                        projectLayout.getProjectDirectory().getAsFile()
-                        : workingDirectory.get());
         String sendMetrics = getSendMetricsFlag();
         if (sendMetrics != null) {
             c.getCommand().add(sendMetrics);
         }
         return c;
     }
-
-    private CommandLine defaultCommandLine(String command, String... args) {
-        return defaultCommandLine(command, Arrays.asList(args));
-    }
-
-    private void defaultCommand(String command, String... args) {
-        defaultCommand(command, Arrays.asList(args));
-    }
-
-    private void defaultCommand(String command, List<String> args) {
-        defaultCommandLine(command, args).executeAndLogOutput();
-    }
-
-    private CommandLine defaultCommandLine(String command, List<String> args) {
-        CommandLine c = initCommandLine();
-        c.getCommand().add(command);
-        List<String> commandArgs = new ArrayList<>(args);
-        commandArgs.add("--builddir=" + buildDirectory.get());
-        c.getCommand().addAll(commandArgs);
-        return c;
-    }
-
 }

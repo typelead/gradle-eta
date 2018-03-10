@@ -3,23 +3,27 @@ package com.typelead.gradle.eta.internal;
 import groovy.lang.Closure;
 
 import org.gradle.api.Action;
+import org.gradle.api.Describable;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.SourceDirectorySetFactory;
+import org.gradle.api.tasks.SourceSet;
+
 import com.typelead.gradle.eta.api.EtaSourceSet;
 
-import org.gradle.util.ConfigureUtil;
-
 public class DefaultEtaSourceSet implements EtaSourceSet {
+
+    private final SourceSet sourceSet;
     private final SourceDirectorySet eta;
-    private final SourceDirectorySet allEta;
 
-    public DefaultEtaSourceSet(String name, String displayName, SourceDirectorySetFactory sourceDirectorySetFactory) {
-        eta = sourceDirectorySetFactory.create(name, displayName + " Eta source");
-        eta.getFilter().include("**/*.java", "**/*.eta", "**/*.hs");
+    public DefaultEtaSourceSet(SourceSet sourceSet,
+                               SourceDirectorySetFactory sourceDirectorySetFactory) {
+        this.sourceSet = sourceSet;
 
-        allEta = sourceDirectorySetFactory.create(displayName + " Eta source");
-        allEta.source(eta);
-        allEta.getFilter().include("**/*.eta");
+        final String displayName = ((Describable) sourceSet).getDisplayName();
+
+        this.eta =
+            sourceDirectorySetFactory.create("eta", displayName + " Eta source");
+        eta.getFilter().include("**/*.eta", "**/*.hs");
     }
 
     @Override
@@ -28,19 +32,32 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
     }
 
     @Override
-    public EtaSourceSet eta(Closure configureClosure) {
-        ConfigureUtil.configure(configureClosure, getEta());
-        return this;
-    }
-
-    @Override
     public EtaSourceSet eta(Action<? super SourceDirectorySet> configureAction) {
         configureAction.execute(getEta());
         return this;
     }
 
-    @Override
-    public SourceDirectorySet getAllEta() {
-        return allEta;
+    public String getCompileTaskName() {
+        return sourceSet.getCompileTaskName("eta");
+    }
+
+    public String getInstallDependenciesTaskName() {
+        return getTaskName("installDependencies");
+    }
+
+    public String getFetchDependenciesTaskName() {
+        return getTaskName("fetchDependencies");
+    }
+
+    public String getRelativeOutputDir() {
+        return "eta/" + sourceSet.getName();
+    }
+
+    public String getClassesDir() {
+        return "classes/" + eta.getName() + "/" + sourceSet.getName();
+    }
+
+    private String getTaskName(String verb) {
+        return verb +  sourceSet.getName() + "Eta";
     }
 }

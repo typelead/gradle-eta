@@ -4,5 +4,6 @@ import org.gradle.api.Project;
 import com.typelead.gradle.utils.VersionRange;
 
 public interface EtaProjectDependency extends EtaDependency {
-    Project getProjectDependency();
+    Project getProject();
+    String  getTargetConfiguration();
 }

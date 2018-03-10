@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.DirectoryProperty;
@@ -22,15 +24,17 @@ import org.gradle.api.artifacts.Configuration;
 
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.ExtensionHelper;
+import com.typelead.gradle.utils.CabalHelper;
 import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaDirectDependency;
 import com.typelead.gradle.eta.api.EtaGitDependency;
 import com.typelead.gradle.eta.api.EtaConfiguration;
 import com.typelead.gradle.eta.api.SourceRepository;
 import com.typelead.gradle.eta.api.EtaExtension;
+import com.typelead.gradle.eta.internal.DependencyUtils;
 import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 
-public class EtaResolveDependencies extends AbstractEtlasTask {
+public class EtaResolveDependencies extends DefaultTask {
 
     public static final String DEFAULT_FREEZE_CONFIG_FILENAME = "cabal.project.freeze";
     public static final String DEFAULT_DESTINATION_DIR = "eta-freeze";
@@ -45,8 +49,8 @@ public class EtaResolveDependencies extends AbstractEtlasTask {
         destinationDir.set
             (getProject().getLayout().getBuildDirectory().dir(DEFAULT_DESTINATION_DIR));
 
-        setDescription("Resolve dependencies all the projects in a multi-project build"
-                     + " to get a consistent snapshot.");
+        setDescription("Resolve dependencies for all the projects in a multi-project" +
+                       " build to get a consistent snapshot of all the dependencies.");
     }
 
     public Provider<Set<EtaDependency>>
@@ -84,53 +88,47 @@ public class EtaResolveDependencies extends AbstractEtlasTask {
     }
 
     @OutputFile
-    public Provider<RegularFile> getDependencyConfigurationFile() {
+    public Provider<RegularFile> getFreezeConfigFile() {
         return destinationDir.file(DEFAULT_FREEZE_CONFIG_FILENAME);
     }
 
     @TaskAction
     public void resolveDependencies() {
-        Stream.Builder<EtaGitDependency>    gitDependenciesBuilder
-            = Stream.builder();
-        Stream.Builder<EtaDirectDependency> directDependenciesBuilder
-            = Stream.builder();
-
-        for (EtaDependency dependency : dependencies.get()) {
-            if (dependency instanceof EtaGitDependency) {
-                gitDependenciesBuilder.add((EtaGitDependency) dependency);
-            } else if (dependency instanceof EtaDirectDependency) {
-                directDependenciesBuilder.add((EtaDirectDependency) dependency);
-            }
-        }
-
-        Set<String> dependencyConstraints =
-            directDependenciesBuilder.build()
-            .map(Object::toString)
-            .collect(Collectors.toSet());
-
-        Set<SourceRepository> sourceRepositories =
-            gitDependenciesBuilder.build()
-            .map(EtaGitDependency::getSourceRepository)
-            .collect(Collectors.toSet());
 
         /* Create the destination directory if it doesn't exist. */
 
         File workingDir = destinationDir.getAsFile().get();
 
-        if (!workingDir.exists()) {
-            workingDir.mkdirs();
+        if (!workingDir.exists() && !workingDir.mkdirs()) {
+            throw new GradleException("Unable to create destination directory: "
+                                     + workingDir.getAbsolutePath());
         }
+
 
         /* Remove the cabal.project.freeze file from a previous run, if it exists. */
 
         File existingFreezeFile =
-            getDependencyConfigurationFile().get().getAsFile();
+            getFreezeConfigFile().get().getAsFile();
 
-        if (existingFreezeFile.exists()) {
-            existingFreezeFile.delete();
+        if (existingFreezeFile.exists() && !existingFreezeFile.delete()) {
+            throw new GradleException("Unable to delete existing freeze file: "
+                                      + existingFreezeFile.getAbsolutePath());
         }
 
+        /* Generate the .cabal & cabal.project files. */
+
+        DependencyUtils.foldEtaDependencies
+            (dependencies.get(),
+             (directDeps, projectDeps) ->
+             CabalHelper.generateCabalFile(getProject().getName(),
+                                           getProject().getVersion().toString(),
+                                           directDeps, workingDir),
+             gitDeps -> CabalHelper.generateCabalProjectFile(gitDeps, workingDir));
+
+        /* Fork an etlas process to freeze the dependencies.  */
+
+        EtlasCommand etlas = new EtlasCommand(getProject());
         etlas.getWorkingDirectory().set(workingDir);
-        etlas.newFreeze(dependencyConstraints, sourceRepositories);
+        etlas.newFreeze();
     }
 }

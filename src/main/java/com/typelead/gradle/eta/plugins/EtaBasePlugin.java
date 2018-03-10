@@ -23,7 +23,7 @@ import com.typelead.gradle.eta.internal.DefaultEtaDependencyHandler;
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
  */
-public abstract class EtaBasePlugin {
+public abstract class EtaBasePlugin implements Plugin<Project> {
 
     private static final Logger LOG = Logging.getLogger(EtaBasePlugin.class);
 
@@ -36,17 +36,16 @@ public abstract class EtaBasePlugin {
     public static final String ETA_DEPENDENCY_HANDLER_DSL_NAME  = "eta";
     public static final String ETA_CONFIGURATION_EXTENSION_NAME  = "eta";
 
-    /* Properties */
-    public static final String ETA_SEND_METRICS_PROPERTY = "etaSendMetrics";
-
     /* Tasks */
     public static final String ETA_SETUP_ENVIRONMENT_TASK_NAME = "setupEnvironmentEta";
-    public static final String ETA_RESOLVE_DEPENDENCIES_TASK_NAME= "resolveDependenciesEta";
+    public static final String
+        ETA_RESOLVE_DEPENDENCIES_TASK_NAME = "resolveDependenciesEta";
 
     /* Protected Fields */
     protected Project project;
     protected EtaExtension extension;
 
+    @Override
     public void apply(Project project) {
         this.project   = project;
         this.extension = project.getExtensions()

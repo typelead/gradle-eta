@@ -18,17 +18,6 @@ public interface EtaSourceSet {
     /**
      * Configures the Eta source for this set.
      *
-     * The given closure is used to configure the {@link SourceDirectorySet} which
-     * contains the Eta source.
-     *
-     * @param configureClosure The closure to use to configure the Eta source.
-     * @return this
-     */
-    EtaSourceSet eta(Closure configureClosure);
-
-    /**
-     * Configures the Eta source for this set.
-     *
      * <p>The given action is used to configure the {@link SourceDirectorySet} which
      * contains the Eta source.
      *
@@ -36,12 +25,4 @@ public interface EtaSourceSet {
      * @return this
      */
     EtaSourceSet eta(Action<? super SourceDirectorySet> configureAction);
-
-    /**
-     * All Eta source for this source set.
-     *
-     * @return the Eta source. Never returns null.
-     */
-    SourceDirectorySet getAllEta();
-
 }

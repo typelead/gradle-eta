@@ -6,10 +6,12 @@ import java.nio.file.Paths;
 import javax.inject.Inject;
 
 import org.gradle.api.GradleException;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 
@@ -25,14 +27,31 @@ import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 import com.typelead.gradle.eta.internal.EtlasResolver;
 
-public class EtaSetupEnvironment extends AbstractEtlasTask {
+public class EtaSetupEnvironment extends DefaultTask {
 
-    private static final String NEWLINE = System.lineSeparator();
-
+    private final Property<ResolvedExecutable> resolvedEta;
+    private final Property<ResolvedExecutable> resolvedEtlas;
     private Provider<ExecutableSpec> etaSpec;
     private Provider<ExecutableSpec> etlasSpec;
     private Provider<String> etlasRepository;
     private Provider<String> resolvedEtlasPath;
+
+    public EtaSetupEnvironment() {
+        final EtaExtension extension =
+            getProject().getExtensions().getByType(EtaExtension.class);
+        this.resolvedEta = extension.getEta();
+        this.resolvedEtlas = extension.getEtlas();
+
+        this.etaSpec   = extension.getEtaSpec();
+        this.etlasSpec = extension.getEtlasSpec();
+        this.etlasRepository = extension.getEtlasRepository();
+        this.resolvedEtlasPath = getProject().provider(() ->
+                                                       resolvedEtlas.get().getPath());
+
+        setDescription
+            ("Setup the Eta & Etlas environment for the specified versions.");
+    }
+
 
     @Input
     public Provider<ExecutableSpec> getEtaSpec() {
@@ -54,21 +73,10 @@ public class EtaSetupEnvironment extends AbstractEtlasTask {
         return resolvedEtlasPath;
     }
 
-    public EtaSetupEnvironment() {
-        super();
-
-        this.etaSpec   = extension.getEtaSpec();
-        this.etlasSpec = extension.getEtlasSpec();
-        this.etlasRepository = extension.getEtlasRepository();
-        this.resolvedEtlasPath = getProject().provider(() ->
-                                                       resolvedEtlas.get().getPath());
-
-        setDescription
-            ("Setup the Eta & Etlas environment for the specified versions.");
-    }
-
     @TaskAction
     public void setupEnvironment() {
+
+        EtlasCommand etlas = new EtlasCommand(getProject());
 
         ResolvedExecutable etlasExec = resolveEtlas();
 
@@ -83,11 +91,11 @@ public class EtaSetupEnvironment extends AbstractEtlasTask {
 
         }
 
-        ResolvedExecutable etaExec = resolveEta();
+        ResolvedExecutable etaExec = resolveEta(etlas);
 
         resolvedEta.set(etaExec);
 
-        ensureTelemetryPreferencesAndUpdate();
+        ensureTelemetryPreferencesAndUpdate(etlas);
 
         if (!etaExec.isSystem()) {
             getProject().getLogger().lifecycle
@@ -144,7 +152,7 @@ public class EtaSetupEnvironment extends AbstractEtlasTask {
         return resolvedEtlas;
     }
 
-    private ResolvedExecutable resolveEta() {
+    private ResolvedExecutable resolveEta(EtlasCommand etlas) {
 
         ResolvedExecutable resolvedEta;
 
@@ -194,7 +202,7 @@ public class EtaSetupEnvironment extends AbstractEtlasTask {
 
     }
 
-    private void ensureTelemetryPreferencesAndUpdate() {
+    private void ensureTelemetryPreferencesAndUpdate(EtlasCommand etlas) {
 
         File etlasConfig = getProject().file(Paths.get(System.getProperty("user.home"),
                                                        ".etlas", "config"));
@@ -224,4 +232,6 @@ public class EtaSetupEnvironment extends AbstractEtlasTask {
 
         }
     }
+
+    private static final String NEWLINE = System.lineSeparator();
 }
