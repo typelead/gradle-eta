@@ -2,9 +2,11 @@ package com.typelead.gradle.utils;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import org.gradle.api.Project;
 import org.gradle.api.GradleException;
@@ -138,35 +140,38 @@ public class EtlasCommand {
         c.executeAndLogOutput();
     }
 
-    public void newFreeze() {
+    public void freeze() {
         CommandLine c = initCommandLineWithEtaVersion();
-        c.getCommand().add( "new-freeze");
+        c.getCommand().add("freeze");
         c.executeAndLogOutput();
     }
 
-    public void newBuildDependenciesOnly() {
+    public void deps(BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
         CommandLine c = initCommandLineWithEtaVersion();
-        c.getCommand().addAll(Arrays.asList("new-build", "--dependencies-only"));
+        c.getCommand().add("deps");
+        List<String> lines = c.executeAndGetStandardOutputLines().stream()
+                              .filter(line -> line.startsWith("file:")
+                                           || line.startsWith("maven:"))
+                              .collect(Collectors.toList());
+        List<File> files = new ArrayList<File>();
+        List<String> mavenDeps = new ArrayList<String>();
+        for (String line: lines) {
+            if (line.startsWith("file:")) {
+                files.add(new File(line.substring(5)));
+            } else if (line.startsWith("maven:")) {
+                mavenDeps.add(line.substring(6));
+            } else {
+                throw new GradleException("Bad output from `etlas deps`.");
+            }
+        }
+        filesAndMavenDeps.accept(files, mavenDeps);
+    }
+
+    public void build() {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().addAll(Arrays.asList("build"));
         c.executeAndLogOutput();
     }
-
-    public void newDeps(BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
-        CommandLine c = initCommandLineWithEtaVersion();
-        c.getCommand().addAll(Arrays.asList("new-deps"));
-        /* TODO: Finish */
-        // c.executeAndGetStandardOutputLines().stream()
-        //     .filter(line -> !line.startsWith(" ")
-        //             && !line.contains("Notice:")
-        //             && line.contains(File.separator))
-        //     .collect(Collectors.toList());
-    }
-
-    public void newBuild() {
-        CommandLine c = initCommandLineWithEtaVersion();
-        c.getCommand().addAll(Arrays.asList("new-build"));
-        c.executeAndLogOutput();
-    }
-
 
     public CommandLine initCommandLineWithEtaVersion() {
         CommandLine c = initCommandLine();

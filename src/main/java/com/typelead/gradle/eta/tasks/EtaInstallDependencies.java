@@ -35,6 +35,7 @@ public class EtaInstallDependencies extends SourceTask {
     public static final String DEFAULT_CABAL_PROJECT_FILENAME = "cabal.project";
     public static final String DEFAULT_DESTINATION_DIR = "eta";
 
+    private final Project     project;
     private Provider<String>  projectName;
     private Provider<String>  projectVersion;
     private FileCollection    freezeConfigFile;
@@ -42,6 +43,27 @@ public class EtaInstallDependencies extends SourceTask {
     private FileCollection    sourceDirectories;
     private Provider<String>  targetConfiguration;
     private Provider<Set<EtaDependency>> dependencies;
+
+    public EtaInstallDependencies() {
+        this.project = getProject();
+        this.projectName = project.provider(() -> project.getName());
+        this.projectVersion =
+            project.provider(() -> project.getVersion().toString());
+        this.freezeConfigFile = project.files();
+        this.dependencies =
+            project.provider
+            (() -> ConfigurationUtils.getEtaConfiguration
+             (project, EtaInstallDependencies.this.targetConfiguration.get())
+             .getAllDependencies());
+
+        this.destinationDir =
+            project.getLayout().directoryProperty();
+
+        destinationDir.set(project.getLayout().getBuildDirectory()
+                           .dir(DEFAULT_DESTINATION_DIR));
+
+        setDescription("Install dependencies for the Eta project.");
+    }
 
     @Input
     public Provider<String> getProjectName() {
@@ -102,29 +124,8 @@ public class EtaInstallDependencies extends SourceTask {
     @OutputFile
     public Provider<RegularFile> getCabalFile() {
         return destinationDir
-            .file(getProject().provider
+            .file(project.provider
                   (() -> projectName.get() + DEFAULT_CABAL_FILENAME));
-    }
-
-    public EtaInstallDependencies() {
-        final Project project = getProject();
-        this.projectName = project.provider(() -> project.getName());
-        this.projectVersion =
-            project.provider(() -> project.getVersion().toString());
-        this.freezeConfigFile = project.files();
-        this.dependencies =
-            project.provider
-            (() -> ConfigurationUtils.getEtaConfiguration
-             (project, EtaInstallDependencies.this.targetConfiguration.get())
-             .getAllDependencies());
-
-        this.destinationDir =
-            project.getLayout().directoryProperty();
-
-        destinationDir.set(project.getLayout().getBuildDirectory()
-                           .dir(DEFAULT_DESTINATION_DIR));
-
-        setDescription("Install dependencies for the Eta project.");
     }
 
     @TaskAction
@@ -135,8 +136,6 @@ public class EtaInstallDependencies extends SourceTask {
                  otherwise Etlas will yell! Or send the new cabal file as a
                  target.
         */
-
-        final Project project = getProject();
 
         /* Create the destination directory if it doesn't exist. */
 
@@ -252,7 +251,13 @@ public class EtaInstallDependencies extends SourceTask {
 
         EtlasCommand etlas = new EtlasCommand(project);
         etlas.getWorkingDirectory().set(workingDir);
-        etlas.newBuildDependenciesOnly();
+        etlas.deps((fileDeps, mavenDeps) -> {
+                /* Inject the dependencies into the target configuration. */
+                DependencyHandler dependencies = project.getDependencies();
+                dependencies.add(configurationName, fileDeps);
+                for (String mavenDep : mavenDeps) {
+                    dependencies.add(configurationName, mavenDep);
+                }
+            });
     }
-
 }

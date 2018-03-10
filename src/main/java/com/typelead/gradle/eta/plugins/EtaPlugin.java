@@ -30,7 +30,6 @@ import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.eta.api.EtaConfiguration;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.tasks.EtaInstallDependencies;
-import com.typelead.gradle.eta.tasks.EtaFetchDependencies;
 import com.typelead.gradle.eta.tasks.EtaCompile;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
 import com.typelead.gradle.eta.internal.DefaultEtaSourceSet;
@@ -114,23 +113,20 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
         installDependenciesTask.dependsOn(resolveDependenciesTask);
         installDependenciesTask.setDescription("Installs dependencies for the " + sourceSet.getName() + " Eta source.");
 
-        /* Create the fetch dependencies task. */
+        /* The install dependencies tasks injects into this configuration so we must
+           ensure that it runs before the Java compilation. */
 
-        EtaFetchDependencies fetchDependenciesTask =
-            project.getTasks().create(etaSourceSet.getFetchDependenciesTaskName(),
-                                      EtaFetchDependencies.class);
+        final AbstractCompile javaCompileTask = (AbstractCompile)
+            project.getTasks().getByName(sourceSet.getCompileJavaTaskName());
 
-        fetchDependenciesTask.setTargetConfiguration(targetConfiguration);
-        fetchDependenciesTask.setDestinationDir(destinationDir);
-        fetchDependenciesTask.dependsOn(installDependenciesTask);
-        fetchDependenciesTask.setDescription("Fetches dependencies for the " + sourceSet.getName() + " Eta source.");
+        javaCompileTask.dependsOn(installDependenciesTask);
+
+        /* Create the compile task. */
 
         EtaCompile compileTask =
             project.getTasks().create(etaSourceSet.getCompileTaskName(),
                                       EtaCompile.class);
 
-        AbstractCompile javaCompileTask = (AbstractCompile)
-            project.getTasks().getByName(sourceSet.getCompileJavaTaskName());
 
         Provider<Directory> classesDir = project.provider
             (() -> {
@@ -152,16 +148,11 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
         compileTask.dependsOn(javaCompileTask);
         compileTask.setDescription("Compiles the " + sourceSet.getName() + " Eta source.");
 
-        /* The fetch dependencies tasks injects into this configuration so we must
-           ensure that it runs before the Java compilation. */
-
-        javaCompileTask.dependsOn(fetchDependenciesTask);
+        /* Register the Eta classes directory as an output so that the Jar task
+           will pick it up nicely. */
 
         Map<String, Object> builtByOptions = new HashMap<String, Object>();
         builtByOptions.put("builtBy", compileTask);
-
-        /* Register the Eta classes directory as an output so that the Jar task
-           will pick it up nicely. */
 
         etaSourceDirectorySet.setOutputDir
             (project.provider(() -> classesDir.get().getAsFile()));
@@ -181,7 +172,7 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
                      JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME);
     }
 
-    public void addArtifacts(Provider<File> artifact, String... configurationNames) {
+    private void addArtifacts(Provider<File> artifact, String... configurationNames) {
         for (String configurationName : configurationNames) {
             ConfigurationUtils.getEtaConfiguration(project, configurationName)
                 .getArtifacts().add(artifact);

@@ -139,7 +139,7 @@ public class EtaCompile extends DefaultTask {
 
         EtlasCommand etlas = new EtlasCommand(project);
         etlas.getWorkingDirectory().set(destinationDir.getAsFile());
-        etlas.newBuild();
+        etlas.build();
 
         /* Extract the Jar file into the classes directory so the rest of the
            Gradle Java pipeline can work as intended.

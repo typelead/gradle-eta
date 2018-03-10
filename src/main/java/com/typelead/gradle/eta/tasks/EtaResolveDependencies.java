@@ -129,6 +129,6 @@ public class EtaResolveDependencies extends DefaultTask {
 
         EtlasCommand etlas = new EtlasCommand(getProject());
         etlas.getWorkingDirectory().set(workingDir);
-        etlas.newFreeze();
+        etlas.freeze();
     }
 }
