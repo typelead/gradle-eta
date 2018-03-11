@@ -26,16 +26,12 @@ public class EtaExtension {
         "http://cdnverify.eta-lang.org/eta-binaries";
     private static final boolean DEFAULT_USE_SYSTEM_ETLAS = false;
     private static final boolean DEFAULT_USE_SYSTEM_ETA   = false;
-    /* This is relative to the default Gradle build directory. */
-    private static final String DEFAULT_BUILD_DIR = "eta";
 
     private final Project project;
 
     private Property<ExecutableSpec> etaSpec;
     private Property<ExecutableSpec> etlasSpec;
     private Property<String> etlasRepository;
-
-    private Property<String> buildDirectory;
 
     private Property<ResolvedExecutable> resolvedEta;
     private Property<ResolvedExecutable> resolvedEtlas;
@@ -79,11 +75,6 @@ public class EtaExtension {
                         return NoSpec.getInstance();
                     }
                 }));
-
-        buildDirectory = objectFactory.property(String.class);
-        buildDirectory.set
-            (project.provider
-             (() -> parseStringProperty("buildDirectory", DEFAULT_BUILD_DIR)));
 
         etlasRepository = objectFactory.property(String.class);
         etlasRepository.set
@@ -133,14 +124,6 @@ public class EtaExtension {
 
     public Property<ExecutableSpec> getEtlasSpec() {
         return etlasSpec;
-    }
-
-    public Property<String> getBuildDirectory() {
-        return buildDirectory;
-    }
-
-    public void setBuildDirectory(String buildDirectory) {
-        this.buildDirectory.set(buildDirectory);
     }
 
     public Property<ResolvedExecutable> getEta() {

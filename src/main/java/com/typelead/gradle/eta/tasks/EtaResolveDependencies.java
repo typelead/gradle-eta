@@ -50,7 +50,7 @@ public class EtaResolveDependencies extends DefaultTask {
             (getProject().getLayout().getBuildDirectory().dir(DEFAULT_DESTINATION_DIR));
 
         setDescription("Resolve dependencies for all the projects in a multi-project" +
-                       " build to get a consistent snapshot of all the dependencies.");
+                       " to get a consistent snapshot of all the dependencies.");
     }
 
     public Provider<Set<EtaDependency>>
@@ -69,13 +69,13 @@ public class EtaResolveDependencies extends DefaultTask {
     }
 
     @Input
-    public Provider<Set<EtaDependency>> getInputDependencies() {
+    public Provider<Set<EtaDependency>> getDependencies() {
         return dependencies;
     }
 
-    public void setInputDependencies
-        (Provider<Set<EtaDependency>> inputDependencies) {
-        dependencies = inputDependencies;
+    public void setDependencies
+        (Provider<Set<EtaDependency>> dependencies) {
+        this.dependencies = dependencies;
     }
 
     @Input

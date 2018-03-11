@@ -5,6 +5,7 @@ import groovy.lang.Closure;
 import org.gradle.api.Action;
 import org.gradle.api.Describable;
 import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.tasks.DefaultSourceSet;
 import org.gradle.api.internal.file.SourceDirectorySetFactory;
 import org.gradle.api.tasks.SourceSet;
 
@@ -19,7 +20,7 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
                                SourceDirectorySetFactory sourceDirectorySetFactory) {
         this.sourceSet = sourceSet;
 
-        final String displayName = ((Describable) sourceSet).getDisplayName();
+        final String displayName = ((DefaultSourceSet) sourceSet).getDisplayName();
 
         this.eta =
             sourceDirectorySetFactory.create("eta", displayName + " Eta source");
@@ -58,6 +59,12 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
     }
 
     private String getTaskName(String verb) {
-        return verb +  sourceSet.getName() + "Eta";
+        String name = sourceSet.getName();
+        if (name.equals("main")) {
+            name = "";
+        } else {
+            name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        }
+        return verb + name + "Eta";
     }
 }

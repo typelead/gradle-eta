@@ -85,7 +85,7 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
         sourceSet.getAllSource().source(etaSourceDirectorySet);
 
         final EtaResolveDependencies resolveDependenciesTask
-            = (EtaResolveDependencies) project.getTasks()
+            = (EtaResolveDependencies) project.getRootProject().getTasks()
             .getByPath(EtaBasePlugin.ETA_RESOLVE_DEPENDENCIES_TASK_NAME);
 
         final FileCollection freezeConfigFile =
@@ -145,6 +145,7 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
         compileTask.setDestinationDir(destinationDir);
         compileTask.addExtraClasspath(javaCompileTask.getDestinationDir());
         compileTask.setClassesDir(classesDir);
+        compileTask.setSource(etaSourceDirectorySet);
         compileTask.dependsOn(javaCompileTask);
         compileTask.setDescription("Compiles the " + sourceSet.getName() + " Eta source.");
 

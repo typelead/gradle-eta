@@ -16,6 +16,7 @@ import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.provider.Provider;
 
@@ -25,7 +26,7 @@ import com.typelead.gradle.utils.ResolvedExecutable;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
 
-public class EtaCompile extends DefaultTask {
+public class EtaCompile extends SourceTask {
 
     private final Provider<ResolvedExecutable> resolvedEta;
     private Provider<String> targetConfiguration;
@@ -38,21 +39,48 @@ public class EtaCompile extends DefaultTask {
     public EtaCompile() {
         final Project project = getProject();
         final EtaExtension extension =
-            project.getExtensions().getByType(EtaExtension.class);
+            project.getRootProject().getExtensions().getByType(EtaExtension.class);
         this.resolvedEta = extension.getEta();
+
+        this.destinationDir = project.getLayout().directoryProperty();
+        this.classesDir     = project.getLayout().directoryProperty();
 
         /* TODO: Do these paths need to be portable? */
         this.packageDB = project.provider
-            (() -> destinationDir
-             .file("dist-newstyle/packagedb/eta-" + getEtaVersion())
-             .get().getAsFile());
+            (() -> {
+                File file = destinationDir
+                  .file("dist-newstyle/packagedb/eta-" + getEtaVersion())
+                  .get().getAsFile();
+                if (file == null) {
+                    /* TODO: This seems like a hack since null provider values are not
+                       allowed. Maybe use Optional instead? */
+                    file = project.getLayout().getBuildDirectory().getAsFile().get();
+                }
+                return file;
+            });
 
         this.outputJar = project.provider
-            (() -> project.fileTree(destinationDir.get(),
-                                    fileTree ->
-                                    fileTree.include("**/*"
-                                                     + project.getName() + "*.jar"))
-             .getSingleFile());
+            (() -> {
+                Set<File> files = project.fileTree(destinationDir.get(),
+                                                   fileTree ->
+                                                   fileTree.include
+                                                   ("**/*" + project.getName()
+                                                           + "*.jar"))
+                                         .getFiles();
+
+                /* TODO: This seems like a hack since null provider values are not
+                   allowed. Maybe use Optional instead? */
+                File file = project.getLayout().getBuildDirectory().getAsFile().get();
+                if (files.size() > 1) {
+                    throw new GradleException("More than one output jar file was found.");
+                } else {
+                    for (File f : files) {
+                        file = f;
+                        break;
+                    }
+                }
+                return file;
+            });
     }
 
     @Input

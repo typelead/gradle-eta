@@ -38,7 +38,7 @@ public class EtaSetupEnvironment extends DefaultTask {
 
     public EtaSetupEnvironment() {
         final EtaExtension extension =
-            getProject().getExtensions().getByType(EtaExtension.class);
+            getProject().getRootProject().getExtensions().getByType(EtaExtension.class);
         this.resolvedEta = extension.getEta();
         this.resolvedEtlas = extension.getEtlas();
 

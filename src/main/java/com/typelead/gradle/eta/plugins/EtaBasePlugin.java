@@ -23,9 +23,7 @@ import com.typelead.gradle.eta.internal.DefaultEtaDependencyHandler;
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
  */
-public abstract class EtaBasePlugin implements Plugin<Project> {
-
-    private static final Logger LOG = Logging.getLogger(EtaBasePlugin.class);
+public class EtaBasePlugin implements Plugin<Project> {
 
     /* Constants */
     public static final String ETA_EXTENSION_NAME = "eta";
@@ -43,34 +41,24 @@ public abstract class EtaBasePlugin implements Plugin<Project> {
 
     /* Protected Fields */
     protected Project project;
-    protected EtaExtension extension;
 
     @Override
     public void apply(Project project) {
         this.project   = project;
-        this.extension = project.getExtensions()
-            .create(EtaPlugin.ETA_EXTENSION_NAME, EtaExtension.class, project);
 
         project.getPlugins().apply(BasePlugin.class);
 
+        createRootEtaExtension();
+
         addEtaExtensionForConfigurations();
 
-        configureEtaResolveDependenciesTask();
+        configureEtaRootTasks();
     }
 
-    private void configureEtaResolveDependenciesTask() {
-        /* The global, consistent dependency resolution must be done in the
-           root project. */
+    private void createRootEtaExtension() {
         if (project == project.getRootProject()) {
-            EtaSetupEnvironment setupEnvironmentTask =
-                project.getTasks().create(ETA_SETUP_ENVIRONMENT_TASK_NAME,
-                                          EtaSetupEnvironment.class);
-
-            EtaResolveDependencies resolveDependenciesTask =
-                project.getTasks().create(ETA_RESOLVE_DEPENDENCIES_TASK_NAME,
-                                          EtaResolveDependencies.class);
-
-            resolveDependenciesTask.dependsOn(setupEnvironmentTask);
+            project.getExtensions().create(EtaPlugin.ETA_EXTENSION_NAME,
+                                           EtaExtension.class, project);
         }
     }
 
@@ -86,4 +74,21 @@ public abstract class EtaBasePlugin implements Plugin<Project> {
                                                  DefaultEtaConfiguration.class,
                                                  configuration));
     }
+
+    private void configureEtaRootTasks() {
+        /* The global, consistent dependency resolution must be done in the
+           root project. */
+        if (project == project.getRootProject()) {
+            EtaSetupEnvironment setupEnvironmentTask =
+                project.getTasks().create(ETA_SETUP_ENVIRONMENT_TASK_NAME,
+                                          EtaSetupEnvironment.class);
+
+            EtaResolveDependencies resolveDependenciesTask =
+                project.getTasks().create(ETA_RESOLVE_DEPENDENCIES_TASK_NAME,
+                                          EtaResolveDependencies.class);
+
+            resolveDependenciesTask.dependsOn(setupEnvironmentTask);
+        }
+    }
+
 }

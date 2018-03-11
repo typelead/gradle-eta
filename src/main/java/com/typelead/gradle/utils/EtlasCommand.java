@@ -27,7 +27,7 @@ public class EtlasCommand {
 
     public EtlasCommand(final Project project) {
         final EtaExtension extension =
-            project.getExtensions().findByType(EtaExtension.class);
+            project.getRootProject().getExtensions().findByType(EtaExtension.class);
 
         this.resolvedEta      = extension.getEta();
         this.resolvedEtlas    = extension.getEtlas();
@@ -182,21 +182,12 @@ public class EtlasCommand {
         return c;
     }
 
-    // /**
-    //  * This will also download dependencies via `etlas install --dependencies-only`
-    //  */
-    // public List<String> depsClasspath(String component) {
-    //     return defaultCommandLine("deps", component, "--classpath")
-    //               .executeAndGetStandardOutputLines()
-    //               .stream()
-    //               .filter(line -> !line.startsWith(" ")
-    //                            && !line.contains("Notice:")
-    //                            && line.contains(File.separator))
-    //               .collect(Collectors.toList());
-    // }
-
     private CommandLine initCommandLine() {
         CommandLine c = new CommandLine(resolvedEtlas.get().getPath());
+        File workingDir = workingDirectory.getOrNull();
+        if (workingDir != null) {
+            c.setWorkingDir(workingDir);
+        }
         String sendMetrics = getSendMetricsFlag();
         if (sendMetrics != null) {
             c.getCommand().add(sendMetrics);
