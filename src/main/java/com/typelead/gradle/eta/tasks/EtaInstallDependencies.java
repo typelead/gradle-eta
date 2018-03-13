@@ -6,20 +6,26 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import org.gradle.api.Buildable;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
-import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.RegularFile;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.Property;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 
 import com.typelead.gradle.utils.EtlasCommand;
@@ -29,20 +35,24 @@ import com.typelead.gradle.eta.api.EtaProjectDependency;
 import com.typelead.gradle.eta.internal.DependencyUtils;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
 
-public class EtaInstallDependencies extends SourceTask {
+public class EtaInstallDependencies extends DefaultTask {
 
     public static final String DEFAULT_CABAL_FILENAME = ".cabal";
     public static final String DEFAULT_CABAL_PROJECT_FILENAME = "cabal.project";
     public static final String DEFAULT_DESTINATION_DIR = "eta";
 
-    private final Project     project;
-    private Provider<String>  projectName;
-    private Provider<String>  projectVersion;
-    private FileCollection    freezeConfigFile;
+    private final Project project;
+    private Provider<String> projectName;
+    private Provider<String> projectVersion;
+    private FileCollection freezeConfigFile;
     private DirectoryProperty destinationDir;
-    private FileCollection    sourceDirectories;
-    private Provider<String>  targetConfiguration;
+    private SourceDirectorySet sourceDirectories;
+    private Provider<List<String>> modulesProvider;
+    private Provider<String> targetConfiguration;
     private Provider<Set<EtaDependency>> dependencies;
+    private Provider<RegularFile> cabalProjectFile;
+    private Provider<RegularFile> cabalFile;
+    private Property<String> executable;
 
     public EtaInstallDependencies() {
         this.project = getProject();
@@ -50,17 +60,23 @@ public class EtaInstallDependencies extends SourceTask {
         this.projectVersion =
             project.provider(() -> project.getVersion().toString());
         this.freezeConfigFile = project.files();
-        this.dependencies =
-            project.provider
-            (() -> ConfigurationUtils.getEtaConfiguration
-             (project, EtaInstallDependencies.this.targetConfiguration.get())
-             .getAllDependencies());
-
         this.destinationDir =
             project.getLayout().directoryProperty();
 
         destinationDir.set(project.getLayout().getBuildDirectory()
                            .dir(DEFAULT_DESTINATION_DIR));
+
+        this.modulesProvider = defaultModulesProvider();
+        this.dependencies =
+            project.provider
+            (() -> ConfigurationUtils.getEtaConfiguration
+             (project, EtaInstallDependencies.this.getTargetConfiguration())
+             .getAllDependencies());
+
+        this.cabalProjectFile = destinationDir.file(DEFAULT_CABAL_PROJECT_FILENAME);
+        this.cabalFile = destinationDir
+            .file(project.provider(() -> projectName.get() + DEFAULT_CABAL_FILENAME));
+        this.executable = project.getObjects().property(String.class);
 
         setDescription("Install dependencies for the Eta project.");
     }
@@ -76,8 +92,8 @@ public class EtaInstallDependencies extends SourceTask {
     }
 
     @Input
-    public Provider<String> getTargetConfiguration() {
-        return targetConfiguration;
+    public String getTargetConfiguration() {
+        return targetConfiguration.get();
     }
 
     public void setTargetConfiguration(Provider<String> targetConfiguration) {
@@ -104,11 +120,42 @@ public class EtaInstallDependencies extends SourceTask {
 
     @Input
     public FileCollection getSourceDirs() {
+        return sourceDirectories.getSourceDirectories();
+    }
+
+    public FileCollection getSource() {
         return sourceDirectories;
     }
 
-    public void setSourceDirs(FileCollection sourceDirs) {
-        this.sourceDirectories = sourceDirs;
+    public void setSource(SourceDirectorySet sourceDirectories) {
+        this.sourceDirectories = sourceDirectories;
+    }
+
+    @Input
+    public Provider<List<String>> getModules() {
+        return modulesProvider;
+    }
+
+    public Provider<List<String>> defaultModulesProvider() {
+        return project.provider
+            (() -> {
+                final List<String> modules = new ArrayList<>();
+                sourceDirectories.getAsFileTree()
+                    .visit(file -> {
+                            if (!file.isDirectory()) {
+                                String moduleWithExtension =
+                                    file.getPath().replace('/', '.');
+                                String module = moduleWithExtension
+                                    .substring(0, moduleWithExtension.lastIndexOf("."));
+                                if (module.equals("Main")) {
+                                    /* TODO: Handle case where there are two Main files. */
+                                    executable.set(moduleWithExtension);
+                                } else {
+                                    modules.add(module);
+                                }
+                            }});
+                return modules;
+            });
     }
 
     @Input
@@ -118,14 +165,37 @@ public class EtaInstallDependencies extends SourceTask {
 
     @OutputFile
     public Provider<RegularFile> getCabalProjectFile() {
-        return destinationDir.file(DEFAULT_CABAL_PROJECT_FILENAME);
+        return cabalProjectFile;
     }
 
     @OutputFile
     public Provider<RegularFile> getCabalFile() {
-        return destinationDir
-            .file(project.provider
-                  (() -> projectName.get() + DEFAULT_CABAL_FILENAME));
+        return cabalFile;
+    }
+
+    public void dependsOnOtherEtaProjects() {
+        dependsOn(new Callable<List<Buildable>>() {
+                @Override
+                public List<Buildable> call() {
+                    List<Buildable> buildables = new ArrayList<Buildable>();
+                    String configurationName = getTargetConfiguration();
+                    Set<EtaDependency> dependencies =
+                        ConfigurationUtils.getEtaConfiguration(project,
+                                                               getTargetConfiguration())
+                        .getAllDependencies();
+                    for (EtaDependency dep : dependencies) {
+                        if (dep instanceof EtaProjectDependency) {
+                            final EtaProjectDependency projectDep =
+                                (EtaProjectDependency) dep;
+                            buildables.add
+                                (projectDep.getProject(project).getConfigurations()
+                                 .findByName(projectDep.getTargetConfiguration())
+                                 .getAllArtifacts());
+                        }
+                    }
+                    return buildables;
+                }
+            });
     }
 
     @TaskAction
@@ -168,26 +238,11 @@ public class EtaInstallDependencies extends SourceTask {
 
         /* Calculate all the modules */
 
-        final StringBuffer executable = new StringBuffer();
-        final List<String> modules = new ArrayList<>();
-
-        getSource().visit(file -> {
-                if (!file.isDirectory()) {
-                    String moduleWithExtension = file.getPath().replace('/', '.');
-                    String module = moduleWithExtension
-                        .substring(0, moduleWithExtension.lastIndexOf("."));
-                    if (module.equals("Main")) {
-                        /* TODO: Handle case where there are two Main files. */
-                        executable.append(moduleWithExtension);
-                    } else {
-                        modules.add(module);
-                    }
-                }
-            });
+        final List<String> modules = modulesProvider.get();
 
         /* Determine if it's an executable */
 
-        String exec = executable.toString();
+        String exec = executable.getOrNull();
         if (exec != null && exec.length() <= 0) {
             exec = null;
         }
@@ -196,12 +251,12 @@ public class EtaInstallDependencies extends SourceTask {
 
         /* Generate the .cabal & cabal.project files. */
 
-        final String configurationName = getTargetConfiguration().get();
+        final String configurationName = getTargetConfiguration();
 
         Set<File> packageDBs = ConfigurationUtils
             .getEtaConfiguration(project.getConfigurations()
                                  .getByName(configurationName))
-            .getAllArtifacts().stream()
+            .getAllArtifacts(project).stream()
             .map(Provider::get)
             .collect(Collectors.toSet());
 
@@ -213,7 +268,7 @@ public class EtaInstallDependencies extends SourceTask {
                    dependency list. */
 
                 directDeps.addAll(projectDeps.stream()
-                                  .map(EtaProjectDependency::getProject)
+                                  .map(dep -> dep.getProject(project))
                                   .map(Project::getName)
                                   .collect(Collectors.toList()));
 
@@ -235,8 +290,8 @@ public class EtaInstallDependencies extends SourceTask {
 
                 for (EtaProjectDependency projectDependency : projectDeps) {
                     Map<String, String> projectOptions = new HashMap<String, String>();
-                    projectOptions.put("project",
-                                       projectDependency.getProject().getPath());
+                    projectOptions.put("path",
+                                       projectDependency.getProject(project).getPath());
                     projectOptions.put("configuration",
                                        projectDependency.getTargetConfiguration());
                     dependencyHandler.add(configurationName,
@@ -254,7 +309,7 @@ public class EtaInstallDependencies extends SourceTask {
         etlas.deps((fileDeps, mavenDeps) -> {
                 /* Inject the dependencies into the target configuration. */
                 DependencyHandler dependencies = project.getDependencies();
-                dependencies.add(configurationName, fileDeps);
+                dependencies.add(configurationName, project.files(fileDeps));
                 for (String mavenDep : mavenDeps) {
                     dependencies.add(configurationName, mavenDep);
                 }

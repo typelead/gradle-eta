@@ -100,18 +100,17 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
 
         /* Create the install dependencies task. */
 
-        EtaInstallDependencies installDependenciesTask =
+        final EtaInstallDependencies installDependenciesTask =
             project.getTasks().create(etaSourceSet.getInstallDependenciesTaskName(),
                                       EtaInstallDependencies.class);
 
         installDependenciesTask.setTargetConfiguration(targetConfiguration);
         installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
         installDependenciesTask.setDestinationDir(destinationDir);
-        installDependenciesTask.setSourceDirs
-            (etaSourceDirectorySet.getSourceDirectories());
         installDependenciesTask.setSource(etaSourceDirectorySet);
         installDependenciesTask.dependsOn(resolveDependenciesTask);
         installDependenciesTask.setDescription("Installs dependencies for the " + sourceSet.getName() + " Eta source.");
+        installDependenciesTask.dependsOnOtherEtaProjects();
 
         /* The install dependencies tasks injects into this configuration so we must
            ensure that it runs before the Java compilation. */
@@ -141,7 +140,10 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
                 return buildDir.dir(etaSourceSet.getClassesDir()).get();
             });
 
-        compileTask.setTargetConfiguration(targetConfiguration);
+        compileTask.setClasspath(project.provider
+                                 (() -> sourceSet.getCompileClasspath()));
+        compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFile());
+        compileTask.setCabalFile(installDependenciesTask.getCabalFile());
         compileTask.setDestinationDir(destinationDir);
         compileTask.addExtraClasspath(javaCompileTask.getDestinationDir());
         compileTask.setClassesDir(classesDir);

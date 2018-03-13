@@ -61,6 +61,7 @@ public class CabalHelper {
                 sb.append(", ");
                 sb.append(it.next());
             }
+            sb.append(NEWLINE);
         }
 
         println(sb, "    build-depends: base");
@@ -69,6 +70,7 @@ public class CabalHelper {
             println(sb, "                 , " + dependencyConstraint);
         }
 
+        println(sb, "    default-language: Haskell2010");
         FileUtils.write(new File(workingDir, projectName + ".cabal"), sb.toString());
     }
 

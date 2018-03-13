@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.LinkedHashSet;
 
 import org.gradle.api.DomainObjectCollection;
+import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.internal.DefaultDomainObjectCollection;
@@ -52,7 +53,7 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
     }
 
     @Override
-    public Set<Provider<File>> getAllArtifacts() {
+    public Set<Provider<File>> getAllArtifacts(final Project project) {
         Set<Provider<File>> allArtifacts = new LinkedHashSet<Provider<File>>();
         allArtifacts.addAll(artifacts);
         for (EtaDependency dependency : getDependencies()) {
@@ -61,15 +62,15 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
                     ((EtaProjectDependency) dependency);
                 allArtifacts.addAll
                     (ConfigurationUtils.getEtaConfiguration
-                     (projectDependency.getProject(),
+                     (projectDependency.getProject(project),
                       projectDependency.getTargetConfiguration())
-                     .getAllArtifacts());
+                     .getAllArtifacts(project));
             }
         }
         for (Configuration configuration : parentConfiguration.getExtendsFrom()) {
             final EtaConfiguration etaConfiguration =
                 ExtensionHelper.getExtension(configuration, EtaConfiguration.class);
-            allArtifacts.addAll(etaConfiguration.getAllArtifacts());
+            allArtifacts.addAll(etaConfiguration.getAllArtifacts(project));
         }
         return allArtifacts;
 

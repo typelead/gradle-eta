@@ -5,14 +5,16 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 
-import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFile;
+import org.gradle.api.tasks.CompileClasspath;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.OutputDirectory;
@@ -29,12 +31,14 @@ import com.typelead.gradle.eta.internal.ConfigurationUtils;
 public class EtaCompile extends SourceTask {
 
     private final Provider<ResolvedExecutable> resolvedEta;
-    private Provider<String> targetConfiguration;
     private DirectoryProperty destinationDir;
     private DirectoryProperty classesDir;
+    private Provider<FileCollection> classpathProvider;
     private List<File> extraClasspath = new ArrayList<File>();
     private Provider<File> packageDB;
     private Provider<File> outputJar;
+    private Provider<RegularFile>  cabalProjectFile;
+    private Provider<RegularFile>  cabalFile;
 
     public EtaCompile() {
         final Project project = getProject();
@@ -49,7 +53,7 @@ public class EtaCompile extends SourceTask {
         this.packageDB = project.provider
             (() -> {
                 File file = destinationDir
-                  .file("dist-newstyle/packagedb/eta-" + getEtaVersion())
+                  .file("dist/packagedb/eta-" + getEtaVersion())
                   .get().getAsFile();
                 if (file == null) {
                     /* TODO: This seems like a hack since null provider values are not
@@ -70,7 +74,7 @@ public class EtaCompile extends SourceTask {
 
                 /* TODO: This seems like a hack since null provider values are not
                    allowed. Maybe use Optional instead? */
-                File file = project.getLayout().getBuildDirectory().getAsFile().get();
+                File file = project.getLayout().getBuildDirectory().file("stub-output.jar").get().getAsFile();
                 if (files.size() > 1) {
                     throw new GradleException("More than one output jar file was found.");
                 } else {
@@ -88,13 +92,22 @@ public class EtaCompile extends SourceTask {
         return resolvedEta.get().getVersion();
     }
 
-    @Input
-    public Provider<String> getTargetConfiguration() {
-        return targetConfiguration;
+    @InputFile
+    public Provider<RegularFile> getCabalProjectFile() {
+        return cabalProjectFile;
     }
 
-    public void setTargetConfiguration(Provider<String> targetConfiguration) {
-        this.targetConfiguration = targetConfiguration;
+    public void setCabalProjectFile(Provider<RegularFile> cabalProjectFile) {
+        this.cabalProjectFile = cabalProjectFile;
+    }
+
+    @InputFile
+    public Provider<RegularFile> getCabalFile() {
+        return cabalFile;
+    }
+
+    public void setCabalFile(Provider<RegularFile> cabalFile) {
+        this.cabalFile = cabalFile;
     }
 
     @Input
@@ -107,12 +120,21 @@ public class EtaCompile extends SourceTask {
     }
 
     @Input
-    public Provider<Directory> getClassesDir() {
-        return classesDir;
+    public Provider<File> getClassesDir() {
+        return classesDir.getAsFile();
     }
 
     public void setClassesDir(Provider<Directory> classesDir) {
         this.classesDir.set(classesDir);
+    }
+
+    @CompileClasspath
+    public FileCollection getClasspath() {
+        return classpathProvider.get();
+    }
+
+    public void setClasspath(Provider<FileCollection> classpathProvider) {
+        this.classpathProvider = classpathProvider;
     }
 
     @InputFiles
@@ -128,12 +150,10 @@ public class EtaCompile extends SourceTask {
              we will be sending *a lot* of package dbs! Instead, we can collect
              the .conf files and construct a new package db via eta-pkg recache
              on every build. */
-    @OutputDirectory
     public Provider<File> getPackageDB() {
         return packageDB;
     }
 
-    @OutputFile
     public Provider<File> getOutputJarFile() {
         return outputJar;
     }
@@ -156,8 +176,7 @@ public class EtaCompile extends SourceTask {
            - Configure the `-cp` flag
         */
 
-        Set<File> classpathFiles = project.getConfigurations()
-            .getByName(getTargetConfiguration().get()).getFiles();
+        Set<File> classpathFiles = getClasspath().getFiles();
 
         classpathFiles.addAll(getExtraClasspath());
 

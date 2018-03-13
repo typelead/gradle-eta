@@ -34,7 +34,7 @@ public class EtaSetupEnvironment extends DefaultTask {
     private Provider<ExecutableSpec> etaSpec;
     private Provider<ExecutableSpec> etlasSpec;
     private Provider<String> etlasRepository;
-    private Provider<String> resolvedEtlasPath;
+    private Provider<File> resolvedEtlasPath;
 
     public EtaSetupEnvironment() {
         final EtaExtension extension =
@@ -45,8 +45,8 @@ public class EtaSetupEnvironment extends DefaultTask {
         this.etaSpec   = extension.getEtaSpec();
         this.etlasSpec = extension.getEtlasSpec();
         this.etlasRepository = extension.getEtlasRepository();
-        this.resolvedEtlasPath = getProject().provider(() ->
-                                                       resolvedEtlas.get().getPath());
+        this.resolvedEtlasPath = getProject()
+            .provider(() -> new File(resolvedEtlas.get().getPath()));
 
         setDescription
             ("Setup the Eta & Etlas environment for the specified versions.");
@@ -69,7 +69,7 @@ public class EtaSetupEnvironment extends DefaultTask {
     }
 
     @OutputFile
-    public Provider<String> resolvedEtlasPath() {
+    public Provider<File> resolvedEtlasPath() {
         return resolvedEtlasPath;
     }
 

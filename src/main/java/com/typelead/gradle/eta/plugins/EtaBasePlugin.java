@@ -66,6 +66,7 @@ public class EtaBasePlugin implements Plugin<Project> {
         ExtensionHelper.createExtension(project.getDependencies(),
                                         ETA_DEPENDENCY_HANDLER_DSL_NAME,
                                         DefaultEtaDependencyHandler.class,
+                                        project,
                                         project.getConfigurations());
         project.getConfigurations()
             .all(configuration ->

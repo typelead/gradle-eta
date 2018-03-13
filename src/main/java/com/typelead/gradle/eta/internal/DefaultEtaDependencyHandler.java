@@ -4,20 +4,25 @@ import java.util.Map;
 
 import groovy.lang.MissingMethodException;
 
+import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationContainer;
+
 import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.eta.api.EtaDependencyHandler;
 import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaDirectDependency;
 import com.typelead.gradle.eta.api.EtaConfiguration;
 
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.ConfigurationContainer;
-
 public class DefaultEtaDependencyHandler implements EtaDependencyHandler {
 
+    private final Project project;
     private final ConfigurationContainer configurationContainer;
 
-    public DefaultEtaDependencyHandler(ConfigurationContainer configurationContainer) {
+    public DefaultEtaDependencyHandler(Project project,
+                                       ConfigurationContainer configurationContainer) {
+        this.project = project;
         this.configurationContainer = configurationContainer;
     }
 
@@ -49,6 +54,22 @@ public class DefaultEtaDependencyHandler implements EtaDependencyHandler {
         return dependency;
     }
 
+    @Override
+    public EtaDependency project(Map<String,?> options) {
+        Object path = options.get("path");
+        Object configuration = options.get("configuration");
+        if (path == null) {
+            throw new GradleException("Must specify at least a 'path' key in the map.");
+        }
+        Project dependencyProject = project.project(path.toString());
+        if (configuration == null) {
+            return new DefaultEtaProjectDependency(dependencyProject);
+        } else {
+            return new DefaultEtaProjectDependency(dependencyProject,
+                                                   configuration.toString());
+        }
+    }
+
     public Object methodMissing(final String configurationName, final Object configurationArguments) {
         Object[] configurationParameters = (Object[]) configurationArguments;
         int numConfigurationParameters = configurationParameters.length;
@@ -60,6 +81,11 @@ public class DefaultEtaDependencyHandler implements EtaDependencyHandler {
                     return add(targetConfiguration, (Map<String,String>)argument);
                 } else if (argument instanceof String) {
                     return add(targetConfiguration, (String)argument);
+                } else if (argument instanceof Project) {
+                    return add(configurationName,
+                               new DefaultEtaProjectDependency((Project) argument));
+                } else if (argument instanceof EtaDependency) {
+                    return add(configurationName, (EtaDependency) argument);
                 }
             }
 
