@@ -111,8 +111,8 @@ public class EtaCompile extends SourceTask {
     }
 
     @Input
-    public Provider<File> getDestinationDir() {
-        return destinationDir.getAsFile();
+    public File getDestinationDir() {
+        return destinationDir.getAsFile().get();
     }
 
     public void setDestinationDir(Provider<Directory> destinationDir) {
@@ -165,7 +165,7 @@ public class EtaCompile extends SourceTask {
 
         /* Create the destination directory if it doesn't exist. */
 
-        File workingDir = destinationDir.getAsFile().get();
+        final File workingDir = getDestinationDir();
 
         if (!workingDir.exists() && !workingDir.mkdirs()) {
             throw new GradleException("Unable to create destination directory: "
@@ -184,19 +184,26 @@ public class EtaCompile extends SourceTask {
 
         /* Fork an etlas process to fetch the dependencies. */
 
-        EtlasCommand etlas = new EtlasCommand(project);
-        etlas.getWorkingDirectory().set(destinationDir.getAsFile());
-        etlas.build();
+        final EtlasCommand etlas = new EtlasCommand(project);
 
-        /* Extract the Jar file into the classes directory so the rest of the
-           Gradle Java pipeline can work as intended.
+        etlas.getWorkingDirectory().set(workingDir);
 
-           TODO: Add an option for the Eta compiler to generate classfiles directly.
-        */
+        boolean isUpToDate = etlas.build();
+        setDidWork(!isUpToDate);
 
-        project.copy(copySpec -> {
-                copySpec.from(project.zipTree(getOutputJarFile()));
-                copySpec.into(classesDir);
-            });
+        if (!isUpToDate) {
+
+            /* Extract the Jar file into the classes directory so the rest of the
+               Gradle Java pipeline can work as intended.
+
+               TODO: Add an option for the Eta compiler to generate classfiles directly.
+            */
+
+            project.copy(copySpec -> {
+                    copySpec.from(project.zipTree(getOutputJarFile()));
+                    copySpec.into(classesDir);
+                });
+        }
+
     }
 }

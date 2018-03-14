@@ -88,6 +88,24 @@ public class CommandLine implements Log {
                                   + " with workingDir " + workingDir);
     }
 
+    public List<String> executeLogAndGetStandardOutputLines() {
+        List<String> stdOutLines = new ArrayList<>();
+        StringBuilder stdErrBuilder = new StringBuilder();
+        Process p = executeAndConsumeOutput
+            (x -> {
+                logger().info(x);
+                stdOutLines.add(x);
+            },
+             x -> {
+                logger().error(x);
+                stdErrBuilder.append(x).append(System.lineSeparator());
+            });
+        String stdOut = String.join(System.lineSeparator(), stdOutLines);
+        String stdErr = stdErrBuilder.toString();
+        checkExitCode(p, stdOut, stdErr);
+        return stdOutLines;
+    }
+
     public void executeWithInputAndLogOutput(String input) {
         Process p = executeWithInputAndConsumeOutput(() -> input,
                                                      x -> logger().info(x),

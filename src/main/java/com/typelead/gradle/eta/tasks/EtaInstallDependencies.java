@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -169,16 +170,14 @@ public class EtaInstallDependencies extends DefaultTask {
     }
 
     @Input
-    public Provider<Set<EtaDependency>> getDependencies() {
-        return dependencies;
+    public Set<EtaDependency> getDependencies() {
+        return dependencies.get();
     }
 
-    @OutputFile
     public Provider<RegularFile> getCabalProjectFile() {
         return cabalProjectFile;
     }
 
-    @OutputFile
     public Provider<RegularFile> getCabalFile() {
         return cabalFile;
     }
@@ -208,6 +207,40 @@ public class EtaInstallDependencies extends DefaultTask {
             });
     }
 
+    private void injectProjectDependencies
+        (Iterable<? extends EtaDependency> dependencies) {
+        final DependencyHandler dependencyHandler = project.getDependencies();
+        final String targetConfigurationName = getTargetConfiguration();
+
+        for (EtaDependency dep : dependencies) {
+            if (dep instanceof EtaProjectDependency) {
+                final EtaProjectDependency projectDependency =
+                    (EtaProjectDependency) dep;
+
+                Map<String, String> projectOptions = new HashMap<String, String>();
+                projectOptions.put("path",
+                                   projectDependency.getProject(project).getPath());
+                projectOptions.put("configuration",
+                                   projectDependency.getTargetConfiguration());
+                dependencyHandler.add(targetConfigurationName,
+                                      dependencyHandler.project(projectOptions));
+            }
+        }
+    }
+
+    private BiConsumer<List<File>, List<String>> injectEtaAndMavenDependencies() {
+        final String targetConfigurationName = getTargetConfiguration();
+        return (fileDeps, mavenDeps) -> {
+            /* Inject the dependencies into the target configuration. */
+            DependencyHandler dependencies = project.getDependencies();
+            dependencies.add(targetConfigurationName, project.files(fileDeps));
+            for (String mavenDep : mavenDeps) {
+                dependencies.add(targetConfigurationName, mavenDep);
+            }
+        };
+    }
+
+
     @TaskAction
     public void installDependencies() {
 
@@ -219,7 +252,7 @@ public class EtaInstallDependencies extends DefaultTask {
 
         /* Create the destination directory if it doesn't exist. */
 
-        File workingDir = getDestinationDir();
+        final File workingDir = getDestinationDir();
 
         if (!workingDir.exists() && !workingDir.mkdirs()) {
             throw new GradleException("Unable to create destination directory: "
@@ -272,7 +305,7 @@ public class EtaInstallDependencies extends DefaultTask {
             .collect(Collectors.toSet());
 
         DependencyUtils.foldEtaDependencies
-            (dependencies.get(),
+            (getDependencies(),
              (directDeps, projectDeps) -> {
 
                 /* Include the project dependencies in the Etlas
@@ -296,18 +329,7 @@ public class EtaInstallDependencies extends DefaultTask {
 
                 /* Make sure to add the project dependencies to the configuration
                    dependencies as well. */
-
-                final DependencyHandler dependencyHandler = project.getDependencies();
-
-                for (EtaProjectDependency projectDependency : projectDeps) {
-                    Map<String, String> projectOptions = new HashMap<String, String>();
-                    projectOptions.put("path",
-                                       projectDependency.getProject(project).getPath());
-                    projectOptions.put("configuration",
-                                       projectDependency.getTargetConfiguration());
-                    dependencyHandler.add(targetConfigurationName,
-                                          dependencyHandler.project(projectOptions));
-                }
+                injectProjectDependencies(projectDeps);
 
             }, gitDeps -> CabalHelper.generateCabalProjectFile(gitDeps,
                                                                packageDBs,
@@ -315,15 +337,11 @@ public class EtaInstallDependencies extends DefaultTask {
 
         /* Fork an etlas process to install the dependencies.  */
 
-        EtlasCommand etlas = new EtlasCommand(project);
+        final EtlasCommand etlas = new EtlasCommand(project);
+
         etlas.getWorkingDirectory().set(workingDir);
-        etlas.deps((fileDeps, mavenDeps) -> {
-                /* Inject the dependencies into the target configuration. */
-                DependencyHandler dependencies = project.getDependencies();
-                dependencies.add(targetConfigurationName, project.files(fileDeps));
-                for (String mavenDep : mavenDeps) {
-                    dependencies.add(targetConfigurationName, mavenDep);
-                }
-            });
+
+        boolean isUpToDate = etlas.deps(injectEtaAndMavenDependencies());
+        setDidWork(!isUpToDate);
     }
 }

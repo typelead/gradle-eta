@@ -146,31 +146,19 @@ public class EtlasCommand {
         c.executeAndLogOutput();
     }
 
-    public void deps(BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
+    public boolean deps(BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
         CommandLine c = initCommandLineWithEtaVersion();
         c.getCommand().add("deps");
-        List<String> lines = c.executeAndGetStandardOutputLines().stream()
-                              .filter(line -> line.startsWith("file:")
-                                           || line.startsWith("maven:"))
-                              .collect(Collectors.toList());
-        List<File> files = new ArrayList<File>();
-        List<String> mavenDeps = new ArrayList<String>();
-        for (String line: lines) {
-            if (line.startsWith("file:")) {
-                files.add(new File(line.substring(5)));
-            } else if (line.startsWith("maven:")) {
-                mavenDeps.add(line.substring(6));
-            } else {
-                throw new GradleException("Bad output from `etlas deps`.");
-            }
-        }
-        filesAndMavenDeps.accept(files, mavenDeps);
+        List<String> allLines = c.executeAndGetStandardOutputLines();
+        parseAndExecuteDependencyLines(allLines, filesAndMavenDeps);
+        return isUpToDate(allLines);
     }
 
-    public void build() {
+    public boolean build() {
         CommandLine c = initCommandLineWithEtaVersion();
-        c.getCommand().addAll(Arrays.asList("build"));
-        c.executeAndLogOutput();
+        c.getCommand().add("build");
+        List<String> allLines = c.executeLogAndGetStandardOutputLines();
+        return isUpToDate(allLines);
     }
 
     public CommandLine initCommandLineWithEtaVersion() {
@@ -193,5 +181,37 @@ public class EtlasCommand {
             c.getCommand().add(sendMetrics);
         }
         return c;
+    }
+
+    private static boolean isUpToDate(List<String> allLines) {
+        Optional<String> upToDate = allLines.stream()
+            .filter(line -> line.indexOf("Up to date") >= 0)
+            .findAny();
+        if (upToDate.isPresent()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static void parseAndExecuteDependencyLines
+        (List<String> allLines,
+         BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
+        List<String> lines = allLines.stream()
+            .filter(line -> line.startsWith("file:")
+                    || line.startsWith("maven:"))
+            .collect(Collectors.toList());
+        List<File> files = new ArrayList<File>();
+        List<String> mavenDeps = new ArrayList<String>();
+        for (String line: lines) {
+            if (line.startsWith("file:")) {
+                files.add(new File(line.substring(5)));
+            } else if (line.startsWith("maven:")) {
+                mavenDeps.add(line.substring(6));
+            } else {
+                throw new GradleException("Bad output from `etlas deps`.");
+            }
+        }
+        filesAndMavenDeps.accept(files, mavenDeps);
     }
 }
