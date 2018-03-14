@@ -19,8 +19,10 @@ import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.plugins.BasePlugin;
-import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.ApplicationPlugin;
+import org.gradle.api.plugins.ApplicationPluginConvention;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.internal.file.SourceDirectorySetFactory;
@@ -57,6 +59,7 @@ public class EtaPlugin implements Plugin<Project> {
         project.getPlugins().apply(JavaPlugin.class);
 
         configureSourceSetDefaults();
+        configureApplicationPluginIfPresent();
     }
 
     private void configureSourceSetDefaults() {
@@ -184,5 +187,17 @@ public class EtaPlugin implements Plugin<Project> {
                     .add(artifact);
             }
         }
+    }
+
+    private void configureApplicationPluginIfPresent() {
+        project.getPlugins().all
+            (plugin -> {
+                if (ApplicationPlugin.class.isInstance(plugin)) {
+                    ApplicationPluginConvention pluginConvention =
+                        project.getConvention().getPlugin
+                        (ApplicationPluginConvention.class);
+                    pluginConvention.setMainClassName("eta.main");
+                }
+            });
     }
 }
