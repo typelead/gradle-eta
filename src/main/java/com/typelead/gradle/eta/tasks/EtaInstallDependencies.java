@@ -48,6 +48,7 @@ public class EtaInstallDependencies extends DefaultTask {
     private DirectoryProperty destinationDir;
     private SourceDirectorySet sourceDirectories;
     private Provider<List<String>> modulesProvider;
+    private Provider<String> sourceConfiguration;
     private Provider<String> targetConfiguration;
     private Provider<Set<EtaDependency>> dependencies;
     private Provider<RegularFile> cabalProjectFile;
@@ -75,20 +76,29 @@ public class EtaInstallDependencies extends DefaultTask {
 
         this.cabalProjectFile = destinationDir.file(DEFAULT_CABAL_PROJECT_FILENAME);
         this.cabalFile = destinationDir
-            .file(project.provider(() -> projectName.get() + DEFAULT_CABAL_FILENAME));
+            .file(project.provider(() -> getProjectName() + DEFAULT_CABAL_FILENAME));
         this.executable = project.getObjects().property(String.class);
 
         setDescription("Install dependencies for the Eta project.");
     }
 
     @Input
-    public Provider<String> getProjectName() {
-        return projectName;
+    public String getProjectName() {
+        return projectName.get();
     }
 
     @Input
-    public Provider<String> getProjectVersion() {
-        return projectVersion;
+    public String getProjectVersion() {
+        return projectVersion.get();
+    }
+
+    @Input
+    public String getSourceConfiguration() {
+        return sourceConfiguration.get();
+    }
+
+    public void setSourceConfiguration(Provider<String> sourceConfiguration) {
+        this.sourceConfiguration = sourceConfiguration;
     }
 
     @Input
@@ -110,8 +120,8 @@ public class EtaInstallDependencies extends DefaultTask {
     }
 
     @Input
-    public Provider<File> getDestinationDir() {
-        return destinationDir.getAsFile();
+    public File getDestinationDir() {
+        return destinationDir.getAsFile().get();
     }
 
     public void setDestinationDir(Provider<Directory> destinationDir) {
@@ -132,8 +142,8 @@ public class EtaInstallDependencies extends DefaultTask {
     }
 
     @Input
-    public Provider<List<String>> getModules() {
-        return modulesProvider;
+    public List<String> getModules() {
+        return modulesProvider.get();
     }
 
     public Provider<List<String>> defaultModulesProvider() {
@@ -209,7 +219,7 @@ public class EtaInstallDependencies extends DefaultTask {
 
         /* Create the destination directory if it doesn't exist. */
 
-        File workingDir = destinationDir.getAsFile().get();
+        File workingDir = getDestinationDir();
 
         if (!workingDir.exists() && !workingDir.mkdirs()) {
             throw new GradleException("Unable to create destination directory: "
@@ -238,7 +248,7 @@ public class EtaInstallDependencies extends DefaultTask {
 
         /* Calculate all the modules */
 
-        final List<String> modules = modulesProvider.get();
+        final List<String> modules = getModules();
 
         /* Determine if it's an executable */
 
@@ -251,11 +261,12 @@ public class EtaInstallDependencies extends DefaultTask {
 
         /* Generate the .cabal & cabal.project files. */
 
-        final String configurationName = getTargetConfiguration();
+        final String sourceConfigurationName = getSourceConfiguration();
+        final String targetConfigurationName = getTargetConfiguration();
 
         Set<File> packageDBs = ConfigurationUtils
             .getEtaConfiguration(project.getConfigurations()
-                                 .getByName(configurationName))
+                                 .getByName(sourceConfigurationName))
             .getAllArtifacts(project).stream()
             .map(Provider::get)
             .collect(Collectors.toSet());
@@ -294,7 +305,7 @@ public class EtaInstallDependencies extends DefaultTask {
                                        projectDependency.getProject(project).getPath());
                     projectOptions.put("configuration",
                                        projectDependency.getTargetConfiguration());
-                    dependencyHandler.add(configurationName,
+                    dependencyHandler.add(targetConfigurationName,
                                           dependencyHandler.project(projectOptions));
                 }
 
@@ -309,9 +320,9 @@ public class EtaInstallDependencies extends DefaultTask {
         etlas.deps((fileDeps, mavenDeps) -> {
                 /* Inject the dependencies into the target configuration. */
                 DependencyHandler dependencies = project.getDependencies();
-                dependencies.add(configurationName, project.files(fileDeps));
+                dependencies.add(targetConfigurationName, project.files(fileDeps));
                 for (String mavenDep : mavenDeps) {
-                    dependencies.add(configurationName, mavenDep);
+                    dependencies.add(targetConfigurationName, mavenDep);
                 }
             });
     }

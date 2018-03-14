@@ -94,8 +94,11 @@ public class EtaPlugin implements Plugin<Project> {
         final FileCollection freezeConfigFile =
             resolveDependenciesTask.getOutputs().getFiles();
 
-        final Provider<String> targetConfiguration
+        final Provider<String> sourceConfiguration
             = project.provider(() -> sourceSet.getCompileClasspathConfigurationName());
+
+        final Provider<String> targetConfiguration
+            = project.provider(() -> sourceSet.getCompileConfigurationName());
 
         final Provider<Directory> destinationDir
             = project.getLayout().getBuildDirectory()
@@ -107,6 +110,7 @@ public class EtaPlugin implements Plugin<Project> {
             project.getTasks().create(etaSourceSet.getInstallDependenciesTaskName(),
                                       EtaInstallDependencies.class);
 
+        installDependenciesTask.setSourceConfiguration(sourceConfiguration);
         installDependenciesTask.setTargetConfiguration(targetConfiguration);
         installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
         installDependenciesTask.setDestinationDir(destinationDir);

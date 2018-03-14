@@ -69,8 +69,8 @@ public class EtaResolveDependencies extends DefaultTask {
     }
 
     @Input
-    public Provider<Set<EtaDependency>> getDependencies() {
-        return dependencies;
+    public Set<EtaDependency> getDependencies() {
+        return dependencies.get();
     }
 
     public void setDependencies
@@ -79,8 +79,8 @@ public class EtaResolveDependencies extends DefaultTask {
     }
 
     @Input
-    public Provider<File> getDestinationDirectory() {
-        return destinationDir.getAsFile();
+    public File getDestinationDirectory() {
+        return destinationDir.getAsFile().get();
     }
 
     public void setDestinationDirectory(Object dir) {
@@ -97,7 +97,7 @@ public class EtaResolveDependencies extends DefaultTask {
 
         /* Create the destination directory if it doesn't exist. */
 
-        File workingDir = destinationDir.getAsFile().get();
+        File workingDir = getDestinationDirectory();
 
         if (!workingDir.exists() && !workingDir.mkdirs()) {
             throw new GradleException("Unable to create destination directory: "
@@ -118,7 +118,7 @@ public class EtaResolveDependencies extends DefaultTask {
         /* Generate the .cabal & cabal.project files. */
 
         DependencyUtils.foldEtaDependencies
-            (dependencies.get(),
+            (getDependencies(),
              (directDeps, projectDeps) ->
              CabalHelper.generateCabalFile(getProject().getName(),
                                            getProject().getVersion().toString(),
