@@ -114,10 +114,11 @@ public class CabalHelper {
     }
 
     public static void generateCabalProjectLocalFile
-        (final Collection<File> classpathFiles, final File workingDir) {
+        (final String projectName, final Collection<File> classpathFiles, final File workingDir) {
         final StringBuilder sb = new StringBuilder();
         if (Collections.isNonEmpty(classpathFiles)) {
-            println(sb, "program-options");
+            sb.append("package ");
+            println(sb, projectName);
             sb.append("  eta-options: -cp \"");
             Iterator<File> it = classpathFiles.iterator();
             char sep = File.pathSeparatorChar;

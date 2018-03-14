@@ -180,7 +180,8 @@ public class EtaCompile extends SourceTask {
 
         classpathFiles.addAll(getExtraClasspath());
 
-        CabalHelper.generateCabalProjectLocalFile(classpathFiles, workingDir);
+        CabalHelper.generateCabalProjectLocalFile(project.getName(),
+                                                  classpathFiles, workingDir);
 
         /* Fork an etlas process to fetch the dependencies. */
 
