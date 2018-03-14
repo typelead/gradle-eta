@@ -57,7 +57,7 @@ public class EtaBasePlugin implements Plugin<Project> {
 
     private void createRootEtaExtension() {
         if (project == project.getRootProject()) {
-            project.getExtensions().create(EtaPlugin.ETA_EXTENSION_NAME,
+            project.getExtensions().create(EtaBasePlugin.ETA_EXTENSION_NAME,
                                            EtaExtension.class, project);
         }
     }

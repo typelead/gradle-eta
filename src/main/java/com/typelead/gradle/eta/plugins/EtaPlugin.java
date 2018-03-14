@@ -38,7 +38,7 @@ import com.typelead.gradle.eta.internal.DefaultEtaSourceSet;
  * A {@link Plugin} which sets up an Eta project.
  */
 @SuppressWarnings("WeakerAccess")
-public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
+public class EtaPlugin implements Plugin<Project> {
 
     private Project project;
     private SourceDirectorySetFactory sourceDirectorySetFactory;
@@ -170,15 +170,19 @@ public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
            upon dependency resolution of project dependencies. */
 
         addArtifacts(compileTask.getPackageDB(),
-                     JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME,
-                     JavaPlugin.RUNTIME_CONFIGURATION_NAME,
-                     JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME);
+                     sourceSet.getApiElementsConfigurationName(),
+                     sourceSet.getRuntimeConfigurationName(),
+                     sourceSet.getRuntimeElementsConfigurationName());
     }
 
     private void addArtifacts(Provider<File> artifact, String... configurationNames) {
         for (String configurationName : configurationNames) {
-            ConfigurationUtils.getEtaConfiguration(project, configurationName)
-                .getArtifacts().add(artifact);
+            final Configuration configuration =
+                project.getConfigurations().findByName(configurationName);
+            if (configuration != null) {
+                ConfigurationUtils.getEtaConfiguration(configuration).getArtifacts()
+                    .add(artifact);
+            }
         }
     }
 }

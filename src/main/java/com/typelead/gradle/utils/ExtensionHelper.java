@@ -9,14 +9,23 @@ public class ExtensionHelper {
             throw new IllegalArgumentException("Cannot extend a non-extensible object " + extensibleObject.getClass());
         }
 
-        return ((ExtensionAware) extensibleObject).getExtensions().create(extensionName, extensionType, extensionArgs);
+        return ((ExtensionAware) extensibleObject).getExtensions()
+            .create(extensionName, extensionType, extensionArgs);
     }
 
     public static <T> T getExtension(Object extensibleObject, Class<T> extensionType) {
         if (!(extensibleObject instanceof ExtensionAware)) {
-            throw new IllegalArgumentException("Cannot extend a non-extensible object " + extensibleObject.getClass());
+            String message;
+            if (extensibleObject != null) {
+                message = "'null'";
+            } else {
+                message = extensibleObject.getClass().toString();
+            }
+            throw new IllegalArgumentException
+                ("Cannot extend a non-extensible object " + message);
         }
 
-        return ((ExtensionAware) extensibleObject).getExtensions().findByType(extensionType);
+        return ((ExtensionAware) extensibleObject).getExtensions()
+            .findByType(extensionType);
     }
 }

@@ -42,12 +42,13 @@ import org.gradle.api.artifacts.ModuleVersionSelector;
 /**
  * A {@link Plugin} which sets up an Eta project.
  */
-public class EtaAndroidPlugin extends EtaBasePlugin implements Plugin<Project> {
+public class EtaAndroidPlugin implements Plugin<Project> {
 
     public static final String ETA_SOURCE_SET_NAME              = "eta";
     public static final String ETA_SOURCE_SET_DSL_NAME          = "eta";
     public static final String ETA_OPTIONS_DSL_NAME             = "etaOptions";
 
+    private Project project;
     private final SourceDirectorySetFactory sourceDirectorySetFactory;
     private BasePlugin androidPlugin;
     private BaseExtension androidExtension;
@@ -59,7 +60,9 @@ public class EtaAndroidPlugin extends EtaBasePlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        super.apply(project);
+        this.project = project;
+
+        project.getPlugins().apply(EtaBasePlugin.class);
 
         androidPlugin =
             AndroidHelper.getAndroidPlugin(project)

@@ -60,11 +60,11 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
             if (dependency instanceof EtaProjectDependency) {
                 final EtaProjectDependency projectDependency =
                     ((EtaProjectDependency) dependency);
-                allArtifacts.addAll
-                    (ConfigurationUtils.getEtaConfiguration
-                     (projectDependency.getProject(project),
-                      projectDependency.getTargetConfiguration())
-                     .getAllArtifacts(project));
+                final EtaConfiguration etaConfiguration =
+                    ConfigurationUtils.getEtaConfiguration
+                    (projectDependency.getProject(project),
+                     projectDependency.getTargetConfiguration());
+                allArtifacts.addAll(etaConfiguration.getAllArtifacts(project));
             }
         }
         for (Configuration configuration : parentConfiguration.getExtendsFrom()) {

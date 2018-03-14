@@ -86,6 +86,14 @@ public class CabalHelper {
          final File workingDir) {
         StringBuilder sb = new StringBuilder();
         println(sb, "packages: .");
+        if (Collections.isNonEmpty(packageDBs)) {
+            println(sb, "package-dbs:");
+            for (File packageDB : packageDBs) {
+                sb.append("  ");
+                println(sb, packageDB.getAbsolutePath());
+            }
+            sb.append(NEWLINE);
+        }
         if (Collections.isNonEmpty(sourceRepositories)) {
             for (SourceRepository sourceRepository : sourceRepositories) {
                 println(sb, "source-repository-package");
@@ -101,15 +109,6 @@ public class CabalHelper {
                 }
                 println(sb, sourceRepository.getCommitIdentifier());
             }
-        }
-        if (Collections.isNonEmpty(packageDBs)) {
-            println(sb, "program-options");
-            sb.append("  eta-options:");
-            for (File packageDB : packageDBs) {
-                sb.append(" -package-db ");
-                sb.append(packageDB.getPath());
-            }
-            sb.append(NEWLINE);
         }
         FileUtils.write(new File(workingDir, "cabal.project"), sb.toString());
     }
