@@ -1,5 +1,11 @@
 package com.typelead.gradle.eta.android;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Action;
@@ -12,10 +18,6 @@ import com.android.build.gradle.FeatureExtension;
 import com.android.build.gradle.TestExtension;
 import com.android.build.gradle.TestedExtension;
 import com.android.build.gradle.api.BaseVariant;
-
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 public class AndroidHelper {
     public static Optional<BasePlugin> getAndroidPlugin(Project project) {
@@ -53,5 +55,9 @@ public class AndroidHelper {
             ((TestedExtension)extension).getTestVariants().all(action);
             ((TestedExtension)extension).getUnitTestVariants().all(action);
         }
+    }
+
+    public static List<File> getAndroidSDKClasspath(BaseExtension extension) {
+        return extension.getBootClasspath();
     }
 }

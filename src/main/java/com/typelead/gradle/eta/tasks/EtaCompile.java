@@ -119,11 +119,6 @@ public class EtaCompile extends SourceTask {
         this.destinationDir.set(destinationDir);
     }
 
-    @Input
-    public Provider<File> getClassesDir() {
-        return classesDir.getAsFile();
-    }
-
     public void setClassesDir(Provider<Directory> classesDir) {
         this.classesDir.set(classesDir);
     }
@@ -192,7 +187,9 @@ public class EtaCompile extends SourceTask {
         boolean isUpToDate = etlas.build();
         setDidWork(!isUpToDate);
 
-        if (!isUpToDate) {
+        Directory classesDir = this.classesDir.getOrNull();
+
+        if (classesDir != null && !isUpToDate) {
 
             /* Extract the Jar file into the classes directory so the rest of the
                Gradle Java pipeline can work as intended.

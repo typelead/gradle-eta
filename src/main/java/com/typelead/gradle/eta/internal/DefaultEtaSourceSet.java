@@ -10,11 +10,20 @@ import org.gradle.api.internal.file.SourceDirectorySetFactory;
 import org.gradle.api.tasks.SourceSet;
 
 import com.typelead.gradle.eta.api.EtaSourceSet;
+import com.typelead.gradle.eta.api.NamingScheme;
 
 public class DefaultEtaSourceSet implements EtaSourceSet {
 
     private final SourceSet sourceSet;
     private final SourceDirectorySet eta;
+
+    public DefaultEtaSourceSet(String name,
+                               String displayName,
+                               SourceDirectorySetFactory sourceDirectorySetFactory) {
+        this.sourceSet = null;
+        this.eta = sourceDirectorySetFactory.create(name, displayName + " Eta source");
+        eta.getFilter().include("**/*.eta", "**/*.hs");
+    }
 
     public DefaultEtaSourceSet(SourceSet sourceSet,
                                SourceDirectorySetFactory sourceDirectorySetFactory) {
@@ -22,8 +31,7 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
 
         final String displayName = ((DefaultSourceSet) sourceSet).getDisplayName();
 
-        this.eta =
-            sourceDirectorySetFactory.create("eta", displayName + " Eta source");
+        this.eta = sourceDirectorySetFactory.create("eta", displayName + " Eta source");
         eta.getFilter().include("**/*.eta", "**/*.hs");
     }
 
@@ -39,19 +47,25 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
     }
 
     public String getCompileTaskName() {
-        return sourceSet.getCompileTaskName("eta");
+        if (sourceSet != null) {
+            return sourceSet.getCompileTaskName("eta");
+        } else {
+            return getTaskName("compile");
+        }
     }
 
     public String getInstallDependenciesTaskName() {
         return getTaskName("installDependencies");
     }
 
-    public String getFetchDependenciesTaskName() {
-        return getTaskName("fetchDependencies");
-    }
-
     public String getRelativeOutputDir() {
-        return "eta/" + sourceSet.getName();
+        String prefix;
+        if (sourceSet != null) {
+            prefix = sourceSet.getName();
+        } else {
+            prefix = "main";
+        }
+        return NamingScheme.getRelativeOutputDir(prefix);
     }
 
     public String getClassesDir() {
@@ -59,12 +73,11 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
     }
 
     private String getTaskName(String verb) {
-        String name = sourceSet.getName();
+        String name = (sourceSet == null)? "main" : sourceSet.getName();
         if (name.equals("main")) {
             name = "";
-        } else {
-            name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         }
-        return verb + name + "Eta";
+        return NamingScheme.getTaskName(verb, name);
     }
+
 }
