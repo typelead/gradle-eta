@@ -3,40 +3,41 @@ plugins {
 }
 
 group "com.typelead"
+version "0.5.0"
 
-static def getGitRev() {
-    def proc = "git rev-parse --short HEAD".execute()
-    proc.waitFor()
-    return proc.text.trim()
-}
+// static def getGitRev() {
+//     def proc = "git rev-parse --short HEAD".execute()
+//     proc.waitFor()
+//     return proc.text.trim()
+// }
 
-static def isGitDirty() {
-    return "git diff-index --quiet HEAD".execute().waitFor() != 0
-}
+// static def isGitDirty() {
+//     return "git diff-index --quiet HEAD".execute().waitFor() != 0
+// }
 
-version = file('version.txt').text.trim().with {
-    if (it.endsWith("SNAPSHOT")) {
-        if (isGitDirty()) {
-            "$it-${getGitRev()}-dirty"
-        } else {
-            "$it-${getGitRev()}"
-        }
-    } else {
-        it
-    }
-}
+// version = file('version.txt').text.trim().with {
+//     if (it.endsWith("SNAPSHOT")) {
+//         if (isGitDirty()) {
+//             "$it-${getGitRev()}-dirty"
+//         } else {
+//             "$it-${getGitRev()}"
+//         }
+//     } else {
+//         it
+//     }
+// }
 
-task printVersion {
-    doLast {
-        println("gradle-eta version: $version")
-    }
-}
+// task printVersion {
+//     doLast {
+//         println("gradle-eta version: $version")
+//     }
+// }
 
-project.afterEvaluate {
-    publishToMavenLocal {
-        dependsOn printVersion
-    }
-}
+// project.afterEvaluate {
+//     publishToMavenLocal {
+//         dependsOn printVersion
+//     }
+// }
 
 apply plugin: 'java'
 apply plugin: 'java-gradle-plugin'
