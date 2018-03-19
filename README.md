@@ -1,25 +1,63 @@
-# gradle-eta
+# Gradle Plugin for Eta
 
 [![Build Status](https://travis-ci.org/typelead/gradle-eta.svg?branch=master)](https://travis-ci.org/typelead/gradle-eta)
 
 A gradle plugin for building [Eta](http://eta-lang.org/) projects via the
 [Etlas](https://github.com/typelead/etlas) build tool.
 
-**NOTE**: This is pre-release software and under active development.
+# Installing
+
+```shell
+./gradlew pTML
+```
+
+Then, in your `build.gradle` you can add:
+
+
+```gradle
+buildscript {
+  repositories {
+    mavenLocal()
+
+    dependencies {
+      classpath 'com.typelead:gradle-eta:0.5.0'
+    }
+  }
+}
+```
 
 ## Quick Start
 
-Here is an example `build.gradle` file -
+### Normal Library
 
 ```gradle
-plugins {
-    id 'com.typelead.eta'
-}
-
-apply plugin: 'com.typelead.eta'
+apply plugin: 'eta'
 
 eta {
-    etlasVersion = '1.1.0.0'
+  useSystemEta = true
+  useSystemEtlas = true
+}
+```
+
+### Normal Executable
+```gradle
+apply plugin: 'eta'
+apply plugin: 'application'
+
+eta {
+  useSystemEta = true
+  useSystemEtlas = true
+}
+```
+
+### Android Application
+
+```gradle
+apply plugin: 'eta-android'
+
+eta {
+  useSystemEta = true
+  useSystemEtlas = true
 }
 ```
 
@@ -27,96 +65,49 @@ See the `examples` and `src/test/testData` directories for more examples.
 
 ## Configuration
 
-You can use the top-level `eta` extension for some basic global configurations -
+You can use the top-level `eta` extension for some basic global configurations.
+
+NOTE: The `eta` extension is only available in the root project! It will not be 
+available in subprojects of a multi-module build because the configuration applies to 
+all projects in the build.
+
+Properties:
+
+* `String version` - Version of Eta to use. The corresponding will binary will 
+    automatically be downloaded.
+* `String etaPath` - Path to locally installed Eta binary. 
+* `boolean useSystemEta` - If specified, attempts to resolve the eta binary on your system `PATH`.
 * `String etlasVersion` - Version of Etlas to use for this project. The Etlas binary
     will automatically be downloaded and installed from the Etlas repository.
 * `String etlasRepo`, defaults to standard Etlas repository. Generally, there is no
     reason to set this.
-* `String etlasBinary` - Path to locally installed Etlas binary. It is recommended to
+* `String etlasPath` - Path to locally installed Etlas binary. It is recommended to
     use `etlasRepo` and `etlasVersion` instead, leaving this unconfigured. It will be
     dynamically set by Gradle if it was downloaded and installed.
 * `boolean useSystemEtlas` - If specified, attempts to resolve the etlas binary
-    on your system `PATH`
-
+    on your system `PATH`.
+    
 ### Tasks
 
-The Gradle plugin provides different task types depending on what you need.
+The Eta Gradle Plugin adds the following tasks:
 
-## Build Tasks
+#### Root Project Tasks
 
-The following tasks are available for compiling Eta sources -
-* `cleanEta` - Cleans the etlas build via `etlas clean`
-* `compileEta` - Compiles via `etlas build`
-* `testDepsEta` - Installs test dependencies; you may need to run this first before
-    running `testEta`
-* `testEta` - Runs Eta test suites
+* `:setupEnvironmentEta` - This task is attached to the root project and installs the necessary `eta` and `etlas` executables for your platform or uses the provided executables in the configuration.
+* `:resolveDependenciesEta` - This task is attached to the root project and makes sure all the projects in the build use a consistent set of Eta dependencies.
 
-Each of these tasks have the following configurations -
-* `Boolean useSandbox`, defaults to `true`
-* `String sandboxConfig`, defaults to `null`, using the Etlas default.
-* `String defaultUserConfig`, defaults to `null`, using the Etlas default.
-* `String etlasBinary`, defaults to the [global configuration](#configuration) in `eta` extension.
-* `List<String> etlasFlags`, defaults to `[]`
-* `List<String> buildFlags`, defaults to `[]`
-* `String buildDir`, defaults to `build/etlas/dist`
-* `List<String> components`, defaults to lib and exe components for `compileEta`,
-    defaults to test components for `testEta`
+#### Per-Project, Per-SourceSet Tasks
 
-## Run Tasks
+* `installDependencies<SourceSet>Eta` - This task installs the Eta dependencies into the Etlas global cache and injects the paths to all the dependency jars into the corresponding Gradle configurations. This task is incremental and will only do work on the first run and every time the dependencies change.
+* `compile<SourceSet>Eta` - This task performs incremental compilation of the corresponding source set. This task depends on `compile<SourceSet>Java` and will have the output of that task in its classpath.
 
-The following run tasks are available for running Eta programs -
-* `runEta`
+For the `main` source set, the tasks are `installDependenciesEta` and `compileEta`.
 
-You can build your own custom run task to run specific executables. This
-is useful if your project defines more than one executable stanza in the
-Cabal file -
+#### Conditional Tasks
 
-```gradle
+If the `application` plugin is enabled as well, the `run` task will run the `main` function defined in `src/main/eta/Main.hs`.
 
-import com.typelead.gradle.eta.tasks.EtaRun
+## Standard Tasks
 
-task foo(type: EtaRun) {
-    component = "foo"
-}
-
-task bar(type: EtaRun) {
-    component = "bar"
-}
-```
-
-## Development Notes
-
-You can run `gradle` with `-i` to enable info logging and see which tasks are being run.
-
-To run the plugin locally,
-you will need to build and deploy the gradle-eta plugin to your local m2 repo with -
-
-```
-% cd path/to/gradle-eta
-% gradle clean assemble publishToMavenLocal
-```
-
-You will need the following in your `build.gradle` for it to resolve the plugin -
-
-```
-buildscript {
-  repositories {
-    mavenLocal()
-
-    dependencies {
-      classpath 'com.typelead:gradle-eta:0.0.1-SNAPSHOT'
-    }
-  }
-}
-
-```
-
-See the `examples/local` project as a demonstration.
-
-
-## Limitations
-
-Currently, `etlas deps` can only be run for projects which have a `library`
-component in their cabal file. This plugin relies one `etlas deps` to resolve
-dependencies, so until `etlas deps` is updated to support non-library components,
-ensure your project contains a `library` stanza in the cabal file.
+The standard Gradle tasks like `build`, `assemble`, so on will work as expected and 
+will trigger compilation of the required Eta source sets.
