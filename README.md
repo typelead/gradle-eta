@@ -89,6 +89,22 @@ Properties:
 * `boolean useSystemEtlas` - If specified, attempts to resolve the etlas binary
     on your system `PATH`.
     
+## Dependencies
+
+You can add Eta dependencies (from Hackage or elsewhere) as follows:
+
+```
+dependencies {
+  eta {
+    compile 'text:1.2.2.2'
+  }
+}
+```
+
+The general format is `[package-name]:[version-or-version-range]` and you can specify dependencies just like you would for Java dependencies in Gradle.
+
+[Ivy version range notation](http://ant.apache.org/ivy/history/latest-milestone/ivyfile/dependency.html) is supported.
+
 ### Tasks
 
 The Eta Gradle Plugin adds the following tasks:
