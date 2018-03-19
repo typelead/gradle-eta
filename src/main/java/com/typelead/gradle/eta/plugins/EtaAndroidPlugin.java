@@ -1,11 +1,14 @@
 package com.typelead.gradle.eta.plugins;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.inject.Inject;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
@@ -18,6 +21,7 @@ import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.builder.model.SourceProvider;
 
@@ -48,6 +52,11 @@ public class EtaAndroidPlugin implements Plugin<Project> {
     private BasePlugin androidPlugin;
     private BaseExtension androidExtension;
 
+    /* This is used to track which variants are executing so
+       that we can skip the installDependencies tasks that
+       are not required. */
+    private Set<String> executingVariants = new HashSet<String>();
+
     @Inject
     public EtaAndroidPlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
         this.sourceDirectorySetFactory = sourceDirectorySetFactory;
@@ -73,6 +82,16 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         configureEtaSourceSetConvention();
         addEtaOptionsToDefaultConfig();
         configureBaseVariants();
+
+        project.getGradle().getTaskGraph().whenReady
+            (taskGraph -> {
+                for (Task task : taskGraph.getAllTasks()) {
+                    if (task instanceof DefaultAndroidTask) {
+                        executingVariants.add(((DefaultAndroidTask) task)
+                                              .getVariantName());
+                    }
+                }
+            });
     }
 
     private void configureEtaSourceSetConvention() {
@@ -162,6 +181,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         installDependenciesTask.setDescription
             ("Installs dependencies for the " + variantName + " Eta source.");
         installDependenciesTask.dependsOnOtherEtaProjects();
+        installDependenciesTask.onlyIf(task -> executingVariants.contains(variantName));
 
         /* Because the installDependenciesTask injects dependencies into the
            configuration, it must run *before* the *main* preBuild phase. */
