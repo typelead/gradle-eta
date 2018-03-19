@@ -1,139 +1,207 @@
 package com.typelead.gradle.eta.plugins;
 
+import java.io.File;
+import java.util.Map;
+import java.util.HashMap;
+
+import javax.inject.Inject;
+
+import org.gradle.api.Describable;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
-import org.gradle.api.plugins.JavaPlugin;
-
-import com.typelead.gradle.eta.tasks.*;
-import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.file.Directory;
+import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileTreeElement;
+import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.plugins.BasePlugin;
-import org.gradle.api.UnknownTaskException;
+import org.gradle.api.plugins.ApplicationPlugin;
+import org.gradle.api.plugins.ApplicationPluginConvention;
+import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.internal.file.SourceDirectorySetFactory;
+import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
+
+import com.typelead.gradle.utils.ExtensionHelper;
+import com.typelead.gradle.eta.api.EtaConfiguration;
+import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
+import com.typelead.gradle.eta.tasks.EtaInstallDependencies;
+import com.typelead.gradle.eta.tasks.EtaCompile;
+import com.typelead.gradle.eta.internal.ConfigurationUtils;
+import com.typelead.gradle.eta.internal.DefaultEtaSourceSet;
 
 /**
  * A {@link Plugin} which sets up an Eta project.
  */
 @SuppressWarnings("WeakerAccess")
-public class EtaPlugin extends EtaBasePlugin implements Plugin<Project> {
+public class EtaPlugin implements Plugin<Project> {
 
-    public static final String CLEAN_ETA_TASK_NAME = "cleanEta";
-    public static final String SANDBOX_INIT_ETA_TASK_NAME = "sandboxInitEta";
-    public static final String SANDBOX_ADD_SOURCES_ETA_TASK_NAME = "sandboxAddSourcesEta";
-    public static final String INSTALL_DEPS_ETA_TASK_NAME = "installDepsEta";
-    public static final String COMPILE_ETA_TASK_NAME = "compileEta";
-    public static final String RUN_ETA_TASK_NAME = "runEta";
-    public static final String TEST_DEPS_ETA_TASK_NAME = "installTestDepsEta";
-    public static final String TEST_COMPILE_ETA_TASK_NAME = "testCompileEta";
-    public static final String TEST_ETA_TASK_NAME = "testEta";
+    private Project project;
+    private SourceDirectorySetFactory sourceDirectorySetFactory;
+
+    @Inject
+    public EtaPlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
+        this.sourceDirectorySetFactory = sourceDirectorySetFactory;
+    }
+
 
     @Override
-    public void configureBeforeEvaluate() {
+    public void apply(Project project) {
+        this.project = project;
+
+        project.getPlugins().apply(EtaBasePlugin.class);
         project.getPlugins().apply(JavaPlugin.class);
 
-        configureEtaCleanTask();
-        configureEtaSandboxInitTask();
-        configureEtaSandboxAddSourcesTask();
-        configureEtaInstallDepsTask();
-        configureEtaCompileTask();
-        configureEtaRunTask();
-        configureEtaTestDepsTask();
-        configureEtaTestCompileTask();
-        configureEtaTestTask();
+        configureSourceSetDefaults();
+        configureApplicationPluginIfPresent();
     }
 
-    @Override
-    public void configureAfterEvaluate() {
-        configureTasksAfterEvaluate();
-        configureBaseCleanTask();
-        configureJavaJarTask();
+    private void configureSourceSetDefaults() {
+        project.getConvention().getPlugin(JavaPluginConvention.class)
+               .getSourceSets().all(this::configureSourceSet);
     }
 
-    private void configureTasksAfterEvaluate() {
-        project.getTasks().forEach(t -> {
-                if (t instanceof AbstractEtlasTask) {
-                    ((AbstractEtlasTask)t).configureWithExtension(extension);
+    private void configureSourceSet(SourceSet sourceSet) {
+
+        final DefaultEtaSourceSet etaSourceSet =
+            ExtensionHelper.createExtension
+              (sourceSet, "eta", DefaultEtaSourceSet.class, sourceSet,
+               sourceDirectorySetFactory);
+
+        final SourceDirectorySet etaSourceDirectorySet = etaSourceSet.getEta();
+
+        etaSourceDirectorySet
+            .srcDir("src/" + sourceSet.getName() + "/eta");
+
+        /* Ensure that you exclude any Eta source files from the
+           resources set. */
+
+        sourceSet.getResources().getFilter()
+            .exclude(element -> etaSourceSet.getEta().contains(element.getFile()));
+
+        sourceSet.getAllSource().source(etaSourceDirectorySet);
+
+        final EtaResolveDependencies resolveDependenciesTask
+            = (EtaResolveDependencies) project.getRootProject().getTasks()
+            .getByPath(EtaBasePlugin.ETA_RESOLVE_DEPENDENCIES_TASK_NAME);
+
+        final FileCollection freezeConfigFile =
+            resolveDependenciesTask.getOutputs().getFiles();
+
+        final Provider<String> sourceConfiguration
+            = project.provider(() -> sourceSet.getCompileClasspathConfigurationName());
+
+        final Provider<String> targetConfiguration
+            = project.provider(() -> sourceSet.getCompileConfigurationName());
+
+        final Provider<Directory> destinationDir
+            = project.getLayout().getBuildDirectory()
+            .dir(etaSourceSet.getRelativeOutputDir());
+
+        /* Create the install dependencies task. */
+
+        final EtaInstallDependencies installDependenciesTask =
+            project.getTasks().create(etaSourceSet.getInstallDependenciesTaskName(),
+                                      EtaInstallDependencies.class);
+
+        installDependenciesTask.setSourceConfiguration(sourceConfiguration);
+        installDependenciesTask.setTargetConfiguration(targetConfiguration);
+        installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
+        installDependenciesTask.setDestinationDir(destinationDir);
+        installDependenciesTask.setSource(etaSourceDirectorySet);
+        installDependenciesTask.dependsOn(resolveDependenciesTask);
+        installDependenciesTask.setDescription("Installs dependencies for the " + sourceSet.getName() + " Eta source.");
+        installDependenciesTask.dependsOnOtherEtaProjects();
+
+        /* The install dependencies tasks injects into this configuration so we must
+           ensure that it runs before the Java compilation. */
+
+        final AbstractCompile javaCompileTask = (AbstractCompile)
+            project.getTasks().getByName(sourceSet.getCompileJavaTaskName());
+
+        javaCompileTask.dependsOn(installDependenciesTask);
+
+        /* Create the compile task. */
+
+        EtaCompile compileTask =
+            project.getTasks().create(etaSourceSet.getCompileTaskName(),
+                                      EtaCompile.class);
+
+
+        Provider<Directory> classesDir = project.provider
+            (() -> {
+                final DirectoryProperty buildDir =
+                  project.getLayout().getBuildDirectory();
+                if (sourceSet.getOutput().isLegacyLayout()) {
+                    return buildDir.dir(buildDir.getAsFile().get().toPath()
+                                        .relativize(sourceSet.getOutput()
+                                                    .getClassesDir().toPath())
+                                        .toString()).get();
                 }
-                if (t instanceof EtaSandboxAddSources) {
-                    t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_INIT_ETA_TASK_NAME));
-                }
-                if (t instanceof EtaInstallDeps) {
-                    t.dependsOn(project.getTasks().getByName(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME));
-                }
-                if (t instanceof EtaCompile) {
-                    t.dependsOn(project.getTasks().getByName(EtaPlugin.INSTALL_DEPS_ETA_TASK_NAME));
-                }
-                if (t instanceof EtaRun) {
-                    t.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
-                }
-                if (t instanceof EtaTestCompile) {
-                    t.dependsOn(project.getTasks().getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
-                }
-                if (t instanceof EtaTest) {
-                    t.dependsOn(project.getTasks().getByName(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME));
+                return buildDir.dir(etaSourceSet.getClassesDir()).get();
+            });
+
+        compileTask.setClasspath(project.provider
+                                 (() -> sourceSet.getCompileClasspath()));
+        compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFile());
+        compileTask.setCabalFile(installDependenciesTask.getCabalFile());
+        compileTask.setDestinationDir(destinationDir);
+        compileTask.addExtraClasspath(javaCompileTask.getDestinationDir());
+        compileTask.setClassesDir(classesDir);
+        compileTask.setSource(etaSourceDirectorySet);
+        compileTask.dependsOn(javaCompileTask);
+        compileTask.setDescription("Compiles the " + sourceSet.getName() + " Eta source.");
+
+        /* Register the Eta classes directory as an output so that the Jar task
+           will pick it up nicely. */
+
+        Map<String, Object> builtByOptions = new HashMap<String, Object>();
+        builtByOptions.put("builtBy", compileTask);
+
+        etaSourceDirectorySet.setOutputDir
+            (project.provider(() -> classesDir.get().getAsFile()));
+
+        /* TODO: Are both classesDir and the output registration below required? */
+        ((DefaultSourceSetOutput) sourceSet.getOutput()).addClassesDir
+            (() -> etaSourceDirectorySet.getOutputDir());
+
+        sourceSet.getOutput().dir(builtByOptions, classesDir);
+
+        /* Register the package databases as artifacts that will be collected
+           upon dependency resolution of project dependencies. */
+
+        addArtifacts(compileTask.getPackageDB(),
+                     sourceSet.getApiElementsConfigurationName(),
+                     sourceSet.getRuntimeConfigurationName(),
+                     sourceSet.getRuntimeElementsConfigurationName());
+    }
+
+    private void addArtifacts(Provider<File> artifact, String... configurationNames) {
+        for (String configurationName : configurationNames) {
+            final Configuration configuration =
+                project.getConfigurations().findByName(configurationName);
+            if (configuration != null) {
+                ConfigurationUtils.getEtaConfiguration(configuration).getArtifacts()
+                    .add(artifact);
+            }
+        }
+    }
+
+    private void configureApplicationPluginIfPresent() {
+        project.getPlugins().all
+            (plugin -> {
+                if (ApplicationPlugin.class.isInstance(plugin)) {
+                    ApplicationPluginConvention pluginConvention =
+                        project.getConvention().getPlugin
+                        (ApplicationPluginConvention.class);
+                    pluginConvention.setMainClassName("eta.main");
                 }
             });
-    }
-
-    private void configureEtaCleanTask() {
-        EtaClean task = project.getTasks().create(EtaPlugin.CLEAN_ETA_TASK_NAME, EtaClean.class);
-        task.setDescription("Clean Eta build artifacts via 'etlas clean'");
-    }
-
-    private void configureEtaSandboxInitTask() {
-        EtaSandboxInit task = project.getTasks().create(EtaPlugin.SANDBOX_INIT_ETA_TASK_NAME, EtaSandboxInit.class);
-        task.setDescription("Initialize an Etlas sandbox if useSandbox=true (default); otherwise, do nothing.");
-    }
-
-    private void configureEtaSandboxAddSourcesTask() {
-        EtaSandboxAddSources task = project.getTasks().create(EtaPlugin.SANDBOX_ADD_SOURCES_ETA_TASK_NAME, EtaSandboxAddSources.class);
-        task.setDescription("Make local packages available in the sandbox via 'etlas sandbox add-source'");
-    }
-
-    private void configureEtaInstallDepsTask() {
-        EtaInstallDeps task = project.getTasks().create(EtaPlugin.INSTALL_DEPS_ETA_TASK_NAME, EtaInstallDeps.class);
-        task.setDescription("Install project dependencies via 'etlas install --dependencies-only'");
-    }
-
-    private void configureEtaCompileTask() {
-        EtaCompile task = project.getTasks().create(EtaPlugin.COMPILE_ETA_TASK_NAME, EtaCompile.class);
-        task.setDescription("Compile Eta sources via 'etlas build'");
-    }
-
-    private void configureEtaRunTask() {
-        EtaRun task = project.getTasks().create(EtaPlugin.RUN_ETA_TASK_NAME, EtaRun.class);
-        task.setDescription("Run a compiled Eta executable");
-    }
-
-    private void configureEtaTestDepsTask() {
-        EtaInstallTestDeps task = project.getTasks().create(EtaPlugin.TEST_DEPS_ETA_TASK_NAME, EtaInstallTestDeps.class);
-        task.setDescription("Install dependencies for Eta tests");
-    }
-
-    private void configureEtaTestCompileTask() {
-        EtaTestCompile task = project.getTasks().create(EtaPlugin.TEST_COMPILE_ETA_TASK_NAME, EtaTestCompile.class);
-        task.setDescription("Compiles Eta test sources via 'etlas build'");
-    }
-
-    private void configureEtaTestTask() {
-        EtaTest task = project.getTasks().create(EtaPlugin.TEST_ETA_TASK_NAME, EtaTest.class);
-        task.setDescription("Run Eta tests");
-    }
-
-    /**
-     * Update the 'clean' lifecycle task to include cleaning the Eta build.
-     */
-    private void configureBaseCleanTask() {
-        final TaskContainer tc = project.getTasks();
-        tc.getByName(BasePlugin.CLEAN_TASK_NAME)
-          .dependsOn(tc.getByName(EtaPlugin.CLEAN_ETA_TASK_NAME));
-    }
-
-    /**
-     * Update the 'jar' lifecycle task to include compiling Eta sources.
-     */
-    private void configureJavaJarTask() {
-        final TaskContainer tc = project.getTasks();
-        tc.getByName(JavaPlugin.JAR_TASK_NAME)
-          .dependsOn(tc.getByName(EtaPlugin.COMPILE_ETA_TASK_NAME));
     }
 }

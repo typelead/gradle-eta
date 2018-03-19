@@ -5,14 +5,17 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.Optional;
+import java.io.Serializable;
 
-import com.typelead.gradle.eta.api.EtaDependency;
+import com.typelead.gradle.eta.api.EtaDirectDependency;
 
 import com.typelead.gradle.utils.Version;
 import com.typelead.gradle.utils.VersionRange;
 import com.typelead.gradle.utils.PrintHelper;
 
-public class DefaultEtaDependency implements EtaDependency {
+public class DefaultEtaDirectDependency implements EtaDirectDependency, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public static final String PACKAGE_ATTRIBUTE = "package";
     public static final String LOWER_ATTRIBUTE   = "lower";
@@ -23,17 +26,17 @@ public class DefaultEtaDependency implements EtaDependency {
     String packageName;
     VersionRange versionRange;
 
-    public DefaultEtaDependency(String packageName, VersionRange versionRange) {
+    public DefaultEtaDirectDependency(String packageName, VersionRange versionRange) {
         this.packageName  = packageName;
         this.versionRange = versionRange;
     }
 
-    public static DefaultEtaDependency create(String dependencyConstraint) {
+    public static DefaultEtaDirectDependency create(String dependencyConstraint) {
         validateConstraint(dependencyConstraint);
         String[] parts = dependencyConstraint.split(":");
         String packageName = parts[0];
         VersionRange versionRange = VersionRange.create(parts[1]);
-        return new DefaultEtaDependency(packageName, versionRange);
+        return new DefaultEtaDirectDependency(packageName, versionRange);
     }
 
     public static void validateConstraint(String dependencyConstraint) {
@@ -47,14 +50,15 @@ public class DefaultEtaDependency implements EtaDependency {
         }
     }
 
-    public static DefaultEtaDependency create(Map<String, String> dependencyConstraintAttributes) {
+    public static DefaultEtaDirectDependency create
+        (Map<String, String> dependencyConstraintAttributes) {
         validateAttributes(dependencyConstraintAttributes);
         String packageName = dependencyConstraintAttributes.get(PACKAGE_ATTRIBUTE);
         Version lowerBound =
             createVersion(dependencyConstraintAttributes.get(LOWER_ATTRIBUTE));
         Version upperBound =
             createVersion(dependencyConstraintAttributes.get(UPPER_ATTRIBUTE));
-        return new DefaultEtaDependency(packageName,
+        return new DefaultEtaDirectDependency(packageName,
                                         VersionRange.create(lowerBound, upperBound));
     }
 

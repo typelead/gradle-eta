@@ -33,8 +33,8 @@ public class CommandLine implements Log {
         return workingDir;
     }
 
-    public void setWorkingDir(String workingDir) {
-        this.workingDir = workingDir;
+    public void setWorkingDir(File workingDir) {
+        this.workingDir = workingDir.getAbsolutePath();
     }
 
     public void execute() {
@@ -86,6 +86,24 @@ public class CommandLine implements Log {
         throw new GradleException("Nonzero (" + p.exitValue()
                                   + ") exit code for command " + command
                                   + " with workingDir " + workingDir);
+    }
+
+    public List<String> executeLogAndGetStandardOutputLines() {
+        List<String> stdOutLines = new ArrayList<>();
+        StringBuilder stdErrBuilder = new StringBuilder();
+        Process p = executeAndConsumeOutput
+            (x -> {
+                logger().info(x);
+                stdOutLines.add(x);
+            },
+             x -> {
+                logger().error(x);
+                stdErrBuilder.append(x).append(System.lineSeparator());
+            });
+        String stdOut = String.join(System.lineSeparator(), stdOutLines);
+        String stdErr = stdErrBuilder.toString();
+        checkExitCode(p, stdOut, stdErr);
+        return stdOutLines;
     }
 
     public void executeWithInputAndLogOutput(String input) {

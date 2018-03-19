@@ -1,90 +1,82 @@
 package com.typelead.gradle.utils;
 
-import com.typelead.gradle.eta.config.EtaExtension;
-import com.typelead.gradle.eta.plugins.EtaPlugin;
-import com.typelead.gradle.eta.plugins.EtaBasePlugin;
-import com.typelead.gradle.eta.tasks.EtlasTaskSpec;
-import org.gradle.api.Project;
-import org.gradle.api.GradleException;
-
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+
+import org.gradle.api.Project;
+import org.gradle.api.GradleException;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.Property;
+
+import com.typelead.gradle.utils.ResolvedExecutable;
+import com.typelead.gradle.eta.api.EtaExtension;
 
 public class EtlasCommand {
 
-    private final Project project;
-    private final boolean useSandbox;
-    private final String sandboxConfig;
-    private final String defaultUserConfig;
-    private final String etlasBinary;
-    private String etlasVersion;
-    private final List<String> etlasFlags;
-    private final List<String> buildFlags;
-    private final String buildDir;
-    private final List<String> components;
-    private final Optional<Boolean> sendMetrics;
+    public static final String ETA_SEND_METRICS_PROPERTY = "etaSendMetrics";
 
-    public EtlasCommand(Project project, EtaExtension extension) {
-        this.project = project;
-        this.useSandbox = extension.getUseSandbox();
-        this.sandboxConfig = extension.getSandboxConfig();
-        this.defaultUserConfig = extension.getDefaultUserConfig();
-        this.etlasBinary = extension.getEtlasBinary();
-        this.etlasVersion = extension.getEtlasVersion();
-        this.etlasFlags = extension.getEtlasFlags();
-        this.buildFlags = extension.getBuildFlags();
-        this.buildDir = extension.getBuildDir();
-        this.components = Collections.emptyList();
-        this.sendMetrics = readSendMetricsProperty(project);
+    private final Provider<ResolvedExecutable> resolvedEtlas;
+    private final Provider<ResolvedExecutable> resolvedEta;
+    private final Property<File> workingDirectory;
+    private final Provider<Optional<Boolean>> sendMetrics;
+
+    public EtlasCommand(final Project project) {
+        final EtaExtension extension =
+            project.getRootProject().getExtensions().findByType(EtaExtension.class);
+
+        this.resolvedEta      = extension.getEta();
+        this.resolvedEtlas    = extension.getEtlas();
+        this.workingDirectory = project.getObjects().property(File.class);
+        this.sendMetrics      = sendMetricsPropertyProvider(project);
     }
 
-    public EtlasCommand(EtlasTaskSpec task) {
-        this.project = task.getProject();
-        this.useSandbox = task.getUseSandbox();
-        this.sandboxConfig = task.getSandboxConfig();
-        this.defaultUserConfig = task.getDefaultUserConfig();
-        this.etlasBinary = task.getEtlasBinary();
-        this.etlasVersion = task.getEtlasVersion();
-        this.etlasFlags = task.getEtlasFlags();
-        this.buildFlags = task.getBuildFlags();
-        this.buildDir = task.getBuildDir();
-        this.components = task.getComponents();
-        this.sendMetrics = readSendMetricsProperty(project);
+    private static Provider<Optional<Boolean>> sendMetricsPropertyProvider
+        (final Project project) {
+        return project.provider(() -> {
+                Object value = project.findProperty
+                    (ETA_SEND_METRICS_PROPERTY);
+                if (value == null) {
+                    return Optional.empty();
+                } else {
+                    String stringValue = (String) value;
+                    if (value.equals("true") || value.equals("false")) {
+                        return Optional.of(Boolean.valueOf(stringValue));
+                    } else {
+                        throw new GradleException
+                            ("Invalid value '" + stringValue +
+                             "' for the etaSendMetrics property." +
+                             " Must be either 'true' or 'false'.");
+                    }
+                }
+            });
     }
 
-    public void setEtlasVersion(String etlasVersion) {
-        this.etlasVersion = etlasVersion;
+    public Property<File> getWorkingDirectory() {
+        return workingDirectory;
     }
 
-    public void configure(List<String> flags) {
-        commandWithComponent("configure", flags);
+    public Optional<Boolean> getSendMetrics() {
+        return sendMetrics.get();
     }
 
-    public void reconfigure(List<String> flags) {
-        commandWithComponent("reconfigure", flags);
+    private String getSendMetricsFlag() {
+        return sendMetrics.get()
+            .map(x -> x.equals(Boolean.TRUE)?
+                 "--enable-send-metrics" : "--disable-send-metrics")
+            .orElse(null);
     }
 
-    public void enableTests() {
-        reconfigure(Collections.singletonList("--enable-tests"));
-    }
-
-    public void clean() {
-        commandWithComponent("clean");
-    }
-
-    public void build() {
-        commandWithComponent("build");
-    }
-
-    public void update() {
-        CommandLine c = initCommandLine();
-        c.getCommand().add("update");
-        c.executeAndLogOutput();
+    private String getEtaVersionFlag() {
+        ResolvedExecutable eta = resolvedEta.get();
+        if (eta.isSystem()) {
+            return null;
+        }
+        return "--select-eta=" + eta.getVersion();
     }
 
     public String getWelcomeMessage() {
@@ -113,74 +105,77 @@ public class EtlasCommand {
         return c.executeAndGetStandardOutput().trim();
     }
 
-    public void test(List<String> testFlags) {
-        commandWithComponent("test", testFlags);
-    }
-
-    public void installDependenciesOnly() {
-        defaultCommand("install", Collections.singletonList("--dependencies-only"));
-    }
-
-    public void installTestDependenciesOnly() {
-        defaultCommand("install", Arrays.asList("--dependencies-only", "--enable-tests"));
-    }
-
-    /**
-     * This will also download dependencies via `etlas install --dependencies-only`
-     */
-    public List<String> depsClasspath(String component) {
-        return defaultCommandLine("deps", component, "--classpath")
-                  .executeAndGetStandardOutputLines()
-                  .stream()
-                  .filter(line -> !line.startsWith(" ")
-                               && !line.contains("Notice:")
-                               && line.contains(File.separator))
-                  .collect(Collectors.toList());
-    }
-
-    /**
-     * If useSandbox == false or if it has already been init'd, skip; otherwise, sandbox init.
-     */
-    public void maybeInitSandbox() {
-        if (!useSandbox) return;
-        // Check if sandbox has been init'd by seeing if the config already exists.
-        boolean sandboxConfigExists =
-            new File(project.getProjectDir(), determineSandboxConfig()).exists();
-        if (sandboxConfigExists) return;
+    public String getGlobalEtaVersion() {
         CommandLine c = initCommandLine();
-        c.getCommand().addAll(Arrays.asList("sandbox", "init"));
+        c.getCommand().addAll(Arrays.asList("exec", "eta", "--", "--numeric-version"));
+        String first = c.executeAndGetStandardOutputLines().stream()
+            .findFirst().orElse(null);
+        if (first == null || first.length() <= 0) {
+            throw new GradleException
+                ("Unable to get the version of the existing Eta installation.");
+        }
+        return first;
+    }
+    public String getLatestEtaVersion() {
+        CommandLine c = initCommandLine();
+        c.getCommand().addAll(Arrays.asList("select", "--list"));
+        String last = c.executeAndGetStandardOutputLines()
+                       .stream().reduce((a, b) -> b).orElse(null);
+        if (last == null || last.length() <= 0) {
+            throw new GradleException
+                ("Unable to get the latest available binary version of Eta.");
+        }
+        return last;
+    }
+
+    public void update() {
+        CommandLine c = initCommandLine();
+        c.getCommand().add("update");
         c.executeAndLogOutput();
     }
 
-    public void deleteSandbox() {
-        CommandLine c = initCommandLine();
-        c.getCommand().addAll(Arrays.asList("sandbox", "delete"));
+    public void installEta() {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().add("update");
         c.executeAndLogOutput();
     }
 
-    public void sandboxAddSources(List<String> sources) {
-        if (sources == null) return;
-        sources.forEach(s -> {
-                CommandLine c = initCommandLine();
-                c.getCommand().addAll(Arrays.asList("sandbox", "add-source", s));
-                c.executeAndLogOutput();
-            });
+    public void freeze() {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().add("freeze");
+        c.executeAndLogOutput();
     }
 
-    private void commandWithComponent(String command, List<String> commandArgs) {
-        List<String> args = new ArrayList<>(commandArgs);
-        args.addAll(components);
-        defaultCommand(command, args);
+    public boolean deps(BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().add("deps");
+        List<String> allLines = c.executeAndGetStandardOutputLines();
+        parseAndExecuteDependencyLines(allLines, filesAndMavenDeps);
+        return isUpToDate(allLines);
     }
 
-    private void commandWithComponent(String command, String... commandArgs) {
-        commandWithComponent(command, Arrays.asList(commandArgs));
+    public boolean build() {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().add("build");
+        List<String> allLines = c.executeLogAndGetStandardOutputLines();
+        return isUpToDate(allLines);
+    }
+
+    public CommandLine initCommandLineWithEtaVersion() {
+        CommandLine c = initCommandLine();
+        String versionFlag = getEtaVersionFlag();
+        if (versionFlag != null) {
+            c.getCommand().add(versionFlag);
+        }
+        return c;
     }
 
     private CommandLine initCommandLine() {
-        CommandLine c = new CommandLine(etlasBinary);
-        c.setWorkingDir(project.getProjectDir().getAbsolutePath());
-        c.getCommand().addAll(etlasFlags);
+        CommandLine c = new CommandLine(resolvedEtlas.get().getPath());
+        File workingDir = workingDirectory.getOrNull();
+        if (workingDir != null) {
+            c.setWorkingDir(workingDir);
+        }
         String sendMetrics = getSendMetricsFlag();
         if (sendMetrics != null) {
             c.getCommand().add(sendMetrics);
@@ -188,60 +183,35 @@ public class EtlasCommand {
         return c;
     }
 
-    private CommandLine defaultCommandLine(String command, List<String> args) {
-        CommandLine c = initCommandLine();
-        if (useSandbox) {
-            if (sandboxConfig != null) c.getCommand().add("--sandbox-config-file=" + sandboxConfig);
-            if (defaultUserConfig != null)
-                c.getCommand().add("--default-user-config=" + defaultUserConfig);
-        }
-        c.getCommand().add(command);
-        List<String> commandArgs = new ArrayList<>(args);
-        commandArgs.addAll(buildFlags);
-        commandArgs.add("--builddir=" + buildDir);
-        c.getCommand().addAll(commandArgs);
-        return c;
-    }
-
-    private CommandLine defaultCommandLine(String command, String... args) {
-        return defaultCommandLine(command, Arrays.asList(args));
-    }
-
-    private void defaultCommand(String command, String... args) {
-        defaultCommand(command, Arrays.asList(args));
-    }
-
-    private void defaultCommand(String command, List<String> args) {
-        defaultCommandLine(command, args).executeAndLogOutput();
-    }
-
-    private String determineSandboxConfig() {
-        return sandboxConfig != null
-            ? sandboxConfig
-            : EtaPlugin.DEFAULT_SANDBOX_CONFIG;
-    }
-
-    public Optional<Boolean> getSendMetrics() {
-        return sendMetrics;
-    }
-
-    private String getSendMetricsFlag() {
-        return sendMetrics.map(x -> x.equals(Boolean.TRUE)?
-                               "--enable-send-metrics" : "--disable-send-metrics")
-                          .orElse(null);
-    }
-
-    private Optional<Boolean> readSendMetricsProperty(Project project) {
-        Object value = project.findProperty(EtaBasePlugin.ETA_SEND_METRICS_PROPERTY);
-        if (value == null) {
-            return Optional.empty();
+    private static boolean isUpToDate(List<String> allLines) {
+        Optional<String> upToDate = allLines.stream()
+            .filter(line -> line.indexOf("Up to date") >= 0)
+            .findAny();
+        if (upToDate.isPresent()) {
+            return true;
         } else {
-            String stringValue = (String) value;
-            if (value.equals("true") || value.equals("false")) {
-                return Optional.of(Boolean.valueOf(stringValue));
+            return false;
+        }
+    }
+
+    private static void parseAndExecuteDependencyLines
+        (List<String> allLines,
+         BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
+        List<String> lines = allLines.stream()
+            .filter(line -> line.startsWith("file:")
+                    || line.startsWith("maven:"))
+            .collect(Collectors.toList());
+        List<File> files = new ArrayList<File>();
+        List<String> mavenDeps = new ArrayList<String>();
+        for (String line: lines) {
+            if (line.startsWith("file:")) {
+                files.add(new File(line.substring(5)));
+            } else if (line.startsWith("maven:")) {
+                mavenDeps.add(line.substring(6));
             } else {
-                throw new GradleException("Invalid value '" + stringValue + "' for the etaSendMetrics property. Must be either 'true' or 'false'.");
+                throw new GradleException("Bad output from `etlas deps`.");
             }
         }
+        filesAndMavenDeps.accept(files, mavenDeps);
     }
 }
