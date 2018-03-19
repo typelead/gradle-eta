@@ -8,6 +8,8 @@ A gradle plugin for building [Eta](http://eta-lang.org/) projects via the
 # Installing
 
 ```shell
+git clone https://github.com/typelead/gradle-eta
+cd gradle-eta
 ./gradlew pTML
 ```
 
