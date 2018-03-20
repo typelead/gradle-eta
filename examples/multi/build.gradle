@@ -1,0 +1,28 @@
+buildscript {
+  repositories {
+    mavenLocal()
+
+    dependencies {
+      classpath 'com.typelead:gradle-eta:+'
+    }
+  }
+}
+
+allprojects {
+  apply plugin: 'eta'
+}
+
+apply plugin: 'application'
+
+eta {
+    useSystemEta   = true
+    useSystemEtlas = true
+}
+
+dependencies {
+  eta {
+    compile 'text:1.2.2.2'
+    compile 'memory:0.14.14'
+    compile project(':hio')
+  }
+}
