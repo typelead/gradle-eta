@@ -97,13 +97,15 @@ public class EtaSetupEnvironment extends DefaultTask {
 
         ensureTelemetryPreferencesAndUpdate(etlas);
 
-        if (!etaExec.isSystem()) {
+        if (etaExec.isFresh()) {
             getProject().getLogger().lifecycle
                 ("Installing Eta v" + etaExec.getVersion()
                  + ". This may take several minutes.");
 
             etlas.installEta();
         }
+
+        setDidWork(etlasExec.isFresh() || etaExec.isFresh());
     }
 
     private ResolvedExecutable resolveEtlas() {
@@ -159,6 +161,7 @@ public class EtaSetupEnvironment extends DefaultTask {
         ExecutableSpec spec = etaSpec.get();
 
         boolean system = false;
+        boolean fresh  = false;
 
         String message = null;
 
@@ -183,6 +186,7 @@ public class EtaSetupEnvironment extends DefaultTask {
         } else if (spec instanceof VersionSpec) {
 
             etaVersion = ((VersionSpec) spec).getVersion();
+            fresh = !etlas.getInstalledEtaVersions().contains(etaVersion);
 
         }
 
@@ -198,7 +202,7 @@ public class EtaSetupEnvironment extends DefaultTask {
 
         }
 
-        return new ResolvedExecutable(null, etaVersion, system);
+        return new ResolvedExecutable(null, etaVersion, system, fresh);
 
     }
 

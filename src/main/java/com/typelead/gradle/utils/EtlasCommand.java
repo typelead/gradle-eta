@@ -131,6 +131,12 @@ public class EtlasCommand {
         return last;
     }
 
+    public List<String> getInstalledEtaVersions() {
+        CommandLine c = initCommandLine();
+        c.getCommand().addAll(Arrays.asList("select", "--list", "--installed"));
+        return c.executeAndGetStandardOutputLines();
+    }
+
     public void update() {
         CommandLine c = initCommandLine();
         c.getCommand().add("update");

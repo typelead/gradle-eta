@@ -3,7 +3,7 @@ buildscript {
     mavenLocal()
 
     dependencies {
-      classpath 'com.typelead:gradle-eta:+'
+      classpath 'com.typelead:gradle-eta:latest.release'
     }
   }
 }
