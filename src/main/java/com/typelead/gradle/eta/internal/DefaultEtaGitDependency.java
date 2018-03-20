@@ -5,10 +5,18 @@ import com.typelead.gradle.eta.api.SourceRepository;
 
 public class DefaultEtaGitDependency implements EtaGitDependency {
 
-    private SourceRepository sourceRepository;
+    private final String packageName;
+    private final SourceRepository sourceRepository;
 
-    public DefaultEtaGitDependency(SourceRepository sourceRepository) {
+    public DefaultEtaGitDependency(String packageName,
+                                   SourceRepository sourceRepository) {
+        this.packageName = packageName;
         this.sourceRepository = sourceRepository;
+    }
+
+    @Override
+    public String getPackageName() {
+        return packageName;
     }
 
     @Override

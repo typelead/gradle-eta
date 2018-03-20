@@ -20,8 +20,6 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.api.BaseVariant;
-import com.android.build.gradle.internal.TaskManager;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.builder.model.SourceProvider;
 
@@ -52,11 +50,6 @@ public class EtaAndroidPlugin implements Plugin<Project> {
     private BasePlugin androidPlugin;
     private BaseExtension androidExtension;
 
-    /* This is used to track which variants are executing so
-       that we can skip the installDependencies tasks that
-       are not required. */
-    private Set<String> executingVariants = new HashSet<String>();
-
     @Inject
     public EtaAndroidPlugin(SourceDirectorySetFactory sourceDirectorySetFactory) {
         this.sourceDirectorySetFactory = sourceDirectorySetFactory;
@@ -82,16 +75,6 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         configureEtaSourceSetConvention();
         addEtaOptionsToDefaultConfig();
         configureBaseVariants();
-
-        project.getGradle().getTaskGraph().whenReady
-            (taskGraph -> {
-                for (Task task : taskGraph.getAllTasks()) {
-                    if (task instanceof DefaultAndroidTask) {
-                        executingVariants.add(((DefaultAndroidTask) task)
-                                              .getVariantName());
-                    }
-                }
-            });
     }
 
     private void configureEtaSourceSetConvention() {
@@ -154,12 +137,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         final FileCollection freezeConfigFile =
             resolveDependenciesTask.getOutputs().getFiles();
 
-        final Provider<String> sourceConfiguration
-            = project.provider(() -> variant.getCompileConfiguration().getName());
-
-        /* TODO: Make this more precise. */
         final Provider<String> targetConfiguration
-            = project.provider(() -> "compile");
+            = project.provider(() -> variant.getCompileConfiguration().getName());
 
         final Provider<Directory> destinationDir
             = project.getLayout().getBuildDirectory()
@@ -172,7 +151,6 @@ public class EtaAndroidPlugin implements Plugin<Project> {
             (NamingScheme.getInstallDependenciesTaskName(variantName),
              EtaInstallDependencies.class);
 
-        installDependenciesTask.setSourceConfiguration(sourceConfiguration);
         installDependenciesTask.setTargetConfiguration(targetConfiguration);
         installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
         installDependenciesTask.setDestinationDir(destinationDir);
@@ -181,13 +159,12 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         installDependenciesTask.setDescription
             ("Installs dependencies for the " + variantName + " Eta source.");
         installDependenciesTask.dependsOnOtherEtaProjects();
-        installDependenciesTask.onlyIf(task -> executingVariants.contains(variantName));
 
         /* Because the installDependenciesTask injects dependencies into the
-           configuration, it must run *before* the *main* preBuild phase. */
+           configuration, it must run *before* the preBuild phase since every task
+           after that will resolve configurations. */
 
-        project.getTasks().findByName(TaskManager.MAIN_PREBUILD)
-            .dependsOn(installDependenciesTask);
+        variant.getPreBuild().dependsOn(installDependenciesTask);
 
         /* Create the compile task. */
 

@@ -20,6 +20,10 @@ public class NamingScheme {
     }
 
     private static String capitalize(String source) {
-        return Character.toUpperCase(source.charAt(0)) + source.substring(1);
+        if (source.length() > 0) {
+            return Character.toUpperCase(source.charAt(0)) + source.substring(1);
+        } else {
+            return source;
+        }
     }
 }

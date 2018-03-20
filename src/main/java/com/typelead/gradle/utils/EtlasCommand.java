@@ -3,9 +3,12 @@ package com.typelead.gradle.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.gradle.api.Project;
@@ -146,7 +149,7 @@ public class EtlasCommand {
         c.executeAndLogOutput();
     }
 
-    public boolean deps(BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
+    public boolean deps(Consumer<ImmutableDAG<String, PackageInfo>> filesAndMavenDeps) {
         CommandLine c = initCommandLineWithEtaVersion();
         c.getCommand().add("deps");
         List<String> allLines = c.executeAndGetStandardOutputLines();
@@ -194,24 +197,47 @@ public class EtlasCommand {
         }
     }
 
+    private static final List<String> emptyList = new LinkedList<String>();
+
     private static void parseAndExecuteDependencyLines
         (List<String> allLines,
-         BiConsumer<List<File>, List<String>> filesAndMavenDeps) {
+         Consumer<ImmutableDAG<String, PackageInfo>> dependencyGraphConsumer) {
         List<String> lines = allLines.stream()
-            .filter(line -> line.startsWith("file:")
-                    || line.startsWith("maven:"))
+            .filter(line -> line.startsWith("dependency,"))
             .collect(Collectors.toList());
-        List<File> files = new ArrayList<File>();
-        List<String> mavenDeps = new ArrayList<String>();
+        int graphSize = lines.size();
+        Map<String, PackageInfo> keyValues = new HashMap<String, PackageInfo>(graphSize);
+        Map<String, List<String>> dependencies = new HashMap<String, List<String>>(graphSize);
         for (String line: lines) {
-            if (line.startsWith("file:")) {
-                files.add(new File(line.substring(5)));
-            } else if (line.startsWith("maven:")) {
-                mavenDeps.add(line.substring(6));
+            String[] parts = line.split(",");
+            String packageName = parts[1];
+            List<String> mavenDeps =
+                nonEmptyStringList(parts[2].split(":"));
+            String jarPath = parts[3];
+            List<String> deps;
+            if (parts.length > 4) {
+                deps = nonEmptyStringList(parts[4].split(":"));
             } else {
-                throw new GradleException("Bad output from `etlas deps`.");
+                deps = emptyList;
+            }
+            keyValues.put(packageName, new PackageInfo(packageName, jarPath, mavenDeps));
+            dependencies.put(packageName, deps);
+        }
+
+        dependencyGraphConsumer.accept(ImmutableDAG.<String,PackageInfo>create(keyValues, dependencies));
+    }
+
+    private static List<String> nonEmptyStringList(String[] strings) {
+        List<String> newStrings = new ArrayList<String>();
+        for (String s: strings) {
+            if (s.length() > 0) {
+                newStrings.add(s);
             }
         }
-        filesAndMavenDeps.accept(files, mavenDeps);
+        if (newStrings.size() > 0) {
+            return newStrings;
+        } else {
+            return emptyList;
+        }
     }
 }

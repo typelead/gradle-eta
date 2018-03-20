@@ -39,22 +39,24 @@ public class EtaResolveDependencies extends DefaultTask {
     public static final String DEFAULT_FREEZE_CONFIG_FILENAME = "cabal.project.freeze";
     public static final String DEFAULT_DESTINATION_DIR = "eta-freeze";
 
+    private final Project project;
     private DirectoryProperty destinationDir;
     private Provider<Set<EtaDependency>> dependencies;
 
     public EtaResolveDependencies() {
-        this.dependencies   = getDefaultDependencyProvider(getProject());
-        this.destinationDir = getProject().getLayout().directoryProperty();
+        this.project        = getProject();
+        this.dependencies   = getDefaultDependencyProvider();
+        this.destinationDir = project.getLayout().directoryProperty();
 
         destinationDir.set
-            (getProject().getLayout().getBuildDirectory().dir(DEFAULT_DESTINATION_DIR));
+            (project.getLayout().getBuildDirectory().dir(DEFAULT_DESTINATION_DIR));
 
         setDescription("Resolve dependencies for all the projects in a multi-project" +
                        " to get a consistent snapshot of all the dependencies.");
     }
 
     public Provider<Set<EtaDependency>>
-        getDefaultDependencyProvider(final Project project) {
+        getDefaultDependencyProvider() {
         return project.provider(() -> {
                 Set<EtaDependency> allDependencies = new LinkedHashSet<>();
                 for (Project p: project.getAllprojects()) {
@@ -118,7 +120,8 @@ public class EtaResolveDependencies extends DefaultTask {
         /* Generate the .cabal & cabal.project files. */
 
         DependencyUtils.foldEtaDependencies
-            (getDependencies(),
+            (project,
+             getDependencies(),
              (directDeps, projectDeps) ->
              CabalHelper.generateCabalFile(getProject().getName(),
                                            getProject().getVersion().toString(),

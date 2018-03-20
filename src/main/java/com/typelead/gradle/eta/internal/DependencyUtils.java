@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 
+import org.gradle.api.Project;
+
 import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaGitDependency;
 import com.typelead.gradle.eta.api.EtaDirectDependency;
@@ -16,19 +18,21 @@ import com.typelead.gradle.eta.api.SourceRepository;
 
 public class DependencyUtils {
     public static void foldEtaDependencies
-        (Collection<EtaDependency> dependencies,
-         BiConsumer<List<String>, List<EtaProjectDependency>> directProjectConsumer,
+        (final Project project,
+         Collection<EtaDependency> dependencies,
+         BiConsumer<List<String>, List<String>> directProjectConsumer,
          Consumer<Set<SourceRepository>> gitConsumer) {
 
         List<String> directDependencies = new ArrayList<>();
-        List<EtaProjectDependency> projectDependencies = new ArrayList<>();
+        List<String> projectDependencies = new ArrayList<>();
         Set<SourceRepository> gitDependencies = new LinkedHashSet<>();
 
         for (EtaDependency dependency : dependencies) {
             if (dependency instanceof EtaDirectDependency) {
                 directDependencies.add(((EtaDirectDependency) dependency).toString());
             } else if (dependency instanceof EtaProjectDependency) {
-                projectDependencies.add(((EtaProjectDependency) dependency));
+                projectDependencies.add(((EtaProjectDependency) dependency)
+                                        .getProject(project).getName());
             } else if (dependency instanceof EtaGitDependency) {
                 gitDependencies.add
                     (((EtaGitDependency) dependency).getSourceRepository());

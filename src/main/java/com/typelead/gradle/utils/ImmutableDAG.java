@@ -3,6 +3,7 @@ package com.typelead.gradle.utils;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -21,7 +22,7 @@ public class ImmutableDAG<K,V> {
     }
 
     public static <K,V> ImmutableDAG<K,V>
-        create(Map<K,V> keyValues, Map<K,Iterable<K>> dependencies) {
+        create(Map<K,V> keyValues, Map<K,? extends Iterable<K>> dependencies) {
         Map<K,NodeInfo<K,V>> graph = new LinkedHashMap<K,NodeInfo<K,V>>();
 
         /* First phase, build out the skeleton of the DAG. */
@@ -29,8 +30,7 @@ public class ImmutableDAG<K,V> {
             K key = entry.getKey();
             int i = 0;
             Iterable<K> deps = dependencies.get(key);
-            Iterator<K> it = deps.iterator();
-            for (; it.hasNext(); i++) {}
+            for (Iterator<K> it = deps.iterator(); it.hasNext(); it.next(), i++) { }
             NodeInfo<K,V> nodeInfo = new NodeInfo(key, entry.getValue(),
                                                   new ArrayList<NodeInfo<K,V>>(i));
             graph.put(key, nodeInfo);
@@ -44,7 +44,14 @@ public class ImmutableDAG<K,V> {
             Iterator<K> it = deps.iterator();
             List<NodeInfo<K,V>> resolvedDeps = new LinkedList<NodeInfo<K,V>>();
             while (it.hasNext()) {
-                resolvedDeps.add(graph.get(it.next()));
+                K depKey = it.next();
+                NodeInfo<K,V> depNodeInfo = graph.get(depKey);
+                if (depNodeInfo == null) {
+                    throw new IllegalArgumentException
+                        ("Unable to find node info for dependent node with key '"
+                         + depKey.toString() + "'");
+                }
+                resolvedDeps.add(depNodeInfo);
             }
             nodeInfo.setDependentNodes(resolvedDeps);
         }
@@ -54,7 +61,13 @@ public class ImmutableDAG<K,V> {
 
     /* Returns the dependency closure of values corresponding to the given
        keys. */
-    public List<V> closure(K... keys) {
+    public List<V> closure(Collection<K> keys) {
+        return differenceClosure(keys, Collections.emptySet());
+    }
+
+    /* Returns the dependency closure of values corresponding to the given
+       keys, ignoring the part of the closure marked by excludedKeys. */
+    public List<V> differenceClosure(Collection<K> keys, Set<K> excludedKeys) {
         /* Stores the output of this function. */
         List<V> results              = new ArrayList<V>();
 
@@ -62,21 +75,23 @@ public class ImmutableDAG<K,V> {
         Set<NodeInfo<K,V>> traversed = new HashSet<NodeInfo<K,V>>();
 
         /* Stores the list of nodes we have yet to traverse */
-        Queue<NodeInfo<K,V>> queue   = new ArrayDeque<NodeInfo<K,V>>(2 * keys.length);
+        Queue<NodeInfo<K,V>> queue   = new ArrayDeque<NodeInfo<K,V>>(2 * keys.size());
 
         /* Initializes the work queue. */
         for (K key : keys) {
-            queue.offer(graph.get(key));
+            if (!excludedKeys.contains(key)) {
+                queue.offer(graph.get(key));
+            }
         }
 
-        /* . */
         while (!queue.isEmpty()) {
             NodeInfo<K,V> current = queue.poll();
             traversed.add(current);
             results.add(current.getValue());
             for (NodeInfo<K,V> nodeInfo : current.getDependentNodes()) {
-                if (!traversed.contains(nodeInfo)) {
-                    queue.add(nodeInfo);
+                if (!excludedKeys.contains(nodeInfo.getKey())
+                 && !traversed.contains(nodeInfo)) {
+                    queue.offer(nodeInfo);
                 }
             }
         }
