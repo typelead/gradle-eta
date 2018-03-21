@@ -33,4 +33,8 @@ public class PrintHelper {
         System.arraycopy(versions, 0, newVersions, 0, newLen);
         return String.join(".", newVersions) + "b" + last;
     }
+
+    public static String machineVersion(String version) {
+        return version.replace("b",".");
+    }
 }

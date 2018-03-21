@@ -185,8 +185,9 @@ public class EtaSetupEnvironment extends DefaultTask {
 
         } else if (spec instanceof VersionSpec) {
 
-            etaVersion = ((VersionSpec) spec).getVersion();
-            fresh = !etlas.getInstalledEtaVersions().contains(etaVersion);
+            final String friendlyEtaVersion = ((VersionSpec) spec).getVersion();
+            etaVersion = PrintHelper.machineVersion(friendlyEtaVersion);
+            fresh = !etlas.getInstalledEtaVersions().contains(friendlyEtaVersion);
 
         }
 
