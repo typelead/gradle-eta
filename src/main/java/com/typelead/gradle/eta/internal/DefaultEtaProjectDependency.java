@@ -1,22 +1,18 @@
 package com.typelead.gradle.eta.internal;
 
-import java.io.Serializable;
-
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
 
 import com.typelead.gradle.eta.api.EtaProjectDependency;
 import com.typelead.gradle.eta.api.SourceRepository;
 
-public class DefaultEtaProjectDependency implements EtaProjectDependency, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class DefaultEtaProjectDependency implements EtaProjectDependency {
 
     private String projectPath;
     private String targetConfiguration;
 
     public DefaultEtaProjectDependency(Project project) {
-        this(project.getPath(), Dependency.DEFAULT_CONFIGURATION);
+        this(project.getPath(), null);
     }
 
     public DefaultEtaProjectDependency(Project project, String targetConfiguration) {
@@ -25,7 +21,9 @@ public class DefaultEtaProjectDependency implements EtaProjectDependency, Serial
 
     public DefaultEtaProjectDependency(String projectPath, String targetConfiguration) {
         this.projectPath = projectPath;
-        this.targetConfiguration = targetConfiguration;
+        this.targetConfiguration =
+            targetConfiguration == null?
+            Dependency.DEFAULT_CONFIGURATION : targetConfiguration;
     }
 
     @Override
@@ -51,5 +49,10 @@ public class DefaultEtaProjectDependency implements EtaProjectDependency, Serial
         EtaProjectDependency projectDep = (EtaProjectDependency) o;
         return projectDep.getProjectPath().equals(projectPath)
             && projectDep.getTargetConfiguration().equals(targetConfiguration);
+    }
+
+    @Override
+    public String toString() {
+        return projectPath;
     }
 }

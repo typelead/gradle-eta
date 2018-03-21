@@ -3,7 +3,7 @@ package com.typelead.gradle.eta.api;
 public class SourceRepository {
 
     public enum CommitIdentifierType {
-        BRANCH, TAG
+        COMMIT, BRANCH, TAG
     }
 
     private String location;

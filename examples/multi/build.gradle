@@ -20,9 +20,7 @@ eta {
 }
 
 dependencies {
-  eta {
-    compile 'text:1.2.2.2'
-    compile 'memory:0.14.14'
+    compile eta('text:1.2.2.2')
+    compile eta('memory:0.14.14')
     compile project(':hio')
-  }
 }

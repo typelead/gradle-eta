@@ -82,22 +82,10 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
         }
 
         List<String> keys = new ArrayList<String>();
-        List<Map<String,String>> resolvedProjectDependencies
-            = new ArrayList<Map<String, String>>();
 
         for (EtaDependency dep : dependencies) {
             if (dep instanceof HasPackageName) {
                 keys.add(((HasPackageName) dep).getPackageName());
-            } else if (dep instanceof EtaProjectDependency) {
-                final EtaProjectDependency projectDependency =
-                    (EtaProjectDependency) dep;
-
-                Map<String, String> projectOptions = new HashMap<String, String>();
-                projectOptions.put("path",
-                                   projectDependency.getProject(project).getPath());
-                projectOptions.put("configuration",
-                                   projectDependency.getTargetConfiguration());
-                resolvedProjectDependencies.add(projectOptions);
             }
         }
 
@@ -123,10 +111,6 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
 
                 for (String mavenDep : resolvedMavenDependencies) {
                     handler.add(configurationName, mavenDep);
-                }
-
-                for (Map<String, String> projectOptions : resolvedProjectDependencies) {
-                    handler.add(configurationName, handler.project(projectOptions));
                 }
 
                 if (fileDeps.size() > 0) {

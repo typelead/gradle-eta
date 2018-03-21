@@ -106,6 +106,9 @@ public class CabalHelper {
                 case TAG:
                     sb.append("  tag: ");
                     break;
+                case COMMIT:
+                    sb.append("  commit: ");
+                    break;
                 }
                 println(sb, sourceRepository.getCommitIdentifier());
             }

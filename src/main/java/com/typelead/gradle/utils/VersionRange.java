@@ -1,11 +1,8 @@
 package com.typelead.gradle.utils;
 
-import java.io.Serializable;
 import java.util.Optional;
 
-public class VersionRange implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class VersionRange {
 
     private Version lowerBound;
     private boolean lowerStrict;

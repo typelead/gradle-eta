@@ -71,8 +71,9 @@ public class EtaResolveDependencies extends DefaultTask {
     }
 
     @Input
-    public Set<EtaDependency> getDependencies() {
-        return dependencies.get();
+    public Set<String> getDependencies() {
+        return dependencies.get().stream()
+            .map(Object::toString).collect(Collectors.toSet());
     }
 
     public void setDependencies
@@ -121,7 +122,7 @@ public class EtaResolveDependencies extends DefaultTask {
 
         DependencyUtils.foldEtaDependencies
             (project,
-             getDependencies(),
+             dependencies.get(),
              (directDeps, projectDeps) ->
              CabalHelper.generateCabalFile(getProject().getName(),
                                            getProject().getVersion().toString(),

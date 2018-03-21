@@ -2,8 +2,10 @@ package com.typelead.gradle.eta.plugins;
 
 import java.io.File;
 import java.util.Optional;
+import java.util.Set;
 import java.nio.file.Paths;
 
+import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -11,14 +13,17 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ProjectDependency;
 
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.ExtensionHelper;
+import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.tasks.EtaSetupEnvironment;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
-import com.typelead.gradle.eta.internal.DefaultEtaDependencyHandler;
+import com.typelead.gradle.eta.internal.DefaultEtaProjectDependency;
 
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
@@ -31,7 +36,6 @@ public class EtaBasePlugin implements Plugin<Project> {
 
     public static final String DEFAULT_ETA_MAIN_CLASS = "eta.main";
 
-    public static final String ETA_DEPENDENCY_HANDLER_DSL_NAME  = "eta";
     public static final String ETA_CONFIGURATION_EXTENSION_NAME  = "eta";
 
     /* Tasks */
@@ -48,6 +52,9 @@ public class EtaBasePlugin implements Plugin<Project> {
 
         project.getPlugins().apply(BasePlugin.class);
 
+        EtaPluginConvention etaConvention = new EtaPluginConvention(project);
+        project.getConvention().getPlugins().put("eta", etaConvention);
+
         createRootEtaExtension();
 
         addEtaExtensionForConfigurations();
@@ -63,17 +70,28 @@ public class EtaBasePlugin implements Plugin<Project> {
     }
 
     private void addEtaExtensionForConfigurations() {
-        ExtensionHelper.createExtension(project.getDependencies(),
-                                        ETA_DEPENDENCY_HANDLER_DSL_NAME,
-                                        DefaultEtaDependencyHandler.class,
-                                        project,
-                                        project.getConfigurations());
-        project.getConfigurations()
-            .all(configuration ->
-                 ExtensionHelper.createExtension(configuration,
-                                                 ETA_CONFIGURATION_EXTENSION_NAME,
-                                                 DefaultEtaConfiguration.class,
-                                                 configuration));
+        project.getConfigurations().all(this::populateEtaConfiguration);
+
+    }
+    private void populateEtaConfiguration(final Configuration configuration) {
+        final DefaultEtaConfiguration etaConfiguration =
+            ExtensionHelper.createExtension
+            (configuration, ETA_CONFIGURATION_EXTENSION_NAME,
+             DefaultEtaConfiguration.class, configuration);
+        DomainObjectCollection<EtaDependency> dependencies =
+            etaConfiguration.getDependencies();
+        configuration.getDependencies().all
+            (dependency -> {
+                if (dependency instanceof ProjectDependency) {
+                    final ProjectDependency projectDependency =
+                        (ProjectDependency) dependency;
+                    dependencies.add(new DefaultEtaProjectDependency
+                                     (projectDependency.getDependencyProject(),
+                                      projectDependency.getTargetConfiguration()));
+                } else if (dependency instanceof EtaDependency) {
+                    dependencies.add((EtaDependency) dependency);
+                }
+            });
     }
 
     private void configureEtaRootTasks() {

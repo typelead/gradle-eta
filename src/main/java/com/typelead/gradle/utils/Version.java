@@ -1,13 +1,9 @@
 package com.typelead.gradle.utils;
 
-import java.io.Serializable;
-
 /**
  * Supports comparing Version numbers.
  */
-public class Version implements Comparable<Version>, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class Version implements Comparable<Version> {
 
     private final int[] parts;
 
