@@ -93,11 +93,9 @@ Properties:
 
 You can add Eta dependencies (from Hackage or elsewhere) as follows:
 
-```
+```gradle
 dependencies {
-  eta {
-    compile 'text:1.2.2.2'
-  }
+    compile eta('text:1.2.2.2')
 }
 ```
 
