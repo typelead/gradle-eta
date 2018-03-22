@@ -158,7 +158,9 @@ public class EtlasCommand {
     public boolean deps(Consumer<ImmutableDAG<String, PackageInfo>> filesAndMavenDeps) {
         CommandLine c = initCommandLineWithEtaVersion();
         c.getCommand().add("deps");
-        List<String> allLines = c.executeAndGetStandardOutputLines();
+        List<String> allLines =
+            c.executeLogAndGetStandardOutputLines
+            (s -> s.startsWith("Downloading ") || s.startsWith("Building "));
         parseAndExecuteDependencyLines(allLines, filesAndMavenDeps);
         return isUpToDate(allLines);
     }

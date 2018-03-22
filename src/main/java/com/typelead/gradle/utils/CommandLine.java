@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class CommandLine implements Log {
@@ -93,13 +94,22 @@ public class CommandLine implements Log {
                                   + ") exit code for command " + command
                                   + " with workingDir " + workingDir);
     }
+    private static Predicate<String> alwaysFalse = x -> false;
 
     public List<String> executeLogAndGetStandardOutputLines() {
+        return executeLogAndGetStandardOutputLines(alwaysFalse);
+    }
+
+    public List<String> executeLogAndGetStandardOutputLines(Predicate<String> logLoudly) {
         List<String> stdOutLines = new ArrayList<>();
         StringBuilder stdErrBuilder = new StringBuilder();
         Process p = executeAndConsumeOutput
             (x -> {
-                logger().info(x);
+                if (logLoudly.test(x)) {
+                    logger().lifecycle(x);
+                } else {
+                    logger().info(x);
+                }
                 stdOutLines.add(x);
             },
              x -> {
