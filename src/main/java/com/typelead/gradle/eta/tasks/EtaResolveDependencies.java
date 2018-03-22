@@ -109,6 +109,11 @@ public class EtaResolveDependencies extends DefaultTask {
                                      + workingDir.getAbsolutePath());
         }
 
+        /* Delete existing *.cabal files to avoid errors when changing the project
+           name. */
+
+        project.delete(project.fileTree(workingDir,
+                                        fileTree -> fileTree.include("*.cabal")));
 
         /* Remove the cabal.project.freeze file from a previous run, if it exists. */
 

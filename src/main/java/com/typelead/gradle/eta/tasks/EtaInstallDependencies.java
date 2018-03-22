@@ -202,12 +202,6 @@ public class EtaInstallDependencies extends DefaultTask {
     @TaskAction
     public void installDependencies() {
 
-        /* TODO: Handle the case where the .cabal file name can change if
-                 the project name changes and the old cabal file must be deleted -
-                 otherwise Etlas will yell! Or send the new cabal file as a
-                 target.
-        */
-
         /* Create the destination directory if it doesn't exist. */
 
         final File workingDir = getDestinationDir();
@@ -216,6 +210,12 @@ public class EtaInstallDependencies extends DefaultTask {
             throw new GradleException("Unable to create destination directory: "
                                       + workingDir.getAbsolutePath());
         }
+
+        /* Delete existing *.cabal files to avoid errors when changing the project
+           name. */
+
+        project.delete(project.fileTree(workingDir,
+                                        fileTree -> fileTree.include("*.cabal")));
 
         /* Ensure the freezeConfig FileCollection contains exactly one file.
            TODO: Find a better way to enforce this invariant? */
