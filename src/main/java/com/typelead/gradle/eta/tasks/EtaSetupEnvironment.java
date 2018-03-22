@@ -85,6 +85,8 @@ public class EtaSetupEnvironment extends DefaultTask {
            invocation to work. */
         resolvedEtlas.set(etlasExec);
 
+        ensureTelemetryPreferencesAndUpdate(etlas);
+
         if (etlasExec.getVersion() == null) {
 
             etlasExec.setVersion(etlas.numericVersion());
@@ -94,8 +96,6 @@ public class EtaSetupEnvironment extends DefaultTask {
         ResolvedExecutable etaExec = resolveEta(etlas);
 
         resolvedEta.set(etaExec);
-
-        ensureTelemetryPreferencesAndUpdate(etlas);
 
         if (etaExec.isFresh()) {
             getProject().getLogger().lifecycle
