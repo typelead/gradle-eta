@@ -80,7 +80,13 @@ public class CommandLine implements Log {
     }
 
     public void executeAndLogOutput() {
-        Process p = executeAndConsumeOutput(x -> logger().info(x),
+        executeAndLogOutput(false);
+    }
+
+    public void executeAndLogOutput(boolean loud) {
+        Consumer<String> lineConsumer =
+            loud? x -> logger().lifecycle(x) : x -> logger().info(x);
+        Process p = executeAndConsumeOutput(lineConsumer,
                                             x -> logger().error(x));
         if (p.exitValue() == 0) return;
         throw new GradleException("Nonzero (" + p.exitValue()

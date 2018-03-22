@@ -42,7 +42,7 @@ public class EtlasCache implements Log {
 
     public String putBinaryForVersion(String version, URL url, Arch arch) {
         Path target = Paths.get(uncheckedBinaryPath(version, arch));
-        logger().info("Downloading etlas from: " + url + " ; caching to " + target);
+        logger().lifecycle("Downloading etlas from: " + url + " ; caching to " + target);
         File dir = target.getParent().toFile();
         if (!dir.exists()) {
             if (!dir.mkdirs()) {

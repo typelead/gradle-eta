@@ -99,8 +99,7 @@ public class EtaSetupEnvironment extends DefaultTask {
 
         if (etaExec.isFresh()) {
             getProject().getLogger().lifecycle
-                ("Installing Eta v" + etaExec.getVersion()
-                 + ". This may take several minutes.");
+                ("Installing Eta v" + etaExec.getVersion());
 
             etlas.installEta();
         }

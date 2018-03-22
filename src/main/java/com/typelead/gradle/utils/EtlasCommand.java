@@ -146,7 +146,7 @@ public class EtlasCommand {
     public void installEta() {
         CommandLine c = initCommandLineWithEtaVersion();
         c.getCommand().add("update");
-        c.executeAndLogOutput();
+        c.executeAndLogOutput(true);
     }
 
     public void freeze() {
