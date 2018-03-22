@@ -63,7 +63,9 @@ public class EtaResolveDependencies extends DefaultTask {
                     for (Configuration c: p.getConfigurations()) {
                         final EtaConfiguration etaConfiguration =
                             ExtensionHelper.getExtension(c, EtaConfiguration.class);
-                        allDependencies.addAll(etaConfiguration.getAllDependencies());
+                        if (etaConfiguration != null) {
+                            allDependencies.addAll(etaConfiguration.getAllDependencies());
+                        }
                     }
                 }
                 return allDependencies;

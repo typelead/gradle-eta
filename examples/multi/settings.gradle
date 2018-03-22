@@ -1,1 +1,1 @@
-include 'hio'
+include 'hio', 'java-deep', 'java-shallow'

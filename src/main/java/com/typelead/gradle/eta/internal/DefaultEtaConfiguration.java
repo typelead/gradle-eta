@@ -141,7 +141,9 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
                     ConfigurationUtils.getEtaConfiguration
                     (projectDependency.getProject(project),
                      projectDependency.getTargetConfiguration());
-                allArtifacts.addAll(etaConfiguration.getAllArtifacts(project));
+                if (etaConfiguration != null) {
+                    allArtifacts.addAll(etaConfiguration.getAllArtifacts(project));
+                }
             }
         }
         for (Configuration configuration : parentConfiguration.getExtendsFrom()) {

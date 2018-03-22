@@ -9,9 +9,12 @@ buildscript {
 }
 
 allprojects {
-  apply plugin: 'eta'
+  repositories {
+    mavenCentral()
+  }
 }
 
+apply plugin: 'eta'
 apply plugin: 'application'
 
 eta {
@@ -23,4 +26,5 @@ dependencies {
     compile eta('text:1.2.2.2')
     compile eta('memory:0.14.14')
     compile project(':hio')
+    compile project(':java-shallow')
 }

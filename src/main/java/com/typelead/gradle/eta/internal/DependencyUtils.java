@@ -15,6 +15,7 @@ import com.typelead.gradle.eta.api.EtaGitDependency;
 import com.typelead.gradle.eta.api.EtaDirectDependency;
 import com.typelead.gradle.eta.api.EtaProjectDependency;
 import com.typelead.gradle.eta.api.SourceRepository;
+import com.typelead.gradle.eta.plugins.EtaPlugin;
 
 public class DependencyUtils {
     public static void foldEtaDependencies
@@ -31,8 +32,11 @@ public class DependencyUtils {
             if (dependency instanceof EtaDirectDependency) {
                 directDependencies.add(((EtaDirectDependency) dependency).toString());
             } else if (dependency instanceof EtaProjectDependency) {
-                projectDependencies.add(((EtaProjectDependency) dependency)
-                                        .getProject(project).getName());
+                final Project targetProject =
+                    ((EtaProjectDependency) dependency).getProject(project);
+                if (isEtaProject(targetProject)) {
+                    projectDependencies.add(targetProject.getName());
+                }
             } else if (dependency instanceof EtaGitDependency) {
                 gitDependencies.add
                     (((EtaGitDependency) dependency).getSourceRepository());
@@ -46,5 +50,9 @@ public class DependencyUtils {
         if (gitConsumer != null) {
             gitConsumer.accept(gitDependencies);
         }
+    }
+
+    private static boolean isEtaProject(final Project project) {
+        return project.getPlugins().hasPlugin(EtaPlugin.class);
     }
 }
