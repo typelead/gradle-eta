@@ -106,6 +106,9 @@ public class EtaBasePlugin implements Plugin<Project> {
                 project.getTasks().create(ETA_RESOLVE_DEPENDENCIES_TASK_NAME,
                                           EtaResolveDependencies.class);
 
+            resolveDependenciesTask.setVersionsChanged
+                (setupEnvironmentTask.getVersionsChanged());
+
             resolveDependenciesTask.dependsOn(setupEnvironmentTask);
         }
     }

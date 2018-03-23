@@ -9,4 +9,9 @@ public class SystemSpec extends ExecutableSpec {
     }
 
     private SystemSpec() {}
+
+    @Override
+    public String toString() {
+        return "SystemSpec";
+    }
 }

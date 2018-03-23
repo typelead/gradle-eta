@@ -13,6 +13,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.tasks.CompileClasspath;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
@@ -51,40 +52,26 @@ public class EtaCompile extends SourceTask {
 
         /* TODO: Do these paths need to be portable? */
         this.packageDB = project.provider
-            (() -> {
-                File file = destinationDir
-                  .file("dist/packagedb/eta-" + getEtaVersion())
-                  .get().getAsFile();
-                if (file == null) {
-                    /* TODO: This seems like a hack since null provider values are not
-                       allowed. Maybe use Optional instead? */
-                    file = project.getLayout().getBuildDirectory().getAsFile().get();
-                }
-                return file;
-            });
+            (() ->
+             new File(getDestinationDir(), "dist/packagedb/eta-" + getEtaVersion()));
 
         this.outputJar = project.provider
             (() -> {
-                Set<File> files = project.fileTree(destinationDir.get(),
-                                                   fileTree ->
-                                                   fileTree.include
-                                                   ("**/*" + project.getName()
-                                                           + "*.jar"))
-                                         .getFiles();
+                File destinationDir = getDestinationDir();
+                try {
+                    return project.fileTree
+                        (destinationDir, fileTree ->
+                         fileTree.include("**/eta-" + getEtaVersion() + "/**/*"
+                                          + project.getName() + "*.jar"))
+                        .getSingleFile();
 
-                /* TODO: This seems like a hack since null provider values are not
-                   allowed. Maybe use Optional instead? */
-                File file = project.getLayout().getBuildDirectory().file("stub-output.jar").get().getAsFile();
-                if (files.size() > 1) {
-                    throw new GradleException("More than one output jar file was found.");
-                } else {
-                    for (File f : files) {
-                        file = f;
-                        break;
-                    }
+                } catch (IllegalStateException e) {
+                    return new File(destinationDir,
+                                    "eta-" + getEtaVersion() + "-stub-output.jar");
                 }
-                return file;
             });
+
+        getOutputs().upToDateWhen(task -> false);
     }
 
     @Input
@@ -93,8 +80,8 @@ public class EtaCompile extends SourceTask {
     }
 
     @InputFile
-    public Provider<RegularFile> getCabalProjectFile() {
-        return cabalProjectFile;
+    public File getCabalProjectFile() {
+        return cabalProjectFile.get().getAsFile();
     }
 
     public void setCabalProjectFile(Provider<RegularFile> cabalProjectFile) {
@@ -102,21 +89,12 @@ public class EtaCompile extends SourceTask {
     }
 
     @InputFile
-    public Provider<RegularFile> getCabalFile() {
-        return cabalFile;
+    public File getCabalFile() {
+        return cabalFile.get().getAsFile();
     }
 
     public void setCabalFile(Provider<RegularFile> cabalFile) {
         this.cabalFile = cabalFile;
-    }
-
-    @Input
-    public File getDestinationDir() {
-        return destinationDir.getAsFile().get();
-    }
-
-    public void setDestinationDir(Provider<Directory> destinationDir) {
-        this.destinationDir.set(destinationDir);
     }
 
     public void setClassesDir(Provider<Directory> classesDir) {
@@ -132,7 +110,7 @@ public class EtaCompile extends SourceTask {
         this.classpathProvider = classpathProvider;
     }
 
-    @InputFiles
+    @CompileClasspath
     public List<File> getExtraClasspath() {
         return extraClasspath;
     }
@@ -145,12 +123,29 @@ public class EtaCompile extends SourceTask {
              we will be sending *a lot* of package dbs! Instead, we can collect
              the .conf files and construct a new package db via eta-pkg recache
              on every build. */
-    public Provider<File> getPackageDB() {
+
+    @OutputDirectory
+    public File getPackageDB() {
+        return packageDB.get();
+    }
+
+    @Internal
+    public Provider<File> getPackageDBProvider() {
         return packageDB;
     }
 
-    public Provider<File> getOutputJarFile() {
-        return outputJar;
+    @OutputFile
+    public File getOutputJarFile() {
+        return outputJar.get();
+    }
+
+    @OutputDirectory
+    public File getDestinationDir() {
+        return destinationDir.getAsFile().get();
+    }
+
+    public void setDestinationDir(Provider<Directory> destinationDir) {
+        this.destinationDir.set(destinationDir);
     }
 
     @TaskAction
@@ -158,14 +153,7 @@ public class EtaCompile extends SourceTask {
 
         final Project project = getProject();
 
-        /* Create the destination directory if it doesn't exist. */
-
         final File workingDir = getDestinationDir();
-
-        if (!workingDir.exists() && !workingDir.mkdirs()) {
-            throw new GradleException("Unable to create destination directory: "
-                                      + workingDir.getAbsolutePath());
-        }
 
         /* Create cabal.project.local file that will contain configuration options:
            - Configure the `-cp` flag

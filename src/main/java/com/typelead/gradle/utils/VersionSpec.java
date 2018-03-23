@@ -1,7 +1,7 @@
 package com.typelead.gradle.utils;
 
 public class VersionSpec extends ExecutableSpec {
-    private String version;
+    private final String version;
 
     public VersionSpec(String version) {
         this.version = version;
@@ -9,5 +9,10 @@ public class VersionSpec extends ExecutableSpec {
 
     public String getVersion() {
         return version;
+    }
+
+    @Override
+    public String toString() {
+        return "VersionSpec{" + version + "}";
     }
 }

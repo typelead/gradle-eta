@@ -1,6 +1,7 @@
 package com.typelead.gradle.eta.tasks;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -19,8 +20,10 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.provider.Provider;
@@ -30,6 +33,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.CabalHelper;
+import static com.typelead.gradle.utils.CabalHelper.WriteResult;
 import com.typelead.gradle.utils.PackageInfo;
 import com.typelead.gradle.eta.api.EtaConfiguration;
 import com.typelead.gradle.eta.api.EtaDependency;
@@ -47,6 +51,7 @@ public class EtaInstallDependencies extends DefaultTask {
     private Provider<String> projectName;
     private Provider<String> projectVersion;
     private FileCollection freezeConfigFile;
+    private Provider<Boolean> freezeConfigChanged;
     private DirectoryProperty destinationDir;
     private SourceDirectorySet sourceDirectories;
     private Provider<List<String>> modulesProvider;
@@ -80,7 +85,7 @@ public class EtaInstallDependencies extends DefaultTask {
             .file(project.provider(() -> getProjectName() + DEFAULT_CABAL_FILENAME));
         this.executable = project.getObjects().property(String.class);
 
-        setDescription("Install dependencies for the Eta project.");
+        getOutputs().upToDateWhen(task -> false);
     }
 
     @Input
@@ -112,19 +117,20 @@ public class EtaInstallDependencies extends DefaultTask {
     }
 
     @Input
-    public File getDestinationDir() {
-        return destinationDir.getAsFile().get();
+    public boolean isFreezeConfigChanged() {
+        return freezeConfigChanged.get();
     }
 
-    public void setDestinationDir(Provider<Directory> destinationDir) {
-        this.destinationDir.set(destinationDir);
+    public void setFreezeConfigChanged(Provider<Boolean> freezeConfigChanged) {
+        this.freezeConfigChanged = freezeConfigChanged;
     }
 
-    @Input
+    @InputFiles
     public FileCollection getSourceDirs() {
         return sourceDirectories.getSourceDirectories();
     }
 
+    @InputFiles
     public FileCollection getSource() {
         return sourceDirectories;
     }
@@ -166,12 +172,33 @@ public class EtaInstallDependencies extends DefaultTask {
             .map(Object::toString).collect(Collectors.toSet());
     }
 
-    public Provider<RegularFile> getCabalProjectFile() {
+    @OutputFile
+    public File getCabalProjectFile() {
+        return cabalProjectFile.get().getAsFile();
+    }
+
+    @Internal
+    public Provider<RegularFile> getCabalProjectFileProvider() {
         return cabalProjectFile;
     }
 
-    public Provider<RegularFile> getCabalFile() {
+    @OutputFile
+    public File getCabalFile() {
+        return cabalFile.get().getAsFile();
+    }
+
+    @Internal
+    public Provider<RegularFile> getCabalFileProvider() {
         return cabalFile;
+    }
+
+    @OutputDirectory
+    public File getDestinationDir() {
+        return destinationDir.getAsFile().get();
+    }
+
+    public void setDestinationDir(Provider<Directory> destinationDir) {
+        this.destinationDir.set(destinationDir);
     }
 
     public void dependsOnOtherEtaProjects() {
@@ -202,40 +229,9 @@ public class EtaInstallDependencies extends DefaultTask {
     @TaskAction
     public void installDependencies() {
 
-        /* Create the destination directory if it doesn't exist. */
-
         final File workingDir = getDestinationDir();
 
-        if (!workingDir.exists() && !workingDir.mkdirs()) {
-            throw new GradleException("Unable to create destination directory: "
-                                      + workingDir.getAbsolutePath());
-        }
-
-        /* Delete existing *.cabal files to avoid errors when changing the project
-           name. */
-
-        project.delete(project.fileTree(workingDir,
-                                        fileTree -> fileTree.include("*.cabal")));
-
-        /* Ensure the freezeConfig FileCollection contains exactly one file.
-           TODO: Find a better way to enforce this invariant? */
-
-        File tmpFreezeConfig = null;
-
-        try {
-            tmpFreezeConfig = freezeConfigFile.getSingleFile();
-        } catch (IllegalStateException e) {
-            throw new GradleException("The freezeConfig file collection contains more than one element!", e);
-        }
-
-        final File freezeConfig = tmpFreezeConfig;
-
-        /* Copy the project-global freeze file into the working directory. */
-
-        project.copy(copySpec -> {
-                copySpec.from(freezeConfig);
-                copySpec.into(workingDir);
-            });
+        copyFreezeConfigIfChanged(workingDir);
 
         /* Calculate all the modules */
 
@@ -251,6 +247,8 @@ public class EtaInstallDependencies extends DefaultTask {
         final String executableSpec = exec;
 
         /* Generate the .cabal & cabal.project files. */
+
+        final WriteResult[] writeResults = new WriteResult[2];
 
         final String targetConfigurationName = getTargetConfiguration();
 
@@ -271,20 +269,37 @@ public class EtaInstallDependencies extends DefaultTask {
 
                 directDeps.addAll(projectDeps);
 
-                CabalHelper.generateCabalFile
-                    (project.getName(),
-                     project.getVersion().toString(),
-                     executableSpec,
+                writeResults[0] = CabalHelper.generateCabalFile
+                    (project.getName(), project.getVersion().toString(), executableSpec,
                      getSourceDirs().getFiles().stream()
                      .map(File::getAbsolutePath)
                      .collect(Collectors.toList()),
-                     modules,
-                     directDeps,
-                     workingDir);
+                     modules, directDeps, workingDir);
 
-            }, gitDeps -> CabalHelper.generateCabalProjectFile(gitDeps,
-                                                               packageDBs,
-                                                               workingDir));
+            }, gitDeps -> {
+                writeResults[1] =
+                    CabalHelper.generateCabalProjectFile(gitDeps, packageDBs,
+                                                         workingDir);
+            });
+
+        /* Delete existing *.cabal files to avoid errors when changing the project
+           name. */
+
+        final File oldCabalFile = writeResults[0].getFile();
+
+        project.delete
+            (project.fileTree
+             (workingDir, fileTree -> {
+                 fileTree.include("*.cabal");
+                 fileTree.exclude
+                     (fileTreeElement -> {
+                         try {
+                             return fileTreeElement.getFile().getCanonicalPath()
+                                 .equals(oldCabalFile.getCanonicalPath());
+                         } catch (IOException e) {
+                             return true;
+                         }
+                     });}));
 
         /* Fork an etlas process to install the dependencies.  */
 
@@ -305,5 +320,29 @@ public class EtaInstallDependencies extends DefaultTask {
             });
 
         setDidWork(!isUpToDate);
+    }
+
+    private void copyFreezeConfigIfChanged(File workingDir) {
+
+        if (isFreezeConfigChanged()) {
+            /* Copy the project-global freeze file into the working directory. */
+
+            File tmpFreezeConfig = null;
+
+            try {
+                tmpFreezeConfig = freezeConfigFile
+                    .filter(file -> file.getName().endsWith(".freeze")).getSingleFile();
+            } catch (IllegalStateException e) {
+                throw new GradleException
+                    ("The freezeConfig file collection contains more than one element!", e);
+            }
+
+            final File freezeConfig = tmpFreezeConfig;
+
+            project.copy(copySpec -> {
+                    copySpec.from(freezeConfig);
+                    copySpec.into(workingDir);
+                });
+        }
     }
 }

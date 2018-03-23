@@ -1,6 +1,7 @@
 package com.typelead.gradle.eta.tasks;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.stream.Stream;
@@ -15,8 +16,9 @@ import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
@@ -25,6 +27,7 @@ import org.gradle.api.artifacts.Configuration;
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.utils.CabalHelper;
+import static com.typelead.gradle.utils.CabalHelper.WriteResult;
 import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaDirectDependency;
 import com.typelead.gradle.eta.api.EtaGitDependency;
@@ -40,6 +43,7 @@ public class EtaResolveDependencies extends DefaultTask {
     public static final String DEFAULT_DESTINATION_DIR = "eta-freeze";
 
     private final Project project;
+    private Provider<Boolean> versionsChanged;
     private DirectoryProperty destinationDir;
     private Provider<Set<EtaDependency>> dependencies;
 
@@ -55,6 +59,7 @@ public class EtaResolveDependencies extends DefaultTask {
                        " to get a consistent snapshot of all the dependencies.");
     }
 
+    @Internal
     public Provider<Set<EtaDependency>>
         getDefaultDependencyProvider() {
         return project.provider(() -> {
@@ -73,6 +78,15 @@ public class EtaResolveDependencies extends DefaultTask {
     }
 
     @Input
+    public boolean getVersionsChanged() {
+        return versionsChanged.get();
+    }
+
+    public void setVersionsChanged(Provider<Boolean> versionsChanged) {
+        this.versionsChanged = versionsChanged;
+    }
+
+    @Input
     public Set<String> getDependencies() {
         return dependencies.get().stream()
             .map(Object::toString).collect(Collectors.toSet());
@@ -83,7 +97,7 @@ public class EtaResolveDependencies extends DefaultTask {
         this.dependencies = dependencies;
     }
 
-    @Input
+    @OutputDirectory
     public File getDestinationDirectory() {
         return destinationDir.getAsFile().get();
     }
@@ -93,8 +107,8 @@ public class EtaResolveDependencies extends DefaultTask {
     }
 
     @OutputFile
-    public Provider<RegularFile> getFreezeConfigFile() {
-        return destinationDir.file(DEFAULT_FREEZE_CONFIG_FILENAME);
+    public File getFreezeConfigFile() {
+        return destinationDir.file(DEFAULT_FREEZE_CONFIG_FILENAME).get().getAsFile();
     }
 
     @TaskAction
@@ -109,16 +123,9 @@ public class EtaResolveDependencies extends DefaultTask {
                                      + workingDir.getAbsolutePath());
         }
 
-        /* Delete existing *.cabal files to avoid errors when changing the project
-           name. */
-
-        project.delete(project.fileTree(workingDir,
-                                        fileTree -> fileTree.include("*.cabal")));
-
         /* Remove the cabal.project.freeze file from a previous run, if it exists. */
 
-        File existingFreezeFile =
-            getFreezeConfigFile().get().getAsFile();
+        File existingFreezeFile = getFreezeConfigFile();
 
         if (existingFreezeFile.exists() && !existingFreezeFile.delete()) {
             throw new GradleException("Unable to delete existing freeze file: "
@@ -127,19 +134,54 @@ public class EtaResolveDependencies extends DefaultTask {
 
         /* Generate the .cabal & cabal.project files. */
 
+        final WriteResult[] writeResults = new WriteResult[2];
+
         DependencyUtils.foldEtaDependencies
             (project,
              dependencies.get(),
-             (directDeps, projectDeps) ->
-             CabalHelper.generateCabalFile(getProject().getName(),
-                                           getProject().getVersion().toString(),
-                                           directDeps, workingDir),
-             gitDeps -> CabalHelper.generateCabalProjectFile(gitDeps, workingDir));
+             (directDeps, projectDeps) -> {
+                writeResults[0] = CabalHelper.generateCabalFile
+                    (getProject().getName(), getProject().getVersion().toString(),
+                     directDeps, workingDir);
+            }, gitDeps -> {
+                writeResults[1] =
+                    CabalHelper.generateCabalProjectFile(gitDeps, workingDir);
+            });
 
-        /* Fork an etlas process to freeze the dependencies.  */
+        /* Delete existing *.cabal files to avoid errors when changing the project
+           name. */
 
-        EtlasCommand etlas = new EtlasCommand(getProject());
-        etlas.getWorkingDirectory().set(workingDir);
-        etlas.freeze();
+        final File oldCabalFile = writeResults[0].getFile();
+
+        project.delete
+            (project.fileTree
+             (workingDir, fileTree -> {
+                 fileTree.include("*.cabal");
+                 fileTree.exclude
+                     (fileTreeElement -> {
+                         try {
+                             return fileTreeElement.getFile().getCanonicalPath()
+                                 .equals(oldCabalFile.getCanonicalPath());
+                         } catch (IOException e) {
+                             return true;
+                         }
+                     });}));
+
+        /* Only run the freeze command if the cabal files have changed or the
+           Eta version state has changed. */
+
+        boolean changed = writeResults[0].isChanged() || writeResults[0].isChanged()
+                       || getVersionsChanged();
+
+        if (changed) {
+
+            /* Fork an etlas process to freeze the dependencies.  */
+
+            EtlasCommand etlas = new EtlasCommand(getProject());
+            etlas.getWorkingDirectory().set(workingDir);
+            etlas.freeze();
+        }
+
+        setDidWork(changed);
     }
 }

@@ -153,6 +153,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
 
         installDependenciesTask.setTargetConfiguration(targetConfiguration);
         installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
+        installDependenciesTask.setFreezeConfigChanged
+            (project.provider(() -> resolveDependenciesTask.getDidWork()));
         installDependenciesTask.setDestinationDir(destinationDir);
         installDependenciesTask.setSource(etaSourceDirectorySet);
         installDependenciesTask.dependsOn(resolveDependenciesTask);
@@ -172,8 +174,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
             project.getTasks().create(NamingScheme.getCompileTaskName(variantName),
                                       EtaCompile.class);
 
-        compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFile());
-        compileTask.setCabalFile(installDependenciesTask.getCabalFile());
+        compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFileProvider());
+        compileTask.setCabalFile(installDependenciesTask.getCabalFileProvider());
         compileTask.setDestinationDir(destinationDir);
         compileTask.setSource(etaSourceDirectorySet);
         compileTask.dependsOn(installDependenciesTask);
@@ -196,7 +198,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         /* Register the package databases as artifacts that will be collected
            upon dependency resolution of project dependencies. */
 
-        addArtifacts(compileTask.getPackageDB(),
+        addArtifacts(compileTask.getPackageDBProvider(),
                      variant.getRuntimeConfiguration());
     }
 

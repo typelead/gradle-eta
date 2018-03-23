@@ -9,4 +9,9 @@ public class NoSpec extends ExecutableSpec {
     }
 
     private NoSpec() {}
+
+    @Override
+    public String toString() {
+        return "NoSpec";
+    }
 }

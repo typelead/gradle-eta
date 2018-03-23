@@ -45,4 +45,16 @@ public class ResolvedExecutable {
     public boolean isSystem() {
         return system;
     }
+
+    @Override
+    public String toString() {
+        return "ResolvedExecutable{path=" + nonNullString(path)
+            + ",version=" + nonNullString(version)
+            + ",system=" + system
+            + ",fresh=" + fresh + "}";
+    }
+
+    private static String nonNullString(String s) {
+      return s == null? "" : s;
+    }
 }

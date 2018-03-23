@@ -11,21 +11,19 @@ import com.typelead.gradle.utils.Collections;
 import com.typelead.gradle.eta.api.SourceRepository;
 
 public class CabalHelper {
-    public static void generateCabalFile(String projectName,
+
+    public static WriteResult generateCabalFile(String projectName,
                                          String projectVersion,
                                          List<String> dependencyConstraints,
                                          File workingDir) {
-        generateCabalFile(projectName, projectVersion, null, null, null,
-                          dependencyConstraints, workingDir);
+        return generateCabalFile(projectName, projectVersion, null, null, null,
+                                 dependencyConstraints, workingDir);
     }
 
-    public static void generateCabalFile(String projectName,
-                                         String projectVersion,
-                                         String maybeExecutable,
-                                         List<String> sourceDirectories,
-                                         List<String> modules,
-                                         List<String> dependencyConstraints,
-                                         File workingDir) {
+    public static WriteResult generateCabalFile
+        (String projectName, String projectVersion, String maybeExecutable,
+         List<String> sourceDirectories, List<String> modules,
+         List<String> dependencyConstraints, File workingDir) {
         boolean hasModules = modules != null;
         StringBuilder sb = new StringBuilder();
         println(sb, "name: " + projectName);
@@ -71,16 +69,19 @@ public class CabalHelper {
         }
 
         println(sb, "    default-language: Haskell2010");
-        FileUtils.write(new File(workingDir, projectName + ".cabal"), sb.toString());
+
+        return snapshotWrite(new File(workingDir, projectName + ".cabal"),
+                             sb.toString(),
+                             new File(workingDir, projectName + ".cabal.snapshot"));
     }
 
-    public static void generateCabalProjectFile
+    public static WriteResult generateCabalProjectFile
         (final Set<SourceRepository> sourceRepositories,
          final File workingDir) {
-        generateCabalProjectFile(sourceRepositories, null, workingDir);
+        return generateCabalProjectFile(sourceRepositories, null, workingDir);
     }
 
-    public static void generateCabalProjectFile
+    public static WriteResult generateCabalProjectFile
         (final Set<SourceRepository> sourceRepositories,
          final Collection<File> packageDBs,
          final File workingDir) {
@@ -113,10 +114,13 @@ public class CabalHelper {
                 println(sb, sourceRepository.getCommitIdentifier());
             }
         }
-        FileUtils.write(new File(workingDir, "cabal.project"), sb.toString());
+
+        return snapshotWrite(new File(workingDir, "cabal.project"),
+                             sb.toString(),
+                             new File(workingDir, "cabal.project.snapshot"));
     }
 
-    public static void generateCabalProjectLocalFile
+    public static WriteResult generateCabalProjectLocalFile
         (final String projectName, final Collection<File> classpathFiles, final File workingDir) {
         final StringBuilder sb = new StringBuilder();
         if (Collections.isNonEmpty(classpathFiles)) {
@@ -132,7 +136,41 @@ public class CabalHelper {
             }
             println(sb, "\"");
         }
-        FileUtils.write(new File(workingDir, "cabal.project.local"), sb.toString());
+
+        return snapshotWrite(new File(workingDir, "cabal.project.local"),
+                             sb.toString(),
+                             new File(workingDir, "cabal.project.local.snapshot"));
+    }
+
+    private static WriteResult snapshotWrite
+        (File file, String fileContents, File snapshotFile) {
+
+        boolean changed = SnapshotUtils.takeSnapshotAndCompare
+            (snapshotFile, fileContents);
+
+        if (changed) {
+            FileUtils.write(file, fileContents);
+        }
+
+        return new WriteResult(file, changed);
+    }
+
+    public static class WriteResult {
+        private final File    file;
+        private final boolean changed;
+
+        public WriteResult(File file, boolean changed) {
+            this.file    = file;
+            this.changed = changed;
+        }
+
+        public boolean isChanged() {
+            return changed;
+        }
+
+        public File getFile() {
+            return file;
+        }
     }
 
     private static final String NEWLINE = System.lineSeparator();

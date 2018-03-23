@@ -5,9 +5,11 @@ import java.nio.file.Paths;
 
 import javax.inject.Inject;
 
+import org.gradle.api.Project;
 import org.gradle.api.GradleException;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
@@ -22,6 +24,7 @@ import com.typelead.gradle.utils.PathSpec;
 import com.typelead.gradle.utils.PrintHelper;
 import com.typelead.gradle.utils.ResolvedExecutable;
 import com.typelead.gradle.utils.SystemSpec;
+import com.typelead.gradle.utils.SnapshotUtils;
 import com.typelead.gradle.utils.VersionSpec;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.plugins.EtaBasePlugin;
@@ -29,24 +32,28 @@ import com.typelead.gradle.eta.internal.EtlasResolver;
 
 public class EtaSetupEnvironment extends DefaultTask {
 
+    public static final String SNAPSHOT_FILENAME = "eta-versions-snapshot";
+
     private final Property<ResolvedExecutable> resolvedEta;
     private final Property<ResolvedExecutable> resolvedEtlas;
+    private final Property<Boolean> versionsChanged;
     private Provider<ExecutableSpec> etaSpec;
     private Provider<ExecutableSpec> etlasSpec;
     private Provider<String> etlasRepository;
-    private Provider<File> resolvedEtlasPath;
 
     public EtaSetupEnvironment() {
+        final Project project = getProject();
         final EtaExtension extension =
-            getProject().getRootProject().getExtensions().getByType(EtaExtension.class);
+            project.getRootProject().getExtensions().getByType(EtaExtension.class);
         this.resolvedEta = extension.getEta();
         this.resolvedEtlas = extension.getEtlas();
 
         this.etaSpec   = extension.getEtaSpec();
         this.etlasSpec = extension.getEtlasSpec();
         this.etlasRepository = extension.getEtlasRepository();
-        this.resolvedEtlasPath = getProject()
-            .provider(() -> new File(resolvedEtlas.get().getPath()));
+        this.versionsChanged = project.getObjects().property(Boolean.class);
+
+        getOutputs().upToDateWhen(task -> false);
 
         setDescription
             ("Setup the Eta & Etlas environment for the specified versions.");
@@ -54,23 +61,34 @@ public class EtaSetupEnvironment extends DefaultTask {
 
 
     @Input
-    public Provider<ExecutableSpec> getEtaSpec() {
-        return etaSpec;
+    public String getEtaSpec() {
+        return etaSpec.get().toString();
     }
 
     @Input
-    public Provider<ExecutableSpec> getEtlasSpec() {
-        return etlasSpec;
+    public String getEtlasSpec() {
+        return etlasSpec.get().toString();
     }
 
     @Input
-    public Provider<String> getEtlasRepository() {
-        return etlasRepository;
+    public String getEtlasRepository() {
+        return etlasRepository.get();
     }
 
     @OutputFile
-    public Provider<File> resolvedEtlasPath() {
-        return resolvedEtlasPath;
+    public File getVersionsSnapshot() {
+        return getProject().getLayout().getBuildDirectory()
+            .file(SNAPSHOT_FILENAME).get().getAsFile();
+    }
+
+    @Internal
+    private String getCacheDir() {
+        return getProject().getGradle().getGradleUserHomeDir() + "/caches/etlas";
+    }
+
+    @Internal
+    public Provider<Boolean> getVersionsChanged() {
+        return versionsChanged;
     }
 
     @TaskAction
@@ -104,14 +122,18 @@ public class EtaSetupEnvironment extends DefaultTask {
             etlas.installEta();
         }
 
-        setDidWork(etlasExec.isFresh() || etaExec.isFresh());
+        boolean changed = SnapshotUtils.takeSnapshotAndCompare
+            (getVersionsSnapshot(), etaExec, etlasExec,
+             getEtaSpec(), getEtlasSpec());
+
+        versionsChanged.set(Boolean.valueOf(changed));
+
+        setDidWork(changed);
     }
 
     private ResolvedExecutable resolveEtlas() {
 
-        EtlasResolver resolver =
-            new EtlasResolver(getProject().getGradle().getGradleUserHomeDir() +
-                              "/caches/etlas");
+        EtlasResolver resolver = new EtlasResolver(getCacheDir());
 
         ExecutableSpec spec = etlasSpec.get();
 
@@ -136,7 +158,7 @@ public class EtaSetupEnvironment extends DefaultTask {
 
         } else if (spec instanceof VersionSpec) {
 
-            String etlasRepo = etlasRepository.get();
+            String etlasRepo = getEtlasRepository();
 
             if (etlasRepo == null) {
 

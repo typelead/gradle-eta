@@ -109,6 +109,8 @@ public class EtaPlugin implements Plugin<Project> {
 
         installDependenciesTask.setTargetConfiguration(targetConfiguration);
         installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
+        installDependenciesTask.setFreezeConfigChanged
+            (project.provider(() -> resolveDependenciesTask.getDidWork()));
         installDependenciesTask.setDestinationDir(destinationDir);
         installDependenciesTask.setSource(etaSourceDirectorySet);
         installDependenciesTask.dependsOn(resolveDependenciesTask);
@@ -145,8 +147,8 @@ public class EtaPlugin implements Plugin<Project> {
 
         compileTask.setClasspath(project.provider
                                  (() -> sourceSet.getCompileClasspath()));
-        compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFile());
-        compileTask.setCabalFile(installDependenciesTask.getCabalFile());
+        compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFileProvider());
+        compileTask.setCabalFile(installDependenciesTask.getCabalFileProvider());
         compileTask.setDestinationDir(destinationDir);
         compileTask.addExtraClasspath(javaCompileTask.getDestinationDir());
         compileTask.setClassesDir(classesDir);
@@ -172,7 +174,7 @@ public class EtaPlugin implements Plugin<Project> {
         /* Register the package databases as artifacts that will be collected
            upon dependency resolution of project dependencies. */
 
-        addArtifacts(compileTask.getPackageDB(),
+        addArtifacts(compileTask.getPackageDBProvider(),
                      sourceSet.getApiElementsConfigurationName(),
                      sourceSet.getRuntimeConfigurationName(),
                      sourceSet.getRuntimeElementsConfigurationName());
