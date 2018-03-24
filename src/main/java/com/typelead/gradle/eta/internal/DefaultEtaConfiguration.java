@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.logging.Logger;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.provider.Provider;
@@ -72,6 +73,9 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
                           final ImmutableDAG<String, PackageInfo> dependencyGraph,
                           Set<String> resolvedDependencies) {
 
+        final Logger logger = project.getLogger();
+        final String configurationName = parentConfiguration.getName();
+
         Set<String> resolvedDeps = new HashSet<String>();
 
         for (Configuration configuration : parentConfiguration.getExtendsFrom()) {
@@ -91,10 +95,13 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
 
         if (!resolved.get() && resolved.compareAndSet(false, true)) {
 
+            logger.info("Resolving Eta Configuration '" + configurationName + "'");
+
             List<PackageInfo> packageInfos =
                 dependencyGraph.differenceClosure(keys, resolvedDeps);
 
             if (packageInfos.size() > 0) {
+
                 resolvedMavenDependencies = packageInfos.stream()
                     .flatMap(x -> x.getMavenDependencies().stream())
                     .collect(Collectors.toList());
@@ -107,13 +114,15 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
 
                 resolvedFileDependencies = project.files(fileDeps);
 
-                final String configurationName = parentConfiguration.getName();
-
                 for (String mavenDep : resolvedMavenDependencies) {
                     handler.add(configurationName, mavenDep);
+                    logger.info("Injecting maven dependency '" + mavenDep + "'");
                 }
 
                 if (fileDeps.size() > 0) {
+                    for (File file: fileDeps) {
+                        logger.info("Injecting file dependency '" + file.getPath() + "'");
+                    }
                     handler.add(configurationName, resolvedFileDependencies);
                 }
             }

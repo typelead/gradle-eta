@@ -24,7 +24,7 @@ public class CabalHelper {
         (String projectName, String projectVersion, String maybeExecutable,
          List<String> sourceDirectories, List<String> modules,
          List<String> dependencyConstraints, File workingDir) {
-        boolean hasModules = modules != null;
+        boolean hasModules = Collections.isNonEmpty(modules);
         StringBuilder sb = new StringBuilder();
         println(sb, "name: " + projectName);
         println(sb, "version: " + fixVersion(projectVersion));
@@ -44,7 +44,7 @@ public class CabalHelper {
             }
         }
 
-        if (modules != null) {
+        if (hasModules) {
             for (String module : modules) {
                 sb.append("        ");
                 println(sb, module);
@@ -64,8 +64,10 @@ public class CabalHelper {
 
         println(sb, "    build-depends: base");
 
-        for (String dependencyConstraint : dependencyConstraints) {
-            println(sb, "                 , " + dependencyConstraint);
+        if (Collections.isNonEmpty(dependencyConstraints)) {
+            for (String dependencyConstraint : dependencyConstraints) {
+                println(sb, "                 , " + dependencyConstraint);
+            }
         }
 
         println(sb, "    default-language: Haskell2010");

@@ -127,12 +127,20 @@ public class EtaInstallDependencies extends DefaultTask {
 
     @InputFiles
     public FileCollection getSourceDirs() {
-        return sourceDirectories.getSourceDirectories();
+        if (sourceDirectories != null) {
+            return sourceDirectories.getSourceDirectories();
+        } else {
+            return project.files();
+        }
     }
 
     @InputFiles
     public FileCollection getSource() {
-        return sourceDirectories;
+        if (sourceDirectories != null) {
+            return sourceDirectories;
+        } else {
+            return project.files();
+        }
     }
 
     public void setSource(SourceDirectorySet sourceDirectories) {
@@ -148,20 +156,21 @@ public class EtaInstallDependencies extends DefaultTask {
         return project.provider
             (() -> {
                 final List<String> modules = new ArrayList<>();
-                sourceDirectories.getAsFileTree()
-                    .visit(file -> {
+                if (sourceDirectories != null) {
+                    sourceDirectories.getAsFileTree().visit
+                        (file -> {
                             if (!file.isDirectory()) {
                                 String moduleWithExtension =
                                     file.getPath().replace('/', '.');
                                 String module = moduleWithExtension
                                     .substring(0, moduleWithExtension.lastIndexOf("."));
                                 if (module.equals("Main")) {
-                                    /* TODO: Handle case where there are two Main files. */
                                     executable.set(moduleWithExtension);
                                 } else {
                                     modules.add(module);
                                 }
                             }});
+                }
                 return modules;
             });
     }

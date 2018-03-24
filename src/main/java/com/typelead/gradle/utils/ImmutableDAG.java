@@ -72,7 +72,7 @@ public class ImmutableDAG<K,V> {
         List<V> results              = new ArrayList<V>();
 
         /* Stores the list of nodes that we have already traversed. */
-        Set<NodeInfo<K,V>> traversed = new HashSet<NodeInfo<K,V>>();
+        Set<K> traversed = new HashSet<K>(excludedKeys);
 
         /* Stores the list of nodes we have yet to traverse */
         Queue<NodeInfo<K,V>> queue   = new ArrayDeque<NodeInfo<K,V>>(2 * keys.size());
@@ -80,17 +80,18 @@ public class ImmutableDAG<K,V> {
         /* Initializes the work queue. */
         for (K key : keys) {
             if (!excludedKeys.contains(key)) {
+                traversed.add(key);
                 queue.offer(graph.get(key));
             }
         }
 
         while (!queue.isEmpty()) {
             NodeInfo<K,V> current = queue.poll();
-            traversed.add(current);
             results.add(current.getValue());
             for (NodeInfo<K,V> nodeInfo : current.getDependentNodes()) {
-                if (!excludedKeys.contains(nodeInfo.getKey())
-                 && !traversed.contains(nodeInfo)) {
+                final K nodeKey = nodeInfo.getKey();
+                if (!traversed.contains(nodeKey)) {
+                    traversed.add(nodeKey);
                     queue.offer(nodeInfo);
                 }
             }
@@ -132,6 +133,14 @@ public class ImmutableDAG<K,V> {
 
         public void setDependentNodes(Collection<NodeInfo<K,V>> nodes) {
             dependentNodes.addAll(nodes);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof NodeInfo) {
+                return ((NodeInfo) o).getKey().equals(getKey());
+            }
+            return false;
         }
     }
 
