@@ -7,6 +7,8 @@ A gradle plugin for building [Eta](http://eta-lang.org/) projects via the
 
 # Installing
 
+_Note that Gradle 4.3+ is required_
+
 ```shell
 git clone https://github.com/typelead/gradle-eta
 cd gradle-eta
