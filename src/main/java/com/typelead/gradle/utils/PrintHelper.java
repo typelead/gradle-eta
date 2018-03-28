@@ -1,5 +1,6 @@
 package com.typelead.gradle.utils;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Iterator;
 
@@ -37,4 +38,14 @@ public class PrintHelper {
     public static String machineVersion(String version) {
         return version.replace("b",".");
     }
+
+    public static void println(StringBuilder sb, String message) {
+        sb.append(message + NEWLINE);
+    }
+
+    public static void print(StringBuilder sb, String message) {
+        sb.append(message);
+    }
+
+    public static final String NEWLINE = System.lineSeparator();
 }

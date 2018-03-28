@@ -3,7 +3,7 @@ plugins {
 }
 
 group "com.typelead"
-version "0.5.0"
+version "0.5.2"
 
 // static def getGitRev() {
 //     def proc = "git rev-parse --short HEAD".execute()

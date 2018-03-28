@@ -99,6 +99,25 @@ public class ImmutableDAG<K,V> {
         return results;
     }
 
+    public V getValue(K key) {
+        NodeInfo<K,V> nodeInfo = graph.get(key);
+        if (nodeInfo != null) {
+            return nodeInfo.getValue();
+        } else {
+            return null;
+        }
+    }
+
+    public List<V> getNodeValues(K key) {
+        NodeInfo<K,V> nodeInfo = graph.get(key);
+        Collection<NodeInfo<K,V>> dependencies = nodeInfo.getDependentNodes();
+        List<V> results = new ArrayList<V>(dependencies.size());
+        for (NodeInfo<K,V> nodeInfoDep : dependencies) {
+            results.add(nodeInfoDep.getValue());
+        }
+        return results;
+    }
+
     public Collection<V> getAllValues() {
         List<V> results = new ArrayList<V>();
         for (NodeInfo<K,V> nodeInfo: graph.values()) {
@@ -127,7 +146,7 @@ public class ImmutableDAG<K,V> {
             return value;
         }
 
-        public Iterable<NodeInfo<K,V>> getDependentNodes() {
+        public Collection<NodeInfo<K,V>> getDependentNodes() {
             return dependentNodes;
         }
 

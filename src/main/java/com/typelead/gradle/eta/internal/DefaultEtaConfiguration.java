@@ -28,10 +28,12 @@ import com.typelead.gradle.eta.api.EtaProjectDependency;
 import com.typelead.gradle.eta.api.EtaConfiguration;
 import com.typelead.gradle.eta.api.HasPackageName;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
+import com.typelead.gradle.eta.internal.EtlasMavenRepository;
 
 public class DefaultEtaConfiguration implements EtaConfiguration {
 
-    private Configuration parentConfiguration;
+    private final Configuration parentConfiguration;
+    private final EtlasMavenRepository mavenRepository;
 
     private DomainObjectCollection<EtaDependency> dependencies =
         new DefaultDomainObjectCollection<EtaDependency>
@@ -39,11 +41,13 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
 
     private Set<Provider<File>> artifacts = new LinkedHashSet<Provider<File>>();
     private List<String> resolvedMavenDependencies;
-    private FileCollection resolvedFileDependencies;
+    private List<String> resolvedLocalMavenDependencies;
     private AtomicBoolean resolved = new AtomicBoolean();
 
-    public DefaultEtaConfiguration(Configuration parentConfiguration) {
+    public DefaultEtaConfiguration(Configuration parentConfiguration,
+                                   EtlasMavenRepository mavenRepository) {
         this.parentConfiguration = parentConfiguration;
+        this.mavenRepository     = mavenRepository;
     }
 
     @Override
@@ -102,31 +106,26 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
 
             if (packageInfos.size() > 0) {
 
+                mavenRepository.installPackages(packageInfos, dependencyGraph);
+
                 resolvedMavenDependencies = packageInfos.stream()
                     .flatMap(x -> x.getMavenDependencies().stream())
                     .collect(Collectors.toList());
 
-                List<File> fileDeps =
-                    packageInfos.stream()
-                    .map(PackageInfo::getJarPath)
-                    .map(File::new) // TODO: Is this step necessary?
+                resolvedLocalMavenDependencies = packageInfos.stream()
+                    .map(mavenRepository::getMavenDependency)
                     .collect(Collectors.toList());
 
-                resolvedFileDependencies = project.files(fileDeps);
+                List<String> allMavenDeps =
+                    new ArrayList<String>(resolvedMavenDependencies);
 
-                for (String mavenDep : resolvedMavenDependencies) {
+                allMavenDeps.addAll(resolvedLocalMavenDependencies);
+
+                for (String mavenDep : allMavenDeps) {
                     handler.add(configurationName, mavenDep);
                     logger.info("Injecting maven dependency '" + mavenDep + "'");
                 }
-
-                if (fileDeps.size() > 0) {
-                    for (File file: fileDeps) {
-                        logger.info("Injecting file dependency '" + file.getPath() + "'");
-                    }
-                    handler.add(configurationName, resolvedFileDependencies);
-                }
             }
-
         }
 
         resolvedDependencies.addAll(resolvedDeps);

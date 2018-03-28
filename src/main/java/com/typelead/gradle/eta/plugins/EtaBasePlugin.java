@@ -24,6 +24,7 @@ import com.typelead.gradle.eta.tasks.EtaSetupEnvironment;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
 import com.typelead.gradle.eta.internal.DefaultEtaProjectDependency;
+import com.typelead.gradle.eta.internal.EtlasMavenRepository;
 
 /**
  * A {@link Plugin} which compiles and tests Eta sources.
@@ -43,12 +44,27 @@ public class EtaBasePlugin implements Plugin<Project> {
     public static final String
         ETA_RESOLVE_DEPENDENCIES_TASK_NAME = "resolveDependenciesEta";
 
-    /* Protected Fields */
-    protected Project project;
+    private Project project;
+    private EtlasMavenRepository mavenRepository;
 
     @Override
     public void apply(Project project) {
         this.project   = project;
+        this.mavenRepository = new EtlasMavenRepository
+            (project, new File(project.getGradle().getGradleUserHomeDir()
+                               + File.separator + "caches" + File.separator
+                               + "etlas"));
+
+        if (project == project.getRootProject()) {
+            project.allprojects(p -> {
+                    p.getRepositories().maven
+                        (repo -> {
+                            repo.setName("EtlasMaven");
+                            repo.setUrl(mavenRepository.getDirectory().toURI());
+                        });
+                });
+        }
+
 
         project.getPlugins().apply(BasePlugin.class);
 
@@ -73,13 +89,17 @@ public class EtaBasePlugin implements Plugin<Project> {
         project.getConfigurations().all(this::populateEtaConfiguration);
 
     }
+
     private void populateEtaConfiguration(final Configuration configuration) {
+
         final DefaultEtaConfiguration etaConfiguration =
             ExtensionHelper.createExtension
             (configuration, ETA_CONFIGURATION_EXTENSION_NAME,
-             DefaultEtaConfiguration.class, configuration);
+             DefaultEtaConfiguration.class, configuration, mavenRepository);
+
         DomainObjectCollection<EtaDependency> dependencies =
             etaConfiguration.getDependencies();
+
         configuration.getDependencies().all
             (dependency -> {
                 if (dependency instanceof ProjectDependency) {

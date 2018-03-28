@@ -9,6 +9,7 @@ import java.util.Set;
 import com.typelead.gradle.utils.FileUtils;
 import com.typelead.gradle.utils.Collections;
 import com.typelead.gradle.eta.api.SourceRepository;
+import static com.typelead.gradle.utils.PrintHelper.*;
 
 public class CabalHelper {
 
@@ -173,12 +174,6 @@ public class CabalHelper {
         public File getFile() {
             return file;
         }
-    }
-
-    private static final String NEWLINE = System.lineSeparator();
-
-    private static void println(StringBuilder sb, String message) {
-        sb.append(message + NEWLINE);
     }
 
     /* TODO: Need to handle other cases and throw invalid if non-numeric digits are
