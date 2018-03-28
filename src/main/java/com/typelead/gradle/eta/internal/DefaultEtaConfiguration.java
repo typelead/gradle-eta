@@ -2,6 +2,7 @@ package com.typelead.gradle.eta.internal;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -12,10 +13,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.gradle.api.DomainObjectCollection;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.internal.DefaultDomainObjectCollection;
@@ -29,6 +33,7 @@ import com.typelead.gradle.eta.api.EtaConfiguration;
 import com.typelead.gradle.eta.api.HasPackageName;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
 import com.typelead.gradle.eta.internal.EtlasMavenRepository;
+import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 
 public class DefaultEtaConfiguration implements EtaConfiguration {
 
@@ -41,7 +46,6 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
 
     private Set<Provider<File>> artifacts = new LinkedHashSet<Provider<File>>();
     private List<String> resolvedMavenDependencies;
-    private List<String> resolvedLocalMavenDependencies;
     private AtomicBoolean resolved = new AtomicBoolean();
 
     public DefaultEtaConfiguration(Configuration parentConfiguration,
@@ -109,22 +113,16 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
                 mavenRepository.installPackages(packageInfos, dependencyGraph);
 
                 resolvedMavenDependencies = packageInfos.stream()
-                    .flatMap(x -> x.getMavenDependencies().stream())
-                    .collect(Collectors.toList());
-
-                resolvedLocalMavenDependencies = packageInfos.stream()
+                    .filter(packageInfo -> keys.contains(packageInfo.getName()))
                     .map(mavenRepository::getMavenDependency)
                     .collect(Collectors.toList());
 
-                List<String> allMavenDeps =
-                    new ArrayList<String>(resolvedMavenDependencies);
-
-                allMavenDeps.addAll(resolvedLocalMavenDependencies);
-
-                for (String mavenDep : allMavenDeps) {
+                for (String mavenDep : resolvedMavenDependencies) {
                     handler.add(configurationName, mavenDep);
                     logger.info("Injecting maven dependency '" + mavenDep + "'");
                 }
+            } else {
+                resolvedMavenDependencies = Collections.emptyList();
             }
         }
 
@@ -161,5 +159,77 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
         }
         return allArtifacts;
 
+    }
+
+    @Override
+    public List<String> getResolvedDependencies() {
+        if (resolved.get()) {
+            return resolvedMavenDependencies;
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<String> getAllResolvedDependencies(final Project project) {
+        List<String> allResolvedDependencies =
+            new ArrayList<String>(getResolvedDependencies());
+
+        for (EtaDependency dependency : dependencies) {
+            if (dependency instanceof EtaProjectDependency) {
+                final EtaProjectDependency projectDependency =
+                    (EtaProjectDependency) dependency;
+                final Project targetProject = projectDependency.getProject(project);
+                final String  targetConfiguration =
+                    projectDependency.getTargetConfiguration();
+                List<String> mavenDependencies;
+                if (targetProject.getPlugins().hasPlugin(EtaBasePlugin.class)) {
+                    mavenDependencies = ConfigurationUtils.getEtaConfiguration
+                        (targetProject, targetConfiguration)
+                        .getAllResolvedDependencies(project);
+                } else {
+                    mavenDependencies = searchForEtaProjectDependencies
+                        (project, ConfigurationUtils.getConfiguration
+                         (targetProject, targetConfiguration));
+                }
+                allResolvedDependencies.addAll(mavenDependencies);
+            }
+        }
+
+        for (Configuration configuration : parentConfiguration.getExtendsFrom()) {
+            allResolvedDependencies.addAll
+                (ConfigurationUtils.getEtaConfiguration(configuration)
+                 .getAllResolvedDependencies(project));
+        }
+
+        return allResolvedDependencies;
+    }
+
+    public static List<String> searchForEtaProjectDependencies
+        (final Project project, final Configuration configuration) {
+
+        List<String> allMavenDependencies = new ArrayList<String>();
+        for (Dependency dependency : configuration.getAllDependencies()) {
+            if (dependency instanceof ProjectDependency) {
+                final ProjectDependency projectDependency =
+                    (ProjectDependency) dependency;
+                final Project targetProject = projectDependency.getDependencyProject();
+                final String  targetConfiguration =
+                    projectDependency.getTargetConfiguration();
+                List<String> mavenDependencies;
+                if (targetProject.getPlugins().hasPlugin(EtaBasePlugin.class)) {
+                    mavenDependencies = ConfigurationUtils.getEtaConfiguration
+                        (targetProject, targetConfiguration)
+                        .getAllResolvedDependencies(project);
+                } else {
+                    mavenDependencies = searchForEtaProjectDependencies
+                        (project, ConfigurationUtils.getConfiguration
+                         (targetProject, targetConfiguration));
+                }
+                allMavenDependencies.addAll(mavenDependencies);
+            }
+        }
+
+        return allMavenDependencies;
     }
 }

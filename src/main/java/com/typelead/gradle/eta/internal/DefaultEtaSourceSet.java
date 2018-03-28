@@ -73,11 +73,8 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
     }
 
     private String getTaskName(String verb) {
-        String name = (sourceSet == null)? "main" : sourceSet.getName();
-        if (name.equals("main")) {
-            name = "";
-        }
-        return NamingScheme.getTaskName(verb, name);
+        return NamingScheme.getTaskName
+            (verb, (sourceSet == null)? "main" : sourceSet.getName());
     }
 
 }

@@ -225,8 +225,9 @@ public class EtaInstallDependencies extends DefaultTask {
                             final EtaProjectDependency projectDep =
                                 (EtaProjectDependency) dep;
                             buildables.add
-                                (projectDep.getProject(project).getConfigurations()
-                                 .findByName(projectDep.getTargetConfiguration())
+                                (ConfigurationUtils.getConfiguration
+                                 (projectDep.getProject(project),
+                                  projectDep.getTargetConfiguration())
                                  .getAllArtifacts());
                         }
                     }
@@ -262,8 +263,8 @@ public class EtaInstallDependencies extends DefaultTask {
         final String targetConfigurationName = getTargetConfiguration();
 
         Set<File> packageDBs = ConfigurationUtils
-            .getEtaConfiguration(project.getConfigurations()
-                                 .getByName(targetConfigurationName))
+            .getEtaConfiguration(ConfigurationUtils.getConfiguration
+                                 (project, targetConfigurationName))
             .getAllArtifacts(project).stream()
             .map(Provider::get)
             .collect(Collectors.toSet());

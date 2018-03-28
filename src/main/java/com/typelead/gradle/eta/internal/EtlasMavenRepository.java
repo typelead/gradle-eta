@@ -146,7 +146,6 @@ public class EtlasMavenRepository {
         print  (sb, packageInfo.getFullVersion());
         println(sb, "</version>");
         println(sb, "  <dependencies>");
-        /* TODO: Find all dependencies here and put the artifact names. */
         for (PackageInfo dependency : graph.getNodeValues(packageInfo.getName())) {
             println(sb, "    <dependency>");
             print  (sb, "      <groupId>");
@@ -157,6 +156,21 @@ public class EtlasMavenRepository {
             println(sb, "</artifactId>");
             print  (sb, "      <version>");
             print  (sb, dependency.getFullVersion());
+            println(sb, "</version>");
+            println(sb, "    </dependency>");
+        }
+
+        for (String mavenDependency : packageInfo.getMavenDependencies()) {
+            String[] parts = mavenDependency.split(":");
+            println(sb, "    <dependency>");
+            print  (sb, "      <groupId>");
+            print  (sb, parts[0]);
+            println(sb, "</groupId>");
+            print  (sb, "      <artifactId>");
+            print  (sb, parts[1]);
+            println(sb, "</artifactId>");
+            print  (sb, "      <version>");
+            print  (sb, parts[2]);
             println(sb, "</version>");
             println(sb, "    </dependency>");
         }

@@ -1,6 +1,7 @@
 package com.typelead.gradle.eta.api;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 import org.gradle.api.DomainObjectCollection;
@@ -18,4 +19,6 @@ public interface EtaConfiguration {
                  ImmutableDAG<String, PackageInfo> dependencyGraph);
     Set<Provider<File>> getArtifacts();
     Set<Provider<File>> getAllArtifacts(Project project);
+    List<String> getResolvedDependencies();
+    List<String> getAllResolvedDependencies(Project project);
 }
