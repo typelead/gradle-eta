@@ -1,6 +1,9 @@
 # Gradle Plugin for Eta
 
 [![Build Status](https://travis-ci.org/typelead/gradle-eta.svg?branch=master)](https://travis-ci.org/typelead/gradle-eta)
+[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta-0.5.2-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta)
+[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta.android-0.5.2-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta.android)
+[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta.base-0.5.2-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta.base)
 
 A gradle plugin for building [Eta](http://eta-lang.org/) projects via the
 [Etlas](https://github.com/typelead/etlas) build tool.
