@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 
+import groovy.lang.Closure;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.file.Directory;
@@ -27,6 +29,7 @@ import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.CabalHelper;
 import com.typelead.gradle.utils.ResolvedExecutable;
 import com.typelead.gradle.eta.api.EtaExtension;
+import com.typelead.gradle.eta.api.EtaOptions;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
 
 public class EtaCompile extends SourceTask {
@@ -40,6 +43,7 @@ public class EtaCompile extends SourceTask {
     private Provider<File> outputJar;
     private Provider<RegularFile>  cabalProjectFile;
     private Provider<RegularFile>  cabalFile;
+    private EtaOptions etaOptions;
 
     public EtaCompile() {
         final Project project = getProject();
@@ -77,6 +81,19 @@ public class EtaCompile extends SourceTask {
     @Input
     public String getEtaVersion() {
         return resolvedEta.get().getVersion();
+    }
+
+    @Internal
+    public EtaOptions getOptions() {
+        return etaOptions;
+    }
+
+    public void setOptions(EtaOptions etaOptions) {
+        this.etaOptions = etaOptions;
+    }
+
+    public void options(Closure configure) {
+        getProject().configure(etaOptions, configure);
     }
 
     @InputFile

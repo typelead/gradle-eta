@@ -47,5 +47,9 @@ public class PrintHelper {
         sb.append(message);
     }
 
+    public static void print(StringBuilder sb, char c) {
+        sb.append(c);
+    }
+
     public static final String NEWLINE = System.lineSeparator();
 }

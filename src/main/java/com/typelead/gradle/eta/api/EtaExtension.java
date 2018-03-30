@@ -10,6 +10,7 @@ import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 
 import com.typelead.gradle.utils.ExecutableSpec;
+import com.typelead.gradle.utils.EtaInfo;
 import com.typelead.gradle.utils.NoSpec;
 import com.typelead.gradle.utils.PathSpec;
 import com.typelead.gradle.utils.ResolvedExecutable;
@@ -34,6 +35,7 @@ public class EtaExtension {
     private Property<String> etlasRepository;
 
     private Property<ResolvedExecutable> resolvedEta;
+    private Property<EtaInfo> resolvedEtaInfo;
     private Property<ResolvedExecutable> resolvedEtlas;
 
     public EtaExtension(final Project project) {
@@ -81,8 +83,9 @@ public class EtaExtension {
             (project.provider
              (() -> parseStringProperty("etlasRepository", DEFAULT_ETLAS_REPO)));
 
-        resolvedEta   = objectFactory.property(ResolvedExecutable.class);
-        resolvedEtlas = objectFactory.property(ResolvedExecutable.class);
+        resolvedEta     = objectFactory.property(ResolvedExecutable.class);
+        resolvedEtaInfo = objectFactory.property(EtaInfo.class);
+        resolvedEtlas   = objectFactory.property(ResolvedExecutable.class);
     }
 
 
@@ -128,6 +131,10 @@ public class EtaExtension {
 
     public Property<ResolvedExecutable> getEta() {
         return resolvedEta;
+    }
+
+    public Property<EtaInfo> getEtaInfo() {
+        return resolvedEtaInfo;
     }
 
     public Property<ResolvedExecutable> getEtlas() {

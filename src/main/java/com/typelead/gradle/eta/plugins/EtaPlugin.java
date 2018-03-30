@@ -30,6 +30,9 @@ import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
 
 import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.eta.api.EtaConfiguration;
+import com.typelead.gradle.eta.api.EtaExtension;
+import com.typelead.gradle.eta.api.EtaOptions;
+import com.typelead.gradle.eta.api.LanguageExtension;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.tasks.EtaInstallDependencies;
 import com.typelead.gradle.eta.tasks.EtaCompile;
@@ -68,6 +71,8 @@ public class EtaPlugin implements Plugin<Project> {
     }
 
     private void configureSourceSet(SourceSet sourceSet) {
+
+        final EtaOptions etaOptions = createEtaOptions();
 
         final DefaultEtaSourceSet etaSourceSet =
             ExtensionHelper.createExtension
@@ -112,6 +117,7 @@ public class EtaPlugin implements Plugin<Project> {
         installDependenciesTask.setFreezeConfigChanged
             (project.provider(() -> resolveDependenciesTask.getDidWork()));
         installDependenciesTask.setDestinationDir(destinationDir);
+        installDependenciesTask.setOptions(etaOptions);
         installDependenciesTask.setSource(etaSourceDirectorySet);
         installDependenciesTask.dependsOn(resolveDependenciesTask);
         installDependenciesTask.setDescription("Installs dependencies for the " + sourceSet.getName() + " Eta source.");
@@ -152,6 +158,7 @@ public class EtaPlugin implements Plugin<Project> {
         compileTask.setDestinationDir(destinationDir);
         compileTask.addExtraClasspath(javaCompileTask.getDestinationDir());
         compileTask.setClassesDir(classesDir);
+        compileTask.setOptions(etaOptions);
         compileTask.setSource(etaSourceDirectorySet);
         compileTask.dependsOn(javaCompileTask);
         compileTask.setDescription("Compiles the " + sourceSet.getName() + " Eta source.");
@@ -201,5 +208,10 @@ public class EtaPlugin implements Plugin<Project> {
                     pluginConvention.setMainClassName("eta.main");
                 }
             });
+    }
+
+    private EtaOptions createEtaOptions() {
+        return project.getObjects().newInstance(EtaOptions.class)
+            .setExtensions(project.container(LanguageExtension.class));
     }
 }

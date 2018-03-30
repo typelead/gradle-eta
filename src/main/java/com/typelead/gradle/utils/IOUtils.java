@@ -36,7 +36,7 @@ public abstract class IOUtils {
 
     public static void consumeLines(InputStream is, Consumer<String> f) {
         new Thread(() -> {
-                BufferedReader in = new BufferedReader(new InputStreamReader(is));
+                BufferedReader in = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                 String line = null;
                 try {
                     while ((line = in.readLine()) != null) {
@@ -50,7 +50,7 @@ public abstract class IOUtils {
 
     public static void consumeLinesIgnoreFailure(InputStream is, Function<String, Boolean> f) {
         new Thread(() -> {
-                BufferedReader in = new BufferedReader(new InputStreamReader(is));
+                BufferedReader in = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                 String line = null;
                 try {
                     while ((line = in.readLine()) != null) {

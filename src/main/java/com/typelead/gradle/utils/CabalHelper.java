@@ -8,6 +8,7 @@ import java.util.Set;
 
 import com.typelead.gradle.utils.FileUtils;
 import com.typelead.gradle.utils.Collections;
+import com.typelead.gradle.eta.api.EtaOptions;
 import com.typelead.gradle.eta.api.SourceRepository;
 import static com.typelead.gradle.utils.PrintHelper.*;
 
@@ -17,13 +18,13 @@ public class CabalHelper {
                                          String projectVersion,
                                          List<String> dependencyConstraints,
                                          File workingDir) {
-        return generateCabalFile(projectName, projectVersion, null, null, null,
+        return generateCabalFile(projectName, projectVersion, null, null, null, null,
                                  dependencyConstraints, workingDir);
     }
 
     public static WriteResult generateCabalFile
         (String projectName, String projectVersion, String maybeExecutable,
-         List<String> sourceDirectories, List<String> modules,
+         List<String> sourceDirectories, List<String> modules, EtaOptions options,
          List<String> dependencyConstraints, File workingDir) {
         boolean hasModules = Collections.isNonEmpty(modules);
         StringBuilder sb = new StringBuilder();
@@ -33,7 +34,7 @@ public class CabalHelper {
         println(sb, "build-type: Simple");
         if (maybeExecutable != null) {
             println(sb, "executable " + projectName);
-            sb.append("    main-is: ");
+            print  (sb, "    main-is: ");
             println(sb, maybeExecutable);
             if (hasModules) {
                 println(sb, "    other-modules:");
@@ -47,20 +48,20 @@ public class CabalHelper {
 
         if (hasModules) {
             for (String module : modules) {
-                sb.append("        ");
+                print  (sb, "        ");
                 println(sb, module);
             }
         }
 
         if (Collections.isNonEmpty(sourceDirectories)) {
-            sb.append("    hs-source-dirs: ");
+            print(sb, "    hs-source-dirs: ");
             Iterator<String> it = sourceDirectories.iterator();
-            sb.append(it.next());
+            print(sb, it.next());
             while (it.hasNext()) {
-                sb.append(", ");
-                sb.append(it.next());
+                print(sb, ", ");
+                print(sb, it.next());
             }
-            sb.append(NEWLINE);
+            print(sb, NEWLINE);
         }
 
         println(sb, "    build-depends: base");
@@ -71,7 +72,46 @@ public class CabalHelper {
             }
         }
 
-        println(sb, "    default-language: Haskell2010");
+        if (options != null) {
+            print  (sb, "    default-language: ");
+            println(sb, options.getLanguage());
+
+            Iterator<String> extensionsIt =
+                options.getExtensions().iterator();
+            if (extensionsIt.hasNext()) {
+                print  (sb, "    default-extensions: ");
+                println(sb, extensionsIt.next());
+                while (extensionsIt.hasNext()) {
+                    print  (sb, "                        ");
+                    println(sb, extensionsIt.next());
+                }
+            }
+            Iterator<String> argsIt =
+                options.getArgs().iterator();
+            if (argsIt.hasNext()) {
+                print(sb, "    eta-options: ");
+                /* TODO: Handle arguments with spaces via quotes? */
+                print(sb, argsIt.next());
+                while (argsIt.hasNext()) {
+                    print(sb, " ");
+                    print(sb, argsIt.next());
+                }
+                print(sb, NEWLINE);
+            }
+
+            Iterator<String> cppIt =
+                options.getCpp().iterator();
+            if (cppIt.hasNext()) {
+                print  (sb, "    cpp-options: ");
+                /* TODO: Handle arguments with spaces via quotes? */
+                println(sb, cppIt.next());
+                while (cppIt.hasNext()) {
+                    print(sb, " ");
+                    print(sb, cppIt.next());
+                }
+                print(sb, NEWLINE);
+            }
+        }
 
         return snapshotWrite(new File(workingDir, projectName + ".cabal"),
                              sb.toString(),
@@ -93,10 +133,10 @@ public class CabalHelper {
         if (Collections.isNonEmpty(packageDBs)) {
             println(sb, "package-dbs:");
             for (File packageDB : packageDBs) {
-                sb.append("  ");
+                print  (sb, "  ");
                 println(sb, packageDB.getAbsolutePath());
             }
-            sb.append(NEWLINE);
+            print  (sb, NEWLINE);
         }
         if (Collections.isNonEmpty(sourceRepositories)) {
             for (SourceRepository sourceRepository : sourceRepositories) {
@@ -105,13 +145,13 @@ public class CabalHelper {
                 println(sb, "  location: " + sourceRepository.getLocation());
                 switch (sourceRepository.getCommitIdentifierType()) {
                 case BRANCH:
-                    sb.append("  branch: ");
+                    print(sb, "  branch: ");
                     break;
                 case TAG:
-                    sb.append("  tag: ");
+                    print(sb, "  tag: ");
                     break;
                 case COMMIT:
-                    sb.append("  commit: ");
+                    print(sb, "  commit: ");
                     break;
                 }
                 println(sb, sourceRepository.getCommitIdentifier());
@@ -127,15 +167,15 @@ public class CabalHelper {
         (final String projectName, final Collection<File> classpathFiles, final File workingDir) {
         final StringBuilder sb = new StringBuilder();
         if (Collections.isNonEmpty(classpathFiles)) {
-            sb.append("package ");
+            print  (sb, "package ");
             println(sb, projectName);
-            sb.append("  eta-options: -cp \"");
+            print  (sb, "  eta-options: -cp \"");
             Iterator<File> it = classpathFiles.iterator();
             char sep = File.pathSeparatorChar;
-            sb.append(it.next());
+            print(sb, it.next().getPath());
             while (it.hasNext()) {
-                sb.append(sep);
-                sb.append(it.next().getPath());
+                print(sb, sep);
+                print(sb, it.next().getPath());
             }
             println(sb, "\"");
         }

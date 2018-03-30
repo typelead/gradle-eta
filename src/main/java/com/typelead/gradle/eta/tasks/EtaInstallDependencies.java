@@ -22,6 +22,7 @@ import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
@@ -32,11 +33,14 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 
 import com.typelead.gradle.utils.EtlasCommand;
+import com.typelead.gradle.utils.EtaInfo;
 import com.typelead.gradle.utils.CabalHelper;
 import static com.typelead.gradle.utils.CabalHelper.WriteResult;
 import com.typelead.gradle.utils.PackageInfo;
 import com.typelead.gradle.eta.api.EtaConfiguration;
 import com.typelead.gradle.eta.api.EtaDependency;
+import com.typelead.gradle.eta.api.EtaExtension;
+import com.typelead.gradle.eta.api.EtaOptions;
 import com.typelead.gradle.eta.api.EtaProjectDependency;
 import com.typelead.gradle.eta.internal.DependencyUtils;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
@@ -48,6 +52,8 @@ public class EtaInstallDependencies extends DefaultTask {
     public static final String DEFAULT_DESTINATION_DIR = "eta";
 
     private final Project project;
+    private final Provider<EtaInfo> etaInfo;
+    private EtaOptions etaOptions;
     private Provider<String> projectName;
     private Provider<String> projectVersion;
     private FileCollection freezeConfigFile;
@@ -69,6 +75,10 @@ public class EtaInstallDependencies extends DefaultTask {
         this.freezeConfigFile = project.files();
         this.destinationDir =
             project.getLayout().directoryProperty();
+
+        final EtaExtension extension =
+            project.getRootProject().getExtensions().getByType(EtaExtension.class);
+        this.etaInfo = extension.getEtaInfo();
 
         destinationDir.set(project.getLayout().getBuildDirectory()
                            .dir(DEFAULT_DESTINATION_DIR));
@@ -96,6 +106,15 @@ public class EtaInstallDependencies extends DefaultTask {
     @Input
     public String getProjectVersion() {
         return projectVersion.get();
+    }
+
+    @Nested
+    public EtaOptions getOptions() {
+        return etaOptions;
+    }
+
+    public void setOptions(EtaOptions etaOptions) {
+        this.etaOptions = etaOptions;
     }
 
     @Input
@@ -239,6 +258,10 @@ public class EtaInstallDependencies extends DefaultTask {
     @TaskAction
     public void installDependencies() {
 
+        final EtaOptions etaOptions = getOptions();
+
+        etaOptions.validate(etaInfo.get());
+
         final File workingDir = getDestinationDir();
 
         copyFreezeConfigIfChanged(workingDir);
@@ -284,7 +307,7 @@ public class EtaInstallDependencies extends DefaultTask {
                      getSourceDirs().getFiles().stream()
                      .map(File::getAbsolutePath)
                      .collect(Collectors.toList()),
-                     modules, directDeps, workingDir);
+                     modules, etaOptions, directDeps, workingDir);
 
             }, gitDeps -> {
                 writeResults[1] =

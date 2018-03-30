@@ -149,6 +149,13 @@ public class EtlasCommand {
         c.executeAndLogOutput(true);
     }
 
+    public List<String> getLanguagesAndExtensions() {
+        CommandLine c = initCommandLineWithEtaVersion();
+        c.getCommand().addAll(Arrays.asList("exec", "eta", "--",
+                                            "--supported-extensions"));
+        return c.executeAndGetStandardOutputLines();
+    }
+
     public void freeze() {
         CommandLine c = initCommandLineWithEtaVersion();
         c.getCommand().add("freeze");

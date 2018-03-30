@@ -1,30 +1,88 @@
 package com.typelead.gradle.eta.api;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import groovy.lang.Closure;
+
+import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.tasks.Input;
+
+import com.typelead.gradle.utils.EtaInfo;
+import com.typelead.gradle.eta.api.LanguageExtension;
 
 public class EtaOptions {
 
-    private NamedDomainObjectContainer<Language> language;
+    private String language = "Haskell2010";
     private NamedDomainObjectContainer<LanguageExtension> languageExtensions;
+    private List<String> arguments  = Collections.emptyList();
+    private List<String> cppOptions = Collections.emptyList();
 
-    public EtaOptions(NamedDomainObjectContainer<Language> language, NamedDomainObjectContainer<LanguageExtension> languageExtensions) {
-        this.language = language;
-        this.languageExtensions = languageExtensions;
-    }
-
-    public NamedDomainObjectContainer<Language> getLanguage() {
+    @Input
+    public String getLanguage() {
         return language;
     }
 
-    public void setLanguage(NamedDomainObjectContainer<Language> language) {
+    public void setLanguage(String language) {
         this.language = language;
     }
 
-    public NamedDomainObjectContainer<LanguageExtension> getLanguageExtensions() {
-        return languageExtensions;
+    @Input
+    public List<String> getArgs() {
+        return arguments;
     }
 
-    public void setLanguageExtensions(NamedDomainObjectContainer<LanguageExtension> languageExtensions) {
+    public void setArgs(String... args) {
+        this.arguments =  Arrays.asList(args);
+    }
+
+    @Input
+    public List<String> getCpp() {
+        return cppOptions;
+    }
+
+    public void setCpp(String... cpp) {
+        this.cppOptions = Arrays.asList(cpp);
+    }
+
+    @Input
+    public Iterable<String> getExtensions() {
+        return languageExtensions.getNames();
+    }
+
+    public EtaOptions setExtensions
+        (NamedDomainObjectContainer<LanguageExtension> languageExtensions) {
         this.languageExtensions = languageExtensions;
+        return this;
+    }
+
+    public void setExtensions(List<String> languageExtensions) {
+        for (String languageExtension : languageExtensions) {
+            this.languageExtensions.maybeCreate(languageExtension);
+        }
+    }
+
+    public void extensions(Closure closure) {
+        languageExtensions.configure(closure);
+    }
+
+    public void validate(final EtaInfo info) {
+        if (!info.isValidLanguage(language)) {
+            throw new GradleException
+                ("Language '" + language + "' is not recognized by Eta v"
+                 + info.getVersion());
+        }
+
+        languageExtensions.forEach
+            (extension -> {
+                if (!info.isValidExtension(extension.getName())) {
+                    throw new GradleException
+                        ("Extension '" + extension + "' is not recognized by Eta v"
+                         + info.getVersion());
+                }
+            });
     }
 }

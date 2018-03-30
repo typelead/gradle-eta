@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -117,7 +118,8 @@ public class EtlasMavenRepository {
             }
 
             mavenMetadataFile.getParentFile().mkdirs();
-            Files.write(mavenMetadataFile.toPath(), sb.toString().getBytes("UTF-8"));
+            Files.write(mavenMetadataFile.toPath(),
+                        sb.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException ie) {
             throw new GradleException("Failed to write maven-metadata.xml file for "
                                       + packageInfo.getName(), ie);
@@ -182,7 +184,7 @@ public class EtlasMavenRepository {
             packageVersionDirectory.mkdirs();
             Files.write(packageVersionDirectory.toPath()
                         .resolve(getPomFileName(packageInfo)),
-                        sb.toString().getBytes("UTF-8"));
+                        sb.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException ie) {
             throw new GradleException("Failed to write pom file for "
                                       + packageInfo.getIdentifier(), ie);

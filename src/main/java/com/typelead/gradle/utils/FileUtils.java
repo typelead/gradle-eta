@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 
 import org.gradle.api.GradleException;
 
@@ -23,7 +24,7 @@ public abstract class FileUtils {
 
     public static String read(File file) {
         try {
-            return new String(Files.readAllBytes(file.toPath()), "UTF-8");
+            return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new GradleException("[FileUtils.read] File not found.", e);
         }

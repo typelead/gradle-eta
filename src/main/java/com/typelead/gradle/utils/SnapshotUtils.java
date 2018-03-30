@@ -2,6 +2,7 @@ package com.typelead.gradle.utils;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -36,7 +37,7 @@ public class SnapshotUtils {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-            digest.update(source.getBytes("UTF-8"));
+            digest.update(source.getBytes(StandardCharsets.UTF_8));
 
             byte[] bytes = digest.digest();
 
@@ -46,8 +47,6 @@ public class SnapshotUtils {
                  sb.append(Integer.toHexString(bytes[i] & 0xFF)), i++);
 
             return sb.toString();
-        } catch (UnsupportedEncodingException e) {
-            throw new GradleException("UTF-8 not supported", e);
         } catch (NoSuchAlgorithmException e) {
             throw new GradleException("SHA-256 not supported", e);
         }

@@ -24,9 +24,9 @@ import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.builder.model.SourceProvider;
 
 import com.typelead.gradle.eta.android.AndroidHelper;
+import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.api.EtaSourceSet;
 import com.typelead.gradle.eta.api.EtaOptions;
-import com.typelead.gradle.eta.api.Language;
 import com.typelead.gradle.eta.api.LanguageExtension;
 import com.typelead.gradle.eta.api.NamingScheme;
 import com.typelead.gradle.eta.tasks.EtaInstallDependencies;
@@ -93,10 +93,9 @@ public class EtaAndroidPlugin implements Plugin<Project> {
     }
 
     private void addEtaOptionsToDefaultConfig() {
-        ExtensionHelper.createExtension(androidExtension, ETA_OPTIONS_DSL_NAME,
-                                        EtaOptions.class,
-                                        project.container(Language.class),
-                                        project.container(LanguageExtension.class));
+        ExtensionHelper.createExtension
+            (androidExtension, ETA_OPTIONS_DSL_NAME, EtaOptions.class)
+            .setExtensions(project.container(LanguageExtension.class));
     }
 
     private void configureBaseVariants() {
@@ -104,6 +103,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
     }
 
     private void configureBaseVariant(BaseVariant variant) {
+
+        final EtaOptions etaOptions = createEtaOptions();
 
         final String variantName = variant.getName();
 
@@ -156,6 +157,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         installDependenciesTask.setFreezeConfigChanged
             (project.provider(() -> resolveDependenciesTask.getDidWork()));
         installDependenciesTask.setDestinationDir(destinationDir);
+        installDependenciesTask.setOptions(etaOptions);
         installDependenciesTask.setSource(etaSourceDirectorySet);
         installDependenciesTask.dependsOn(resolveDependenciesTask);
         installDependenciesTask.setDescription
@@ -177,6 +179,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFileProvider());
         compileTask.setCabalFile(installDependenciesTask.getCabalFileProvider());
         compileTask.setDestinationDir(destinationDir);
+        compileTask.setOptions(etaOptions);
         compileTask.setSource(etaSourceDirectorySet);
         compileTask.dependsOn(installDependenciesTask);
         compileTask.setDescription("Compiles the " + variantName + " Eta source.");
@@ -220,5 +223,10 @@ public class EtaAndroidPlugin implements Plugin<Project> {
                     .add(artifact);
             }
         }
+    }
+
+    private EtaOptions createEtaOptions() {
+        return project.getObjects().newInstance(EtaOptions.class)
+            .setExtensions(project.container(LanguageExtension.class));
     }
 }

@@ -1,6 +1,16 @@
 package com.typelead.gradle.eta.tasks;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.nio.file.Paths;
 
 import javax.inject.Inject;
@@ -18,7 +28,10 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 
 import com.typelead.gradle.utils.EtlasCommand;
+import com.typelead.gradle.utils.EtaInfo;
 import com.typelead.gradle.utils.ExecutableSpec;
+import com.typelead.gradle.utils.IOUtils;
+import com.typelead.gradle.utils.FileUtils;
 import com.typelead.gradle.utils.NoSpec;
 import com.typelead.gradle.utils.PathSpec;
 import com.typelead.gradle.utils.PrintHelper;
@@ -26,15 +39,18 @@ import com.typelead.gradle.utils.ResolvedExecutable;
 import com.typelead.gradle.utils.SystemSpec;
 import com.typelead.gradle.utils.SnapshotUtils;
 import com.typelead.gradle.utils.VersionSpec;
+import static com.typelead.gradle.utils.PrintHelper.*;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 import com.typelead.gradle.eta.internal.EtlasResolver;
 
 public class EtaSetupEnvironment extends DefaultTask {
 
+    public static final String INFO_FILENAME = "eta-info";
     public static final String SNAPSHOT_FILENAME = "eta-versions-snapshot";
 
     private final Property<ResolvedExecutable> resolvedEta;
+    private final Property<EtaInfo> resolvedEtaInfo;
     private final Property<ResolvedExecutable> resolvedEtlas;
     private final Property<Boolean> versionsChanged;
     private Provider<ExecutableSpec> etaSpec;
@@ -45,8 +61,9 @@ public class EtaSetupEnvironment extends DefaultTask {
         final Project project = getProject();
         final EtaExtension extension =
             project.getRootProject().getExtensions().getByType(EtaExtension.class);
-        this.resolvedEta = extension.getEta();
-        this.resolvedEtlas = extension.getEtlas();
+        this.resolvedEta     = extension.getEta();
+        this.resolvedEtaInfo = extension.getEtaInfo();
+        this.resolvedEtlas   = extension.getEtlas();
 
         this.etaSpec   = extension.getEtaSpec();
         this.etlasSpec = extension.getEtlasSpec();
@@ -125,6 +142,8 @@ public class EtaSetupEnvironment extends DefaultTask {
         boolean changed = SnapshotUtils.takeSnapshotAndCompare
             (getVersionsSnapshot(), etaExec, etlasExec,
              getEtaSpec(), getEtlasSpec());
+
+        resolvedEtaInfo.set(fetchEtaInfo(etlas, etaExec, changed));
 
         versionsChanged.set(Boolean.valueOf(changed));
 
@@ -257,6 +276,57 @@ public class EtaSetupEnvironment extends DefaultTask {
             etlas.update();
 
         }
+    }
+
+    private EtaInfo fetchEtaInfo(EtlasCommand etlas, ResolvedExecutable eta,
+                                 boolean changed) {
+        File infoFile = getProject().getLayout().getBuildDirectory()
+            .file(INFO_FILENAME).get().getAsFile();
+
+        List<String> lines;
+
+        if (!infoFile.exists() || changed) {
+            lines = etlas.getLanguagesAndExtensions();
+            final StringBuilder sb = new StringBuilder();
+            for (String line: lines) {
+                println(sb, line);
+            }
+            FileUtils.write(infoFile, sb.toString());
+        } else {
+            try {
+                lines = new ArrayList<String>();
+                BufferedReader in = null;
+                try {
+                    in = new BufferedReader(new FileReader(infoFile));
+                    String line = null;
+                    while ((line = in.readLine()) != null) {
+                        lines.add(line);
+                    }
+                } finally {
+                    if (in != null) {
+                        in.close();
+                    }
+                }
+            } catch (IOException io) {
+                throw new GradleException
+                    ("fetchEtaInfo: While reading " + infoFile.getPath() +
+                     ", encountered an IOException" , io);
+            }
+        }
+
+        Set<String> validLanguages  = new LinkedHashSet<String>();
+        Set<String> validExtensions = new LinkedHashSet<String>();
+
+        Iterator<String> it = lines.iterator();
+        validLanguages.add(it.next());
+        validLanguages.add(it.next());
+
+        while (it.hasNext()) {
+            validExtensions.add(it.next());
+        }
+
+        return new EtaInfo(PrintHelper.friendlyVersion(eta.getVersion()),
+                           validLanguages, validExtensions);
     }
 
     private static final String NEWLINE = System.lineSeparator();
