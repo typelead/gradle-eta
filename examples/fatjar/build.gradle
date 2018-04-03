@@ -1,0 +1,24 @@
+buildscript {
+  repositories {
+    jcenter()
+    mavenLocal()
+  }
+
+  dependencies {
+    classpath 'com.typelead:gradle-eta:latest.release'
+    classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.3'
+  }
+}
+
+apply plugin: 'eta'
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+eta {
+  useSystemEta   = true
+  useSystemEtlas = true
+}
+
+dependencies {
+  compile eta('base:4.8.2.0')
+}
