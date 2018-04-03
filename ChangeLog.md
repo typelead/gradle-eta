@@ -8,3 +8,4 @@
     - Arguments that you want to pass to the Eta compiler directly
   - List<String> cpp
     - Preprocessor arguments to send to the Eta compiler
+- Added getDefaultEtaProguardFile() function to EtaPluginConvention that provides an out-of-the-box config file to use.

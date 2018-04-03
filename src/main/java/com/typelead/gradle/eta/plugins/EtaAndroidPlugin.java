@@ -188,7 +188,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
 
         Object etaClasspathKey =
             variant.registerPreJavacGeneratedBytecode
-            (project.files(compileTask.getOutputJarFile()).builtBy(compileTask));
+            (project.files(compileTask.getOutputJarFileProvider())
+             .builtBy(compileTask));
 
         /* Setup the classpath for Eta */
 

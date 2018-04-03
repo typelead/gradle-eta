@@ -23,6 +23,7 @@ import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.api.NamingScheme;
+import com.typelead.gradle.eta.api.ProguardFiles;
 import com.typelead.gradle.eta.tasks.EtaSetupEnvironment;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.tasks.EtaInjectDependencies;
@@ -38,6 +39,8 @@ public class EtaBasePlugin implements Plugin<Project> {
     /* Constants */
     public static final String ETA_EXTENSION_NAME = "eta";
     public static final String TASK_GROUP_NAME = "EtaPlugin";
+
+    public static final String ETA_INTERMEDIATES_DIRECTORY = "eta-intermediates";
 
     public static final String DEFAULT_ETA_MAIN_CLASS = "eta.main";
 
@@ -73,6 +76,8 @@ public class EtaBasePlugin implements Plugin<Project> {
         configureEtaRootTasks();
 
         configureInjectionTasks();
+
+        createProguardFiles();
     }
 
     private void createRootEtaExtension() {
@@ -174,5 +179,9 @@ public class EtaBasePlugin implements Plugin<Project> {
 
     private boolean isRootProject() {
         return project == project.getRootProject();
+    }
+
+    private void createProguardFiles() {
+        ProguardFiles.createAll(project);
     }
 }

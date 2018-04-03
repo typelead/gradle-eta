@@ -1,10 +1,12 @@
 package com.typelead.gradle.eta.plugins;
 
+import java.io.File;
 import java.util.Map;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.SelfResolvingDependency;
 
+import com.typelead.gradle.eta.api.ProguardFiles;
 import com.typelead.gradle.eta.internal.DefaultEtaDirectDependency;
 import com.typelead.gradle.eta.internal.DefaultEtaGitDependency;
 
@@ -29,5 +31,9 @@ public class EtaPluginConvention {
 
     public SelfResolvingDependency eta(Map<String, String> dependencyAttributes) {
         return DefaultEtaGitDependency.create(project, dependencyAttributes);
+    }
+
+    public File getDefaultEtaProguardFile() {
+        return ProguardFiles.getDefaultEtaProguardFile(project);
     }
 }

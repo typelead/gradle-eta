@@ -156,6 +156,11 @@ public class EtaCompile extends SourceTask {
         return outputJar.get();
     }
 
+    @Internal
+    public Provider<File> getOutputJarFileProvider() {
+        return outputJar;
+    }
+
     @OutputDirectory
     public File getDestinationDir() {
         return destinationDir.getAsFile().get();

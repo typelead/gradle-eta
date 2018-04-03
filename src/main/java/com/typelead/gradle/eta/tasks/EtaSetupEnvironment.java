@@ -40,6 +40,7 @@ import com.typelead.gradle.utils.SystemSpec;
 import com.typelead.gradle.utils.SnapshotUtils;
 import com.typelead.gradle.utils.VersionSpec;
 import static com.typelead.gradle.utils.PrintHelper.*;
+import static com.typelead.gradle.eta.plugins.EtaBasePlugin.*;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 import com.typelead.gradle.eta.internal.EtlasResolver;
@@ -95,7 +96,7 @@ public class EtaSetupEnvironment extends DefaultTask {
     @OutputFile
     public File getVersionsSnapshot() {
         return getProject().getLayout().getBuildDirectory()
-            .file(SNAPSHOT_FILENAME).get().getAsFile();
+            .dir(ETA_INTERMEDIATES_DIRECTORY).get().file(SNAPSHOT_FILENAME).getAsFile();
     }
 
     @Internal
@@ -281,7 +282,7 @@ public class EtaSetupEnvironment extends DefaultTask {
     private EtaInfo fetchEtaInfo(EtlasCommand etlas, ResolvedExecutable eta,
                                  boolean changed) {
         File infoFile = getProject().getLayout().getBuildDirectory()
-            .file(INFO_FILENAME).get().getAsFile();
+            .dir(ETA_INTERMEDIATES_DIRECTORY).get().file(INFO_FILENAME).getAsFile();
 
         List<String> lines;
 
