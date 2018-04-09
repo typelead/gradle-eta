@@ -27,7 +27,7 @@ plugins {
     id 'com.typelead.eta.base' version '0.5.4'
 }
 
-apply plugin: "com.typelead.eta.base"
+apply plugin: 'eta-base'
 ```
 
 ### Eta Plugin
@@ -39,7 +39,7 @@ plugins {
     id 'com.typelead.eta' version '0.5.4'
 }
 
-apply plugin: "com.typelead.eta"
+apply plugin: 'eta'
 ```
 
 ### Eta Android Plugin
@@ -51,7 +51,7 @@ plugins {
     id 'com.typelead.eta.android' version '0.5.4'
 }
 
-apply plugin: "com.typelead.eta.android"
+apply plugin: 'eta-android'
 ```
 
 ## Standard Method
