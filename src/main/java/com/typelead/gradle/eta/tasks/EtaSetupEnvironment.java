@@ -34,7 +34,6 @@ import com.typelead.gradle.utils.IOUtils;
 import com.typelead.gradle.utils.FileUtils;
 import com.typelead.gradle.utils.NoSpec;
 import com.typelead.gradle.utils.PathSpec;
-import com.typelead.gradle.utils.PrintHelper;
 import com.typelead.gradle.utils.ResolvedExecutable;
 import com.typelead.gradle.utils.SystemSpec;
 import com.typelead.gradle.utils.SnapshotUtils;
@@ -135,7 +134,7 @@ public class EtaSetupEnvironment extends DefaultTask {
 
         if (etaExec.isFresh()) {
             getProject().getLogger().lifecycle
-                ("Installing Eta v" + etaExec.getVersion());
+                ("Installing Eta v" + friendlyVersion(etaExec.getVersion()));
 
             etlas.installEta();
         }
@@ -227,7 +226,7 @@ public class EtaSetupEnvironment extends DefaultTask {
         } else if (spec instanceof VersionSpec) {
 
             final String friendlyEtaVersion = ((VersionSpec) spec).getVersion();
-            etaVersion = PrintHelper.machineVersion(friendlyEtaVersion);
+            etaVersion = machineVersion(friendlyEtaVersion);
             fresh = !etlas.getInstalledEtaVersions().contains(friendlyEtaVersion);
 
         }
@@ -236,7 +235,7 @@ public class EtaSetupEnvironment extends DefaultTask {
 
             getProject().getLogger().lifecycle
                 ("WARNING: You have not explicitly set the version of Eta to be used, "
-                 + "so the " + message + ", " + PrintHelper.friendlyVersion(etaVersion)
+                 + "so the " + message + ", " + friendlyVersion(etaVersion)
                  + ", will be used." + NEWLINE + NEWLINE
                  + "This is not recommended since it will make this build "
                  + "non-reproducible. Please supply a value for the 'version' property "
@@ -326,7 +325,7 @@ public class EtaSetupEnvironment extends DefaultTask {
             validExtensions.add(it.next());
         }
 
-        return new EtaInfo(PrintHelper.friendlyVersion(eta.getVersion()),
+        return new EtaInfo(friendlyVersion(eta.getVersion()),
                            validLanguages, validExtensions);
     }
 

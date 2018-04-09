@@ -18,6 +18,7 @@ import org.gradle.api.provider.Property;
 
 import com.typelead.gradle.utils.ResolvedExecutable;
 import com.typelead.gradle.eta.api.EtaExtension;
+import static com.typelead.gradle.utils.PrintHelper.*;
 
 public class EtlasCommand {
 
@@ -79,7 +80,7 @@ public class EtlasCommand {
         if (eta.isSystem()) {
             return null;
         }
-        return "--select-eta=" + eta.getVersion();
+        return "--select-eta=" + friendlyVersion(eta.getVersion());
     }
 
     public String getWelcomeMessage() {
