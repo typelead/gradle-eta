@@ -124,8 +124,8 @@ buildscript {
 apply plugin: 'eta'
 
 eta {
-  useSystemEta = true
-  useSystemEtlas = true
+  version = '0.7.2b1'
+  etlasVersion = '1.3.0.0'
 }
 ```
 
@@ -135,8 +135,8 @@ apply plugin: 'eta'
 apply plugin: 'application'
 
 eta {
-  useSystemEta = true
-  useSystemEtlas = true
+  version = '0.7.2b1'
+  etlasVersion = '1.3.0.0'
 }
 ```
 
@@ -146,8 +146,8 @@ eta {
 apply plugin: 'eta-android'
 
 eta {
-  useSystemEta = true
-  useSystemEtlas = true
+  version = '0.7.2b1'
+  etlasVersion = '1.3.0.0'
 }
 ```
 
