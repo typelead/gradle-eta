@@ -24,7 +24,7 @@ NOTE: Both the Eta Plugin and the Eta Android Plugin apply the Eta Base Plugin b
 
 ```gradle
 plugins {
-    id 'com.typelead.eta.base version '0.5.4'
+    id 'com.typelead.eta.base' version '0.5.4'
 }
 
 apply plugin: "com.typelead.eta.base"
