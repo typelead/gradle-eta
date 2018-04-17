@@ -73,6 +73,7 @@ public class CabalHelper {
         }
 
         if (options != null) {
+            /* TODO: Abstract out the redundancies with functions. */
             print  (sb, "    default-language: ");
             println(sb, options.getLanguage());
 
@@ -102,12 +103,37 @@ public class CabalHelper {
             Iterator<String> cppIt =
                 options.getCpp().iterator();
             if (cppIt.hasNext()) {
-                print  (sb, "    cpp-options: ");
+                print(sb, "    cpp-options: ");
                 /* TODO: Handle arguments with spaces via quotes? */
-                println(sb, cppIt.next());
+                print(sb, cppIt.next());
                 while (cppIt.hasNext()) {
                     print(sb, " ");
                     print(sb, cppIt.next());
+                }
+                print(sb, NEWLINE);
+            }
+
+            Iterator<String> installIncludesIt =
+                options.getInstallIncludes().iterator();
+            if (installIncludesIt.hasNext()) {
+                print  (sb, "    install-includes: ");
+                /* TODO: Handle arguments with spaces via quotes? */
+                println(sb, installIncludesIt.next());
+                while (installIncludesIt.hasNext()) {
+                    print  (sb, "                      ");
+                    println(sb, installIncludesIt.next());
+                }
+            }
+
+            Iterator<String> includeDirsIt =
+                options.getIncludeDirs().iterator();
+            if (includeDirsIt.hasNext()) {
+                print(sb, "    include-dirs: ");
+                /* TODO: Handle arguments with spaces via quotes? */
+                print(sb, includeDirsIt.next());
+                while (includeDirsIt.hasNext()) {
+                    print(sb, " ");
+                    print(sb, includeDirsIt.next());
                 }
                 print(sb, NEWLINE);
             }

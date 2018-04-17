@@ -18,8 +18,10 @@ public class EtaOptions {
 
     private String language = "Haskell2010";
     private NamedDomainObjectContainer<LanguageExtension> languageExtensions;
-    private List<String> arguments  = Collections.emptyList();
-    private List<String> cppOptions = Collections.emptyList();
+    private List<String> arguments       = Collections.emptyList();
+    private List<String> cppOptions      = Collections.emptyList();
+    private List<String> installIncludes = Collections.emptyList();
+    private List<String> includeDirs     = Collections.emptyList();
 
     @Input
     public String getLanguage() {
@@ -46,6 +48,23 @@ public class EtaOptions {
 
     public void setCpp(String... cpp) {
         this.cppOptions = Arrays.asList(cpp);
+    }
+
+    @Input
+    public List<String> getInstallIncludes() {
+        return installIncludes;
+    }
+
+    public void setInstallIncludes(String... includes) {
+        this.installIncludes = Arrays.asList(includes);
+    }
+
+    public List<String> getIncludeDirs() {
+        return includeDirs;
+    }
+
+    public void setIncludeDirs(String... includeDirs) {
+        this.includeDirs = Arrays.asList(includeDirs);
     }
 
     @Input
