@@ -48,7 +48,7 @@ plugins {
 }
 ```
 
-### Standard Method
+### Legacy Method
 
 Before applying any of the plugins, you should add the following in the `build.gradle` for your root project.
 
