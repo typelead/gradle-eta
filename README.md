@@ -8,15 +8,15 @@
 A gradle plugin for building [Eta](http://eta-lang.org/) projects via the
 [Etlas](https://github.com/typelead/etlas) build tool.
 
-# Requirements
+## Requirements
 
 This plugin requires that Gradle 4.3+ is used.
 
-# Using the Plugin
+## Using the Plugin
 
-## Plugin DSL
+### Plugin DSL
 
-### Eta Base Plugin
+#### Eta Base Plugin
 
 This is used for configuring your Eta/Etlas versions for your entire project. You can only do such configuration in the root project.
 
@@ -28,7 +28,7 @@ plugins {
 }
 ```
 
-### Eta Plugin
+#### Eta Plugin
 
 This is used for standard JVM projects.
 
@@ -38,7 +38,7 @@ plugins {
 }
 ```
 
-### Eta Android Plugin
+#### Eta Android Plugin
 
 This is used for Android projects.
 
@@ -48,7 +48,7 @@ plugins {
 }
 ```
 
-## Standard Method
+### Standard Method
 
 Before applying any of the plugins, you should add the following in the `build.gradle` for your root project.
 
@@ -65,29 +65,29 @@ buildscript {
 }
 ```
 
-### Eta Base Plugin
+#### Eta Base Plugin
 
 ```gradle
 apply plugin: 'eta-base'
 ```
 
-### Eta Plugin
+#### Eta Plugin
 
 ```gradle
 apply plugin: 'eta'
 ```
 
-### Eta Android Plugin
+#### Eta Android Plugin
 
 ```gradle
 apply plugin: 'eta-android'
 ```
 
-# Building from Source
+## Building from Source
 
 If you're interested in hacking on the plugin or trying out the latest version, you can install it from source.
 
-## Source Installation
+### Source Installation
 
 ```shell
 git clone https://github.com/typelead/gradle-eta
@@ -110,9 +110,9 @@ buildscript {
 }
 ```
 
-# Quick Start
+## Quick Start
 
-## Library
+### Library
 
 ```gradle
 eta {
@@ -121,7 +121,7 @@ eta {
 }
 ```
 
-## Executable
+### Executable
 ```gradle
 apply plugin: 'application'
 
@@ -131,7 +131,7 @@ eta {
 }
 ```
 
-## Android Application
+### Android Application
 
 ```gradle
 eta {
@@ -142,7 +142,7 @@ eta {
 
 See the `examples` and `src/test/testData` directories for more examples.
 
-# Configuration
+## Configuration
 
 You can use the top-level `eta` extension for some basic global configurations.
 
@@ -166,7 +166,7 @@ Properties:
 * `boolean useSystemEtlas` - If specified, attempts to resolve the etlas binary
     on your system `PATH`.
 
-# Dependencies
+## Dependencies
 
 You can add Eta dependencies (from Hackage or elsewhere) as follows:
 
@@ -180,16 +180,16 @@ The general format is `eta([package-name]:[version-or-version-range])`.
 
 [Ivy version range notation](http://ant.apache.org/ivy/history/latest-milestone/ivyfile/dependency.html) is supported.
 
-# Tasks
+## Tasks
 
 The Eta Gradle Plugin adds the following tasks:
 
-## Root Project Tasks
+### Root Project Tasks
 
 * `:setupEnvironmentEta` - This task is attached to the root project and installs the necessary `eta` and `etlas` executables for your platform or uses the provided executables in the configuration.
 * `:resolveDependenciesEta` - This task is attached to the root project and makes sure all the projects in the build use a consistent set of Eta dependencies.
 
-## Per-Project, Per-SourceSet Tasks
+### Per-Project, Per-SourceSet Tasks
 
 * `installDependencies<SourceSet>Eta` - This task installs the Eta dependencies into the Etlas global cache and injects the paths to all the dependency jars into the corresponding Gradle configurations. This task is incremental and will only do work on the first run and every time the dependencies change.
 * `compile<SourceSet>Eta` - This task performs incremental compilation of the corresponding source set. This task depends on `compile<SourceSet>Java` and will have the output of that task in its classpath.
@@ -197,10 +197,10 @@ The Eta Gradle Plugin adds the following tasks:
 
 For the `main` source set, the tasks are `installDependenciesEta` and `compileEta`.
 
-## Conditional Tasks
+### Conditional Tasks
 
 If the `application` plugin is enabled as well, the `run` task will run the `main` function defined in `src/main/eta/Main.hs`.
 
-## Standard Tasks
+### Standard Tasks
 
 The standard Gradle tasks like `build`, `assemble`, so on will work as expected and will trigger compilation of the required Eta source sets.
