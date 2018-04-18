@@ -75,9 +75,9 @@ public class EtaPlugin implements Plugin<Project> {
         final EtaOptions etaOptions = createEtaOptions();
 
         final DefaultEtaSourceSet etaSourceSet =
-            ExtensionHelper.createExtension
-              (sourceSet, "eta", DefaultEtaSourceSet.class, sourceSet,
-               sourceDirectorySetFactory);
+            new DefaultEtaSourceSet(sourceSet, sourceDirectorySetFactory);
+
+        ExtensionHelper.createConvention(sourceSet, "eta", etaSourceSet);
 
         final SourceDirectorySet etaSourceDirectorySet = etaSourceSet.getEta();
 

@@ -81,12 +81,16 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         androidExtension.getSourceSets().all(sourceSet -> {
                 project.getLogger().debug("Creating EtaSourceSet for source set " + sourceSet);
 
-                EtaSourceSet etaSourceSet =
-                    ExtensionHelper.createExtension(sourceSet,
-                        ETA_SOURCE_SET_DSL_NAME, DefaultEtaSourceSet.class,
-                        ETA_SOURCE_SET_NAME,
-                        ((DefaultAndroidSourceSet) sourceSet).getDisplayName(),
-                        sourceDirectorySetFactory);
+                final DefaultEtaSourceSet etaSourceSet =
+                    new DefaultEtaSourceSet
+                    (ETA_SOURCE_SET_NAME,
+                     ((DefaultAndroidSourceSet) sourceSet).getDisplayName(),
+                     sourceDirectorySetFactory);
+
+                ExtensionHelper.createConvention
+                    (sourceSet, ETA_SOURCE_SET_DSL_NAME, etaSourceSet);
+
+                ExtensionHelper.createConvention(sourceSet, "eta", etaSourceSet);
 
                 etaSourceSet.getEta().srcDir("src/" + sourceSet.getName() + "/eta");
             });
@@ -125,7 +129,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
 
         for (SourceProvider sourceProvider : variant.getSourceSets()) {
             final EtaSourceSet etaSourceSet =
-                ExtensionHelper.getExtension(sourceProvider, EtaSourceSet.class);
+                ExtensionHelper.getConvention(sourceProvider, EtaSourceSet.class);
             if (etaSourceSet != null) {
                 etaSourceDirectorySet.source(etaSourceSet.getEta());
             }

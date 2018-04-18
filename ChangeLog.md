@@ -1,4 +1,18 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.5
+
+- Added new properties to EtaOptions:
+	- List<String> installIncludes
+	  Include files to install with the package installation
+	- List<String> includeDirs
+	  Directories for which to search include files
+- Fixed sourceSet extension behavior to use conventions instead.
+
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.4
+
+- Use friendly version when printing out error messages for binary installation.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.3
+
 - Added EtaOptions configuration for EtaCompile task:
   - String language
     - Either Haskell98 or Haskell2010
