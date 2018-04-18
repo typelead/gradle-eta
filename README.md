@@ -26,8 +26,6 @@ NOTE: Both the Eta Plugin and the Eta Android Plugin apply the Eta Base Plugin b
 plugins {
     id 'com.typelead.eta.base' version '0.5.4'
 }
-
-apply plugin: 'eta-base'
 ```
 
 ### Eta Plugin
@@ -38,8 +36,6 @@ This is used for standard JVM projects.
 plugins {
     id 'com.typelead.eta' version '0.5.4'
 }
-
-apply plugin: 'eta'
 ```
 
 ### Eta Android Plugin
@@ -50,8 +46,6 @@ This is used for Android projects.
 plugins {
     id 'com.typelead.eta.android' version '0.5.4'
 }
-
-apply plugin: 'eta-android'
 ```
 
 ## Standard Method
@@ -121,8 +115,6 @@ buildscript {
 ## Library
 
 ```gradle
-apply plugin: 'eta'
-
 eta {
   version = '0.7.2b1'
   etlasVersion = '1.3.0.0'
@@ -131,7 +123,6 @@ eta {
 
 ## Executable
 ```gradle
-apply plugin: 'eta'
 apply plugin: 'application'
 
 eta {
@@ -143,8 +134,6 @@ eta {
 ## Android Application
 
 ```gradle
-apply plugin: 'eta-android'
-
 eta {
   version = '0.7.2b1'
   etlasVersion = '1.3.0.0'
