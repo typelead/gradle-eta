@@ -26,6 +26,7 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.internal.file.SourceDirectorySetFactory;
+import org.gradle.api.internal.tasks.DefaultSourceSet;
 import org.gradle.api.internal.tasks.DefaultSourceSetOutput;
 
 import com.typelead.gradle.utils.ExtensionHelper;
@@ -75,7 +76,10 @@ public class EtaPlugin implements Plugin<Project> {
         final EtaOptions etaOptions = createEtaOptions();
 
         final DefaultEtaSourceSet etaSourceSet =
-            new DefaultEtaSourceSet(sourceSet, sourceDirectorySetFactory);
+            project.getObjects().newInstance
+            (DefaultEtaSourceSet.class, sourceSet, "eta",
+             ((DefaultSourceSet) sourceSet).getDisplayName(),
+             sourceDirectorySetFactory);
 
         ExtensionHelper.createConvention(sourceSet, "eta", etaSourceSet);
 

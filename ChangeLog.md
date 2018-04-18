@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.6
+- Support configuration DSL for the sourceSet extension.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.5
 
 - Added new properties to EtaOptions:

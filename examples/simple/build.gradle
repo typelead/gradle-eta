@@ -16,6 +16,14 @@ eta {
   useSystemEtlas = true
 }
 
+sourceSets {
+  main {
+    eta {
+      srcDir 'eta'
+    }
+  }
+}
+
 dependencies {
   compile eta('base:4.8.2.0')
 }

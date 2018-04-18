@@ -1,11 +1,12 @@
 package com.typelead.gradle.eta.internal;
 
+import javax.inject.Inject;
+
 import groovy.lang.Closure;
 
 import org.gradle.api.Action;
 import org.gradle.api.Describable;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.tasks.DefaultSourceSet;
 import org.gradle.api.internal.file.SourceDirectorySetFactory;
 import org.gradle.api.tasks.SourceSet;
 
@@ -17,21 +18,13 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
     private final SourceSet sourceSet;
     private final SourceDirectorySet eta;
 
-    public DefaultEtaSourceSet(String name,
+    @Inject
+    public DefaultEtaSourceSet(SourceSet sourceSet,
+                               String name,
                                String displayName,
                                SourceDirectorySetFactory sourceDirectorySetFactory) {
-        this.sourceSet = null;
-        this.eta = sourceDirectorySetFactory.create(name, displayName + " Eta source");
-        eta.getFilter().include("**/*.eta", "**/*.hs");
-    }
-
-    public DefaultEtaSourceSet(SourceSet sourceSet,
-                               SourceDirectorySetFactory sourceDirectorySetFactory) {
         this.sourceSet = sourceSet;
-
-        final String displayName = ((DefaultSourceSet) sourceSet).getDisplayName();
-
-        this.eta = sourceDirectorySetFactory.create("eta", displayName + " Eta source");
+        this.eta = sourceDirectorySetFactory.create(name, displayName + " Eta source");
         eta.getFilter().include("**/*.eta", "**/*.hs");
     }
 

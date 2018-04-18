@@ -1,9 +1,9 @@
 # Gradle Plugin for Eta
 
 [![Build Status](https://travis-ci.org/typelead/gradle-eta.svg?branch=master)](https://travis-ci.org/typelead/gradle-eta)
-[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta-0.5.4-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta)
-[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta.android-0.5.4-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta.android)
-[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta.base-0.5.4-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta.base)
+[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta-0.5.6-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta)
+[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta.android-0.5.6-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta.android)
+[![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta.base-0.5.6-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta.base)
 
 A gradle plugin for building [Eta](http://eta-lang.org/) projects via the
 [Etlas](https://github.com/typelead/etlas) build tool.
@@ -24,7 +24,7 @@ NOTE: Both the Eta Plugin and the Eta Android Plugin apply the Eta Base Plugin b
 
 ```gradle
 plugins {
-    id 'com.typelead.eta.base' version '0.5.4'
+    id 'com.typelead.eta.base' version '0.5.6'
 }
 ```
 
@@ -34,7 +34,7 @@ This is used for standard JVM projects.
 
 ```gradle
 plugins {
-    id 'com.typelead.eta' version '0.5.4'
+    id 'com.typelead.eta' version '0.5.6'
 }
 ```
 
@@ -44,7 +44,7 @@ This is used for Android projects.
 
 ```gradle
 plugins {
-    id 'com.typelead.eta.android' version '0.5.4'
+    id 'com.typelead.eta.android' version '0.5.6'
 }
 ```
 
@@ -60,7 +60,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath "gradle.plugin.com.typelead:gradle-eta:0.5.4"
+    classpath "gradle.plugin.com.typelead:gradle-eta:0.5.6"
   }
 }
 ```

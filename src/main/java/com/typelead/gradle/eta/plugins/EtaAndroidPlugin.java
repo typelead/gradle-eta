@@ -82,8 +82,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
                 project.getLogger().debug("Creating EtaSourceSet for source set " + sourceSet);
 
                 final DefaultEtaSourceSet etaSourceSet =
-                    new DefaultEtaSourceSet
-                    (ETA_SOURCE_SET_NAME,
+                    project.getObjects().newInstance
+                    (DefaultEtaSourceSet.class, null, ETA_SOURCE_SET_NAME,
                      ((DefaultAndroidSourceSet) sourceSet).getDisplayName(),
                      sourceDirectorySetFactory);
 
