@@ -1,9 +1,11 @@
 package com.typelead.gradle.eta.api;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.io.File;
 
 import groovy.lang.Closure;
 
@@ -64,7 +66,12 @@ public class EtaOptions {
     }
 
     public void setIncludeDirs(String... includeDirs) {
-        this.includeDirs = Arrays.asList(includeDirs);
+        // Convert the relative paths to absolute paths.
+        List<String> newIncludeDirs = new ArrayList<String>(includeDirs.length);
+        for (String path : includeDirs) {
+            newIncludeDirs.add(new File(path).getAbsolutePath());
+        }
+        this.includeDirs = newIncludeDirs;
     }
 
     @Input
