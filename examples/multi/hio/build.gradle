@@ -1,4 +1,6 @@
-apply plugin: 'eta'
+plugins {
+    id 'com.typelead.eta'
+}
 
 dependencies {
     compile eta('text:1.2.2.2')
