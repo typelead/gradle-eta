@@ -1,8 +1,7 @@
 plugins {
     id 'com.typelead.eta' version '0.5.7'
+    id 'application'
 }
-
-apply plugin: 'application'
 
 eta {
     version = '0.7.2b1'
