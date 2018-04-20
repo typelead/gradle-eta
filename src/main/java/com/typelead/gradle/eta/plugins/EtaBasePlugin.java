@@ -1,10 +1,19 @@
 package com.typelead.gradle.eta.plugins;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.nio.file.Paths;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+
+import groovy.lang.Closure;
+
+import org.gradle.api.Action;
 import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -17,6 +26,16 @@ import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.testing.Test;
+import org.gradle.api.tasks.testing.TestResult.ResultType;
+import org.gradle.api.internal.tasks.testing.TestStartEvent;
+import org.gradle.api.internal.tasks.testing.TestCompleteEvent;
+import org.gradle.api.internal.tasks.testing.TestResultProcessor;
+import org.gradle.api.internal.tasks.testing.JvmTestExecutionSpec;
+import org.gradle.api.internal.tasks.testing.DefaultTestDescriptor;
+import org.gradle.api.internal.tasks.testing.DefaultTestSuiteDescriptor;
+import org.gradle.process.ExecResult;
+import org.gradle.process.JavaExecSpec;
 
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.ExtensionHelper;
@@ -78,6 +97,8 @@ public class EtaBasePlugin implements Plugin<Project> {
         configureInjectionTasks();
 
         createProguardFiles();
+
+        configureTestTask();
     }
 
     private void createRootEtaExtension() {
@@ -183,5 +204,127 @@ public class EtaBasePlugin implements Plugin<Project> {
 
     private void createProguardFiles() {
         ProguardFiles.createAll(project);
+    }
+
+    private void configureTestTask() {
+        Class<?> testExecuter = null;
+        Method method = null;
+        try {
+            testExecuter = Class.forName("org.gradle.api.internal.tasks.testing.detection.TestExecuter");
+            method = Test.class.getDeclaredMethod("setTestExecuter", testExecuter);
+        } catch (NoSuchMethodException ne) {
+            try {
+                testExecuter = Class.forName("org.gradle.api.internal.tasks.testing.TestExecuter");
+                method = Test.class.getDeclaredMethod("setTestExecuter", testExecuter);
+            } catch (NoSuchMethodException e) {
+                project.getLogger().info("Unable to find method with name 'setTestExecuter' in class org.gradle.api.tasks.testing.Test.");
+            } catch (ClassNotFoundException e) {
+                project.getLogger().info("Unable to find class org.gradle.api.tasks.testing.detection.TestExecuter");
+            }
+        } catch (ClassNotFoundException cne) {
+            project.getLogger().info("Unable to find class org.gradle.api.tasks.testing.detection.TestExecuter");
+        }
+
+        if (method == null || testExecuter == null) return;
+
+        method.setAccessible(true);
+
+        final Method setTestExecuterMethod = method;
+        final Class<?> testExecuterClass = testExecuter;
+
+        project.getTasks().withType
+            (Test.class, test ->
+             test.getConvention().getExtraProperties()
+             .set("useEtaTest", new SetTestExecuterClosure
+                  (test, setTestExecuterMethod, testExecuterClass)));
+    }
+
+    private class SetTestExecuterClosure extends Closure {
+
+        private final Test test;
+        private final Method method;
+        private final Class<?> testExecuter;
+
+        public SetTestExecuterClosure(Test test, Method method, Class<?> testExecuter) {
+            super(null);
+            this.test = test;
+            this.method = method;
+            this.testExecuter = testExecuter;
+        }
+
+        public Object doCall() {
+            Object taskExecuterInstance =
+                Proxy.newProxyInstance
+                (testExecuter.getClassLoader(), new Class<?>[] { testExecuter },
+                 new TestExecuterInvokeHandler());
+            try {
+                method.invoke(test, taskExecuterInstance);
+            } catch (IllegalAccessException e) {
+                throw new GradleException("Unable to access 'setTestExecuter'", e);
+            } catch (InvocationTargetException e) {
+                throw new GradleException("Exception thrown by 'setTestExecuter'", e);
+            }
+            return null;
+        }
+    }
+
+    private class TestExecuterInvokeHandler implements InvocationHandler {
+
+        public TestExecuterInvokeHandler() {}
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+            if (method.getName().equals("execute")) {
+                TestResultProcessor resultProcessor = (TestResultProcessor) args[1];
+                Object testSpec = args[0];
+                if (testSpec instanceof Test) {
+                    execute((Test) testSpec, resultProcessor);
+                } else if (testSpec instanceof JvmTestExecutionSpec) {
+                    execute((JvmTestExecutionSpec) testSpec, resultProcessor);
+                } else {
+                    throw new GradleException
+                        ("Bad argument to 'execute': " + testSpec.getClass());
+                }
+            } else if (method.getName().equals("stopNow")) {
+                /* TODO: Kill the process if this is called. */
+            }
+            return null;
+        }
+
+        private void execute(JvmTestExecutionSpec spec, TestResultProcessor resultProcessor) {
+            execute(execSpec -> {
+                    spec.getJavaForkOptions().copyTo(execSpec);
+                    execSpec.setClasspath(project.files(spec.getClasspath()));
+                }, resultProcessor);
+        }
+
+        private void execute(Test test, TestResultProcessor resultProcessor) {
+            execute(execSpec -> {
+                    test.copyTo(execSpec);
+                    execSpec.setClasspath(test.getClasspath());
+                }, resultProcessor);
+        }
+
+        private void execute(Action<JavaExecSpec> execSpecAction,
+                             TestResultProcessor resultProcessor) {
+            Object rootTestId = "eta-test-root";
+            Object testId = "eta-test";
+            resultProcessor.started
+                (new DefaultTestSuiteDescriptor(rootTestId, "Eta Root"),
+                 new TestStartEvent(System.currentTimeMillis()));
+            resultProcessor.started
+                (new DefaultTestDescriptor(testId, "eta.main", "Default Eta Test"),
+                 new TestStartEvent(System.currentTimeMillis()));
+            ExecResult execResult = project.javaexec(execSpec -> {
+                    execSpecAction.execute(execSpec);
+                    execSpec.setMain("eta.main");
+                });
+            ResultType resultType =
+                (execResult.getExitValue() == 0)? ResultType.SUCCESS : ResultType.FAILURE;
+            resultProcessor.completed
+                (testId, new TestCompleteEvent(System.currentTimeMillis(), resultType));
+            resultProcessor.completed
+                (rootTestId, new TestCompleteEvent(System.currentTimeMillis(), resultType));
+        }
     }
 }

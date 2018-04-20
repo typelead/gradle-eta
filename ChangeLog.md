@@ -1,3 +1,7 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.7
+- Fix bug with includeDirs property in which the user has to know the plugin internals
+- Add `useEtaTest()` method that uses simple Eta-style testing
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.6
 - Support configuration DSL for the sourceSet extension.
 

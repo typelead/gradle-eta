@@ -22,6 +22,11 @@ sourceSets {
       srcDir 'eta'
     }
   }
+  test {
+    eta {
+      srcDir 'eta-test'
+    }
+  }
 }
 
 dependencies {
@@ -36,4 +41,8 @@ compileEta {
     }
     cpp = ['-DHELLO=1']
   }
+}
+
+test {
+  useEtaTest()
 }
