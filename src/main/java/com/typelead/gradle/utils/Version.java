@@ -1,5 +1,8 @@
 package com.typelead.gradle.utils;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 /**
  * Supports comparing Version numbers.
  */
@@ -11,17 +14,33 @@ public class Version implements Comparable<Version> {
         this.parts = parts;
     }
 
+    private static final Pattern NUMERIC_PATTERN = Pattern.compile("[0-9]+");
+
     public static Version create(String v) {
         if (v == null) throw new IllegalArgumentException("Version String must not be null");
         if (v.isEmpty()) throw new IllegalArgumentException("Version String must not be empty");
         String[] ps = v.split("\\.");
         int[] parts = new int[ps.length];
+        int i = 0;
         try {
-            for (int i = 0; i < ps.length; ++i) {
+            for (; i < ps.length; ++i) {
                 parts[i] = Integer.parseInt(ps[i]);
             }
             return new Version(parts);
         } catch (NumberFormatException e) {
+            int lastIndex = ps.length - 1;
+            if (i == lastIndex) {
+                String suffix = ps[lastIndex];
+                Matcher matcher = NUMERIC_PATTERN.matcher(suffix);
+                if (matcher.find()) {
+                    try {
+                        parts[lastIndex] = Integer.parseInt(matcher.group());
+                    } catch (NumberFormatException ne) {
+                        throw new IllegalArgumentException("This should never happen." + suffix, ne);
+                    }
+                }
+                return new Version(parts);
+            }
             throw new IllegalArgumentException("Invalid Version String: " + v, e);
         }
     }

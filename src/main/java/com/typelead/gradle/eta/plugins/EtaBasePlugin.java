@@ -39,6 +39,7 @@ import org.gradle.process.JavaExecSpec;
 
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.ExtensionHelper;
+import com.typelead.gradle.utils.Version;
 import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.api.NamingScheme;
@@ -76,6 +77,9 @@ public class EtaBasePlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         this.project   = project;
+
+        checkForValidGradleVersion();
+
         this.mavenRepository = new EtlasMavenRepository
             (project, new File(project.getGradle().getGradleUserHomeDir()
                                + File.separator + "caches" + File.separator
@@ -99,6 +103,13 @@ public class EtaBasePlugin implements Plugin<Project> {
         createProguardFiles();
 
         configureTestTask();
+    }
+
+    private void checkForValidGradleVersion() {
+        if (Version.create(project.getGradle().getGradleVersion())
+            .isBefore(Version.create("4.3"))) {
+            throw new GradleException("The Eta Gradle Plugin only supports Gradle 4.3+. You can temporarily disable this plugin and update your wrapper script with `./gradlew wrapper --gradle-version 4.7`.");
+        }
     }
 
     private void createRootEtaExtension() {
