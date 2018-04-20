@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -66,10 +66,11 @@ public class EtaInstallDependencies extends DefaultTask {
     private Provider<RegularFile> cabalProjectFile;
     private Provider<RegularFile> cabalFile;
     private Property<String> executable;
+    private Map<String,Object> extraPackageDBs = new LinkedHashMap<String, Object>();
+    private Provider<String> packageName;
 
     public EtaInstallDependencies() {
         this.project = getProject();
-        this.projectName = project.provider(() -> project.getName());
         this.projectVersion =
             project.provider(() -> project.getVersion().toString());
         this.freezeConfigFile = project.files();
@@ -92,15 +93,19 @@ public class EtaInstallDependencies extends DefaultTask {
 
         this.cabalProjectFile = destinationDir.file(DEFAULT_CABAL_PROJECT_FILENAME);
         this.cabalFile = destinationDir
-            .file(project.provider(() -> getProjectName() + DEFAULT_CABAL_FILENAME));
+            .file(project.provider(() -> getPackageName() + DEFAULT_CABAL_FILENAME));
         this.executable = project.getObjects().property(String.class);
 
         getOutputs().upToDateWhen(task -> false);
     }
 
     @Input
-    public String getProjectName() {
-        return projectName.get();
+    public String getPackageName() {
+        return packageName.get();
+    }
+
+    public void setPackageName(Provider<String> packageName) {
+        this.packageName = packageName;
     }
 
     @Input
@@ -124,6 +129,14 @@ public class EtaInstallDependencies extends DefaultTask {
 
     public void setTargetConfiguration(Provider<String> targetConfiguration) {
         this.targetConfiguration = targetConfiguration;
+    }
+
+    public Map<String,Object> getExtraPackageDBs() {
+        return extraPackageDBs;
+    }
+
+    public void addExtraPackageDB(String packageName, Object file) {
+        extraPackageDBs.put(packageName, file);
     }
 
     @InputFiles
@@ -292,6 +305,8 @@ public class EtaInstallDependencies extends DefaultTask {
             .map(Provider::get)
             .collect(Collectors.toSet());
 
+        packageDBs.addAll(project.files(extraPackageDBs.values()).getFiles());
+
         DependencyUtils.foldEtaDependencies
             (project,
              dependencies.get(),
@@ -301,9 +316,10 @@ public class EtaInstallDependencies extends DefaultTask {
                    dependency list. */
 
                 directDeps.addAll(projectDeps);
+                directDeps.addAll(extraPackageDBs.keySet());
 
                 writeResults[0] = CabalHelper.generateCabalFile
-                    (project.getName(), project.getVersion().toString(), executableSpec,
+                    (getPackageName(), project.getVersion().toString(), executableSpec,
                      getSourceDirs().getFiles().stream()
                      .map(File::getAbsolutePath)
                      .collect(Collectors.toList()),

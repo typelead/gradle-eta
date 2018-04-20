@@ -44,6 +44,7 @@ public class EtaCompile extends SourceTask {
     private Provider<RegularFile>  cabalProjectFile;
     private Provider<RegularFile>  cabalFile;
     private EtaOptions etaOptions;
+    private Provider<String> packageName;
 
     public EtaCompile() {
         final Project project = getProject();
@@ -66,7 +67,7 @@ public class EtaCompile extends SourceTask {
                     return project.fileTree
                         (destinationDir, fileTree ->
                          fileTree.include("**/eta-" + getEtaVersion() + "/**/*"
-                                          + project.getName() + "*.jar"))
+                                          + getPackageName() + "*.jar"))
                         .getSingleFile();
 
                 } catch (IllegalStateException e) {
@@ -76,6 +77,15 @@ public class EtaCompile extends SourceTask {
             });
 
         getOutputs().upToDateWhen(task -> false);
+    }
+
+    @Input
+    public String getPackageName() {
+        return packageName.get();
+    }
+
+    public void setPackageName(Provider<String> packageName) {
+        this.packageName = packageName;
     }
 
     @Input
@@ -185,7 +195,7 @@ public class EtaCompile extends SourceTask {
 
         classpathFiles.addAll(getExtraClasspath());
 
-        CabalHelper.generateCabalProjectLocalFile(project.getName(),
+        CabalHelper.generateCabalProjectLocalFile(getPackageName(),
                                                   classpathFiles, workingDir);
 
         /* Fork an etlas process to fetch the dependencies. */

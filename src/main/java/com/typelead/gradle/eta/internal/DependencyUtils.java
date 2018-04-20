@@ -9,11 +9,13 @@ import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 
 import org.gradle.api.Project;
+import org.gradle.api.tasks.SourceSet;
 
 import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaGitDependency;
 import com.typelead.gradle.eta.api.EtaDirectDependency;
 import com.typelead.gradle.eta.api.EtaProjectDependency;
+import com.typelead.gradle.eta.api.NamingScheme;
 import com.typelead.gradle.eta.api.SourceRepository;
 import com.typelead.gradle.eta.plugins.EtaPlugin;
 
@@ -35,7 +37,9 @@ public class DependencyUtils {
                 final Project targetProject =
                     ((EtaProjectDependency) dependency).getProject(project);
                 if (isEtaProject(targetProject)) {
-                    projectDependencies.add(targetProject.getName());
+                    projectDependencies.add
+                        (NamingScheme.getPackageName(targetProject,
+                                                     SourceSet.MAIN_SOURCE_SET_NAME));
                 }
             } else if (dependency instanceof EtaGitDependency) {
                 gitDependencies.add

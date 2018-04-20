@@ -61,6 +61,7 @@ public class EtaOptions {
         this.installIncludes = Arrays.asList(includes);
     }
 
+    @Input
     public List<String> getIncludeDirs() {
         return includeDirs;
     }

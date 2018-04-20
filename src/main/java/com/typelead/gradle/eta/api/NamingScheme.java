@@ -1,5 +1,7 @@
 package com.typelead.gradle.eta.api;
 
+import org.gradle.api.Project;
+
 public class NamingScheme {
 
     public static String getTaskName(String verb, String name) {
@@ -33,5 +35,13 @@ public class NamingScheme {
         } else {
             return source;
         }
+    }
+
+    public static String getPackageName(Project project, String extraName) {
+        String path = project.getPath().substring(1);
+        if (path.equals("")) {
+            path = project.getName();
+        }
+        return (path + ":" + extraName).replace(":", "-");
     }
 }

@@ -17,6 +17,7 @@ import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.ApplicationPlugin;
@@ -34,6 +35,7 @@ import com.typelead.gradle.eta.api.EtaConfiguration;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.api.EtaOptions;
 import com.typelead.gradle.eta.api.LanguageExtension;
+import com.typelead.gradle.eta.api.NamingScheme;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.tasks.EtaInstallDependencies;
 import com.typelead.gradle.eta.tasks.EtaCompile;
@@ -67,13 +69,27 @@ public class EtaPlugin implements Plugin<Project> {
     }
 
     private void configureSourceSetDefaults() {
-        project.getConvention().getPlugin(JavaPluginConvention.class)
-               .getSourceSets().all(this::configureSourceSet);
+        JavaPluginConvention convention =
+            project.getConvention().getPlugin(JavaPluginConvention.class);
+        SourceSetContainer sourceSets = convention.getSourceSets();
+        sourceSets.all(this::configureSourceSet);
+
+        EtaCompile mainCompileTask = (EtaCompile) project.getTasks().findByName
+            (NamingScheme.getCompileTaskName(SourceSet.MAIN_SOURCE_SET_NAME));
+        EtaInstallDependencies testInstallDependenciesTask =
+            (EtaInstallDependencies) project.getTasks().findByName
+            (NamingScheme.getInstallDependenciesTaskName(SourceSet.TEST_SOURCE_SET_NAME));
+        testInstallDependenciesTask.addExtraPackageDB
+            (NamingScheme.getPackageName(project, SourceSet.MAIN_SOURCE_SET_NAME),
+             mainCompileTask.getPackageDBProvider());
     }
 
     private void configureSourceSet(SourceSet sourceSet) {
 
         final EtaOptions etaOptions = createEtaOptions();
+
+        final Provider<String> packageName =
+            project.provider(() -> NamingScheme.getPackageName(project, sourceSet.getName()));
 
         final DefaultEtaSourceSet etaSourceSet =
             project.getObjects().newInstance
@@ -116,6 +132,7 @@ public class EtaPlugin implements Plugin<Project> {
             project.getTasks().create(etaSourceSet.getInstallDependenciesTaskName(),
                                       EtaInstallDependencies.class);
 
+        installDependenciesTask.setPackageName(packageName);
         installDependenciesTask.setTargetConfiguration(targetConfiguration);
         installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
         installDependenciesTask.setFreezeConfigChanged
@@ -155,6 +172,7 @@ public class EtaPlugin implements Plugin<Project> {
                 return buildDir.dir(etaSourceSet.getClassesDir()).get();
             });
 
+        compileTask.setPackageName(packageName);
         compileTask.setClasspath(project.provider
                                  (() -> sourceSet.getCompileClasspath()));
         compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFileProvider());

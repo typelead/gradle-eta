@@ -34,7 +34,3 @@ compileEta {
     cpp = ['-DHELLO=1']
   }
 }
-
-test {
-  useEtaTest()
-}

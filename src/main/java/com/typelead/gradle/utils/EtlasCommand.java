@@ -3,7 +3,7 @@ package com.typelead.gradle.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Map;
@@ -222,8 +222,8 @@ public class EtlasCommand {
             .filter(line -> line.startsWith("dependency,"))
             .collect(Collectors.toList());
         int graphSize = lines.size();
-        Map<String, PackageInfo> keyValues = new HashMap<String, PackageInfo>(graphSize);
-        Map<String, List<String>> dependencies = new HashMap<String, List<String>>(graphSize);
+        Map<String, PackageInfo> keyValues = new LinkedHashMap<String, PackageInfo>(graphSize);
+        Map<String, List<String>> dependencies = new LinkedHashMap<String, List<String>>(graphSize);
         for (String line: lines) {
             String[] parts = line.split(",");
             String packageName = parts[1];

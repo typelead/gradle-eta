@@ -99,7 +99,7 @@ public class EtaSetupEnvironment extends DefaultTask {
     }
 
     @Internal
-    private String getCacheDir() {
+    public String getCacheDir() {
         return getProject().getGradle().getGradleUserHomeDir() + "/caches/etlas";
     }
 
