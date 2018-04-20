@@ -1,6 +1,7 @@
 package com.typelead.gradle.eta.api;
 
 import org.gradle.api.Project;
+import org.gradle.api.tasks.SourceSet;
 
 public class NamingScheme {
 
@@ -42,6 +43,12 @@ public class NamingScheme {
         if (path.equals("")) {
             path = project.getName();
         }
-        return (path + ":" + extraName).replace(":", "-");
+        String suffix;
+        if (extraName.equals(SourceSet.MAIN_SOURCE_SET_NAME)) {
+            suffix = "";
+        } else {
+            suffix = ":" + extraName;
+        }
+        return (path + suffix).replace(":", "-");
     }
 }
