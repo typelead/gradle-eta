@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.9
+- Correct naming scheme for main sourceset to avoid breakages
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.5.8
 - Throws exception if Gradle version is less than 4.3
 - Properly feed dependencies for compileTestEta

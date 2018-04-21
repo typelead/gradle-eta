@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.typelead'
-version '0.5.8'
+version '0.5.9'
 
 apply plugin: 'java'
 apply plugin: 'java-gradle-plugin'
@@ -47,21 +47,21 @@ pluginBundle {
   plugins {
     etaPlugin {
       id = 'com.typelead.eta'
-      version = '0.5.8'
+      version = '0.5.9'
       description = 'The official Gradle plugin for the Eta programming language. This plugin should be used for standard JVM projects.'
       displayName =  'Eta plugin'
       tags = ['eta', 'haskell', 'functional-programming']
     }
     etaBasePlugin {
       id = 'com.typelead.eta.base'
-      version = '0.5.8'
+      version = '0.5.9'
       description = 'The official base Gradle plugin for the Eta programming language. This plugin should be used to configure Eta/Etlas in the root project.'
       displayName = 'Eta Base plugin'
       tags = ['eta', 'haskell', 'functional-programming']
     }
     etaAndroidPlugin {
       id = 'com.typelead.eta.android'
-      version = '0.5.8'
+      version = '0.5.9'
       description = 'The official Android Gradle plugin for the Eta programming language. This plugin should be used to build Android applications with Eta.'
       displayName = 'Eta Android plugin'
       tags = ['eta', 'haskell', 'functional-programming', 'Android']
