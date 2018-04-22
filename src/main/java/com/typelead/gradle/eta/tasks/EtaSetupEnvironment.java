@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import javax.inject.Inject;
@@ -26,6 +27,7 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
+import org.gradle.internal.os.OperatingSystem;
 
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.EtaInfo;
@@ -249,10 +251,7 @@ public class EtaSetupEnvironment extends DefaultTask {
 
     private void ensureTelemetryPreferencesAndUpdate(EtlasCommand etlas) {
 
-        File etlasConfig = getProject().file(Paths.get(System.getProperty("user.home"),
-                                                       ".etlas", "config"));
-
-        if (!etlasConfig.exists()) {
+        if (!getEtlasConfigPath().exists()) {
 
             if(!etlas.getSendMetrics().isPresent()) {
 
@@ -276,6 +275,22 @@ public class EtaSetupEnvironment extends DefaultTask {
             etlas.update();
 
         }
+    }
+
+    private File getEtlasConfigPath() {
+        Path path;
+        String userHome = System.getProperty("user.home");
+        if (OperatingSystem.current().isWindows()) {
+            String appData = System.getenv("APPDATA");
+            if (appData != null) {
+                path = Paths.get(appData, "etlas", "config");
+            } else {
+                path = Paths.get(userHome, "AppData", "Roaming", "etlas", "config");
+            }
+        } else {
+            path = Paths.get(userHome, ".etlas", "config");
+        }
+        return getProject().file(path);
     }
 
     private EtaInfo fetchEtaInfo(EtlasCommand etlas, ResolvedExecutable eta,
