@@ -97,9 +97,10 @@ public class EtaAndroidPlugin implements Plugin<Project> {
     }
 
     private void addEtaOptionsToDefaultConfig() {
-        ExtensionHelper.createExtension
+        EtaOptions options = ExtensionHelper.createExtension
             (androidExtension, ETA_OPTIONS_DSL_NAME, EtaOptions.class)
             .setExtensions(project.container(LanguageExtension.class));
+        options.setProjectPath(project.getProjectDir().toPath());
     }
 
     private void configureBaseVariants() {
@@ -236,7 +237,9 @@ public class EtaAndroidPlugin implements Plugin<Project> {
     }
 
     private EtaOptions createEtaOptions() {
-        return project.getObjects().newInstance(EtaOptions.class)
+        EtaOptions options = project.getObjects().newInstance(EtaOptions.class)
             .setExtensions(project.container(LanguageExtension.class));
+        options.setProjectPath(project.getProjectDir().toPath());
+        return options;
     }
 }

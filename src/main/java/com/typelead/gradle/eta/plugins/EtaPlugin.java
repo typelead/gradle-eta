@@ -233,7 +233,9 @@ public class EtaPlugin implements Plugin<Project> {
     }
 
     private EtaOptions createEtaOptions() {
-        return project.getObjects().newInstance(EtaOptions.class)
+        EtaOptions options = project.getObjects().newInstance(EtaOptions.class)
             .setExtensions(project.container(LanguageExtension.class));
+        options.setProjectPath(project.getProjectDir().toPath());
+        return options;
     }
 }

@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import groovy.lang.Closure;
 
@@ -24,6 +26,11 @@ public class EtaOptions {
     private List<String> cppOptions      = Collections.emptyList();
     private List<String> installIncludes = Collections.emptyList();
     private List<String> includeDirs     = Collections.emptyList();
+    private Path projectPath;
+
+    public void setProjectPath(Path projectPath) {
+        this.projectPath = projectPath;
+    }
 
     @Input
     public String getLanguage() {
@@ -70,7 +77,8 @@ public class EtaOptions {
         // Convert the relative paths to absolute paths.
         List<String> newIncludeDirs = new ArrayList<String>(includeDirs.length);
         for (String path : includeDirs) {
-            newIncludeDirs.add(new File(path).getAbsolutePath());
+            newIncludeDirs.add(projectPath.resolve(Paths.get(path))
+                               .toFile().getAbsolutePath());
         }
         this.includeDirs = newIncludeDirs;
     }
