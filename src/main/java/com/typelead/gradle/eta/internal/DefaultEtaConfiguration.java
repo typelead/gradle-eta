@@ -102,7 +102,8 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
 
         if (!resolved.get() && resolved.compareAndSet(false, true)) {
 
-            logger.info("Resolving Eta Configuration '" + configurationName + "'");
+            logger.info("Resolving Eta Configuration '"
+                        + parentConfiguration.getIncoming().getPath() + "'" );
 
             List<PackageInfo> packageInfos =
                 dependencyGraph.differenceClosure(keys, resolvedDeps);

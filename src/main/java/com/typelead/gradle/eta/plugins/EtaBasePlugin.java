@@ -46,6 +46,7 @@ import com.typelead.gradle.eta.api.NamingScheme;
 import com.typelead.gradle.eta.api.ProguardFiles;
 import com.typelead.gradle.eta.tasks.EtaSetupEnvironment;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
+import com.typelead.gradle.eta.tasks.EtaInstallAllDependencies;
 import com.typelead.gradle.eta.tasks.EtaInjectDependencies;
 import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
 import com.typelead.gradle.eta.internal.DefaultEtaProjectDependency;
@@ -71,7 +72,11 @@ public class EtaBasePlugin implements Plugin<Project> {
     public static final String
         ETA_RESOLVE_DEPENDENCIES_TASK_NAME = "resolveDependenciesEta";
 
+    public static final String
+        ETA_INSTALL_ALL_DEPENDENCIES_TASK_NAME = "installAllDependenciesEta";
+
     private Project project;
+    private EtaExtension extension;
     private EtlasMavenRepository mavenRepository;
 
     @Override
@@ -114,8 +119,8 @@ public class EtaBasePlugin implements Plugin<Project> {
 
     private void createRootEtaExtension() {
         if (isRootProject()) {
-            project.getExtensions().create(EtaBasePlugin.ETA_EXTENSION_NAME,
-                                           EtaExtension.class, project);
+            extension = project.getExtensions()
+                .create(EtaBasePlugin.ETA_EXTENSION_NAME, EtaExtension.class, project);
         }
     }
 
@@ -172,10 +177,27 @@ public class EtaBasePlugin implements Plugin<Project> {
                 project.getTasks().create(ETA_RESOLVE_DEPENDENCIES_TASK_NAME,
                                           EtaResolveDependencies.class);
 
+            EtaInstallAllDependencies installAllDependenciesTask =
+                project.getTasks().create(ETA_INSTALL_ALL_DEPENDENCIES_TASK_NAME,
+                                          EtaInstallAllDependencies.class);
+
             resolveDependenciesTask.setVersionsChanged
                 (setupEnvironmentTask.getVersionsChanged());
 
             resolveDependenciesTask.dependsOn(setupEnvironmentTask);
+
+            installAllDependenciesTask.dependsOn(resolveDependenciesTask);
+
+            // We need to wait until the Eta dependencies of *all* subprojects
+            // have been configured.
+            project.getGradle().projectsEvaluated(gradle -> {
+                    if (extension.shouldPreInstallDependencies()) {
+                        setupEnvironmentTask.setupEnvironment();
+                        resolveDependenciesTask.resolveDependencies();
+                        installAllDependenciesTask.installAllDependencies();
+                    }
+                });
+
         }
     }
 

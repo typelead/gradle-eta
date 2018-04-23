@@ -38,6 +38,8 @@ public class EtaExtension {
     private Property<EtaInfo> resolvedEtaInfo;
     private Property<ResolvedExecutable> resolvedEtlas;
 
+    private Property<Boolean> preInstallDependencies;
+
     public EtaExtension(final Project project) {
         this.project = project;
 
@@ -86,6 +88,9 @@ public class EtaExtension {
         resolvedEta     = objectFactory.property(ResolvedExecutable.class);
         resolvedEtaInfo = objectFactory.property(EtaInfo.class);
         resolvedEtlas   = objectFactory.property(ResolvedExecutable.class);
+
+        preInstallDependencies = objectFactory.property(Boolean.class);
+        preInstallDependencies.set(false);
     }
 
 
@@ -145,6 +150,10 @@ public class EtaExtension {
         return etlasRepository;
     }
 
+    public boolean shouldPreInstallDependencies() {
+        return preInstallDependencies.get();
+    }
+
     /* Setters so that users can conveniently specify property values. */
 
     public void setVersion(String etaVersion) {
@@ -173,6 +182,10 @@ public class EtaExtension {
 
     public void setEtlasRepository(String etlasRepository) {
         this.etlasRepository.set(etlasRepository);
+    }
+
+    public void setPreInstallDependencies(boolean preInstallDependencies) {
+        this.preInstallDependencies.set(preInstallDependencies);
     }
 
 }

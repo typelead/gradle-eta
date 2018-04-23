@@ -362,8 +362,8 @@ public class EtaInstallDependencies extends DefaultTask {
 
                 DependencyHandler dependencies = project.getDependencies();
                 final EtaConfiguration targetEtaConfiguration =
-                ConfigurationUtils.getEtaConfiguration(project,
-                                                       getTargetConfiguration());
+                  ConfigurationUtils.getEtaConfiguration
+                    (project, getTargetConfiguration());
 
                 targetEtaConfiguration.resolve(project, dependencies, dependencyGraph);
             });
