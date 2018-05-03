@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.1
+- Fixed bug with maven dependency parsing that caused build failure when including eta-kafka-client as a dependency.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.0
 - Resolve relative paths in includeDirs in EtaOptions against project directory.
 - Add option 'preInstallDependencies' to EtaExtension which will install dependencies after all projects are evaluated and before the task graph is resolved.
