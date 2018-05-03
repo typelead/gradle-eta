@@ -3,6 +3,7 @@ package com.typelead.gradle.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.LinkedList;
@@ -227,8 +228,13 @@ public class EtlasCommand {
         for (String line: lines) {
             String[] parts = line.split(",");
             String packageName = parts[1];
-            List<String> mavenDeps =
+            List<String> preMavenDeps =
                 nonEmptyStringList(parts[2].split(":"));
+            Iterator<String> it = preMavenDeps.iterator();
+            List<String> mavenDeps = new ArrayList<String>(preMavenDeps.size() / 3);
+            while (it.hasNext()) {
+                mavenDeps.add(it.next() + ":" + it.next() + ":" + it.next());
+            }
             String jarPath = parts[3];
             List<String> deps;
             if (parts.length > 4) {
