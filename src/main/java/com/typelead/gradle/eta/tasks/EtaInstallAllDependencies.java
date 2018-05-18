@@ -83,7 +83,9 @@ public class EtaInstallAllDependencies extends DefaultTask {
 
         etlas.getWorkingDirectory().set(workingDir);
 
-        boolean isUpToDate = etlas.deps (dependencyGraph -> {
+        boolean isUpToDate =
+            etlas.deps (EtlasCommand.libTarget(getProject().getName()),
+                        dependencyGraph -> {
 
                 /* Inject the dependencies into the respective configurations. */
 

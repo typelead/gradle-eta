@@ -164,14 +164,19 @@ public class EtlasCommand {
         c.executeAndLogOutput();
     }
 
-    public boolean deps(Consumer<ImmutableDAG<String, PackageInfo>> filesAndMavenDeps) {
+    public boolean deps(String target,
+                        Consumer<ImmutableDAG<String, PackageInfo>> filesAndMavenDeps) {
         CommandLine c = initCommandLineWithEtaVersion();
-        c.getCommand().add("deps");
+        c.getCommand().addAll(Arrays.asList("deps", target));
         List<String> allLines =
             c.executeLogAndGetStandardOutputLines
             (s -> s.startsWith("Downloading ") || s.startsWith("Building "));
         parseAndExecuteDependencyLines(allLines, filesAndMavenDeps);
         return isUpToDate(allLines);
+    }
+
+    public static String libTarget(String name) {
+        return "lib:" + name;
     }
 
     public boolean build() {
@@ -242,8 +247,13 @@ public class EtlasCommand {
             } else {
                 deps = emptyList;
             }
-            keyValues.put(packageName, new PackageInfo(packageName, jarPath, mavenDeps));
-            dependencies.put(packageName, deps);
+
+            /* TODO: This case happens when you have local dependencies. The real
+                     solution here is to fix etlas so that it spits out local paths. */
+            if (jarPath != null && jarPath.length() > 0) {
+                keyValues.put(packageName, new PackageInfo(packageName, jarPath, mavenDeps));
+                dependencies.put(packageName, deps);
+            }
         }
 
         dependencyGraphConsumer.accept(ImmutableDAG.<String,PackageInfo>create(keyValues, dependencies));

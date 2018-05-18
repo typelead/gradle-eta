@@ -32,27 +32,35 @@ public class CabalHelper {
         println(sb, "version: " + fixVersion(projectVersion));
         println(sb, "cabal-version: >= 1.10");
         println(sb, "build-type: Simple");
-        if (maybeExecutable != null) {
-            println(sb, "executable " + projectName);
-            print  (sb, "    main-is: ");
-            println(sb, maybeExecutable);
-            if (hasModules) {
-                println(sb, "    other-modules:");
-            }
-        } else {
-            println(sb, "library");
-            if (hasModules) {
-                println(sb, "    exposed-modules:");
-            }
-        }
-
+        println(sb, "library");
         if (hasModules) {
+            println(sb, "    exposed-modules:");
             for (String module : modules) {
                 print  (sb, "        ");
                 println(sb, module);
             }
         }
+        printStanzaCommon(sb, sourceDirectories, dependencyConstraints, options);
 
+        if (maybeExecutable != null) {
+            println(sb, "");
+            println(sb, "executable " + projectName);
+            print  (sb, "    main-is: ");
+            println(sb, maybeExecutable);
+            // MUTATION ALERT!
+            dependencyConstraints.add(projectName);
+            printStanzaCommon(sb, sourceDirectories, dependencyConstraints, options);
+        }
+
+        return snapshotWrite(new File(workingDir, projectName + ".cabal"),
+                             sb.toString(),
+                             new File(workingDir, projectName + ".cabal.snapshot"));
+    }
+
+    private static void printStanzaCommon(final StringBuilder sb,
+                                          final List<String> sourceDirectories,
+                                          final List<String> dependencyConstraints,
+                                          final EtaOptions options) {
         if (Collections.isNonEmpty(sourceDirectories)) {
             print(sb, "    hs-source-dirs: ");
             Iterator<String> it = sourceDirectories.iterator();
@@ -139,9 +147,6 @@ public class CabalHelper {
             }
         }
 
-        return snapshotWrite(new File(workingDir, projectName + ".cabal"),
-                             sb.toString(),
-                             new File(workingDir, projectName + ".cabal.snapshot"));
     }
 
     public static WriteResult generateCabalProjectFile
