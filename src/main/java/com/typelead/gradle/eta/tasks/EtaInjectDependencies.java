@@ -3,6 +3,7 @@ package com.typelead.gradle.eta.tasks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.gradle.api.Buildable;
@@ -21,6 +22,7 @@ import com.typelead.gradle.eta.api.EtaProjectDependency;
 import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
 import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
+import com.typelead.gradle.utils.ExtensionHelper;
 
 public class EtaInjectDependencies extends DefaultTask {
 
@@ -67,12 +69,18 @@ public class EtaInjectDependencies extends DefaultTask {
                                   (project, getTargetConfiguration()));
     }
 
+    private static final String INJECT_STATE_PROPERTY = "injectDependenciesState";
+
     private void injectProjectDependencies(final Project project,
                                            final DependencyHandler dependencies,
-                                           Configuration configuration) {
+                                           final Configuration configuration) {
+        ConcurrentHashMap<Dependency, Boolean> injectState =
+            getInjectState(configuration);
+
         final String configurationName = configuration.getName();
         for (Dependency dependency : configuration.getDependencies()) {
-            if (dependency instanceof ProjectDependency) {
+            if (dependency instanceof ProjectDependency &&
+                injectState.put(dependency, Boolean.TRUE) == null) {
                 final ProjectDependency projectDependency =
                     (ProjectDependency) dependency;
                 final Project targetProject = projectDependency.getDependencyProject();
@@ -87,8 +95,9 @@ public class EtaInjectDependencies extends DefaultTask {
                     mavenDependencies = DefaultEtaConfiguration
                         .searchForEtaProjectDependencies
                         (project, ConfigurationUtils.getConfiguration
-                         (targetProject, targetConfiguration));
+                        (targetProject, targetConfiguration));
                 }
+
                 for (String mavenDependency : mavenDependencies) {
                     dependencies.add(configurationName, mavenDependency);
                 }
@@ -98,5 +107,28 @@ public class EtaInjectDependencies extends DefaultTask {
         for (Configuration parent : configuration.getExtendsFrom()) {
             injectProjectDependencies(project, dependencies, parent);
         }
+    }
+
+    private ConcurrentHashMap<Dependency, Boolean> getInjectState
+        (final Configuration configuration) {
+        ConcurrentHashMap<Dependency, Boolean> injectState = null;
+        if (!ExtensionHelper.hasExtProperty(configuration, INJECT_STATE_PROPERTY)) {
+            synchronized (configuration) {
+                if (!ExtensionHelper.hasExtProperty(configuration,
+                                                    INJECT_STATE_PROPERTY)) {
+                    injectState = new ConcurrentHashMap<Dependency, Boolean>();
+                    ExtensionHelper.setExtProperty
+                        (configuration, INJECT_STATE_PROPERTY, injectState);
+                } else {
+                    injectState = (ConcurrentHashMap<Dependency, Boolean>)
+                        ExtensionHelper.getExtProperty(configuration,
+                                                       INJECT_STATE_PROPERTY);
+                }
+            }
+        } else {
+            injectState = (ConcurrentHashMap<Dependency, Boolean>)
+                ExtensionHelper.getExtProperty(configuration, INJECT_STATE_PROPERTY);
+        }
+        return injectState;
     }
 }
