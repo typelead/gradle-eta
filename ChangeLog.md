@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.4
+- Fix regression in which projects with Main.hs and additional modules were failing.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.3
 - Fix bug in the Eta plugin that caused jar files to duplicate every file twice.
 
