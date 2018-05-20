@@ -29,7 +29,7 @@ public class CabalHelper {
         boolean hasModules = Collections.isNonEmpty(modules);
         StringBuilder sb = new StringBuilder();
         println(sb, "name: " + projectName);
-        println(sb, "version: " + fixVersion(projectVersion));
+        println(sb, "version: " + projectVersion);
         println(sb, "cabal-version: >= 1.10");
         println(sb, "build-type: Simple");
         println(sb, "library");
@@ -43,13 +43,7 @@ public class CabalHelper {
         printStanzaCommon(sb, sourceDirectories, dependencyConstraints, options);
 
         if (maybeExecutable != null) {
-            println(sb, "");
-            println(sb, "executable " + projectName);
-            print  (sb, "    main-is: ");
-            println(sb, maybeExecutable);
-            // MUTATION ALERT!
-            dependencyConstraints.add(projectName);
-            printStanzaCommon(sb, sourceDirectories, dependencyConstraints, options);
+            println(sb, "    eta-options: -shared");
         }
 
         return snapshotWrite(new File(workingDir, projectName + ".cabal"),
@@ -245,14 +239,5 @@ public class CabalHelper {
         public File getFile() {
             return file;
         }
-    }
-
-    /* TODO: Need to handle other cases and throw invalid if non-numeric digits are
-             found. */
-    private static String fixVersion(String version) {
-        if (version.equals("unspecified")) {
-            return "0.0.0";
-        }
-        return version;
     }
 }

@@ -30,10 +30,11 @@ import com.typelead.gradle.utils.CabalHelper;
 import static com.typelead.gradle.utils.CabalHelper.WriteResult;
 import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaDirectDependency;
+import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.api.EtaGitDependency;
 import com.typelead.gradle.eta.api.EtaConfiguration;
+import com.typelead.gradle.eta.api.NamingScheme;
 import com.typelead.gradle.eta.api.SourceRepository;
-import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.internal.DependencyUtils;
 import com.typelead.gradle.eta.plugins.EtaBasePlugin;
 
@@ -141,7 +142,7 @@ public class EtaResolveDependencies extends DefaultTask {
              dependencies.get(),
              (directDeps, projectDeps) -> {
                 writeResults[0] = CabalHelper.generateCabalFile
-                    (getProject().getName(), getProject().getVersion().toString(),
+                    (getProject().getName(), NamingScheme.fixVersion(getProject().getVersion().toString()),
                      directDeps, workingDir);
             }, gitDeps -> {
                 writeResults[1] =

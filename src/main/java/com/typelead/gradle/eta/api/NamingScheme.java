@@ -51,4 +51,11 @@ public class NamingScheme {
         }
         return (path + suffix).replace(":", "-");
     }
+
+    public static String fixVersion(String version) {
+        if (version.equals("unspecified")) {
+            return "0.0.0";
+        }
+        return version;
+    }
 }

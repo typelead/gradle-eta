@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.nio.file.Paths;
 
 import groovy.lang.Closure;
 
@@ -45,6 +46,7 @@ public class EtaCompile extends SourceTask {
     private Provider<RegularFile>  cabalFile;
     private EtaOptions etaOptions;
     private Provider<String> packageName;
+    private Provider<String> packageVersion;
 
     public EtaCompile() {
         final Project project = getProject();
@@ -62,18 +64,11 @@ public class EtaCompile extends SourceTask {
 
         this.outputJar = project.provider
             (() -> {
-                File destinationDir = getDestinationDir();
-                try {
-                    return project.fileTree
-                        (destinationDir, fileTree ->
-                         fileTree.include("**/eta-" + getEtaVersion() + "/**/*"
-                                          + getPackageName() + "*.jar"))
-                        .getSingleFile();
-
-                } catch (IllegalStateException e) {
-                    return new File(destinationDir,
-                                    "eta-" + getEtaVersion() + "-stub-output.jar");
-                }
+                String packageId = getPackageName() + "-" + getPackageVersion();
+                return Paths.get(getDestinationDir().getAbsolutePath(),
+                                 "dist", "build", "eta-" + getEtaVersion(),
+                                 packageId, "build", packageId + "-inplace.jar")
+                            .toFile();
             });
 
         getOutputs().upToDateWhen(task -> false);
@@ -86,6 +81,15 @@ public class EtaCompile extends SourceTask {
 
     public void setPackageName(Provider<String> packageName) {
         this.packageName = packageName;
+    }
+
+    @Input
+    public String getPackageVersion() {
+        return packageVersion.get();
+    }
+
+    public void setPackageVersion(Provider<String> packageVersion) {
+        this.packageVersion = packageVersion;
     }
 
     @Input
@@ -208,8 +212,9 @@ public class EtaCompile extends SourceTask {
         setDidWork(!isUpToDate);
 
         Directory classesDir = this.classesDir.getOrNull();
+        File outputJarFile = getOutputJarFile();
 
-        if (classesDir != null && !isUpToDate) {
+        if (classesDir != null && !isUpToDate && outputJarFile.exists()) {
 
             /* Extract the Jar file into the classes directory so the rest of the
                Gradle Java pipeline can work as intended.
@@ -218,7 +223,7 @@ public class EtaCompile extends SourceTask {
             */
 
             project.copy(copySpec -> {
-                    copySpec.from(project.zipTree(getOutputJarFile()));
+                    copySpec.from(project.zipTree(outputJarFile));
                     copySpec.into(classesDir);
                 });
         }

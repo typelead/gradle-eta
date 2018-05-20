@@ -1,3 +1,5 @@
+import Lib
+
 data PrintStream = PrintStream @java.io.PrintStream
 
 foreign import java unsafe "@static @field java.lang.System.out" stdout :: PrintStream
@@ -6,9 +8,9 @@ foreign import java unsafe println :: PrintStream -> String -> IO ()
 
 myHello :: String
 #if HELLO == 1
-myHello = "Hello"
+myHello = myHello1
 #else
-myHello = "Bonjour"
+myHello = myHello2
 #endif
 
 main :: IO ()

@@ -54,8 +54,8 @@ public class EtaInstallDependencies extends DefaultTask {
     private final Project project;
     private final Provider<EtaInfo> etaInfo;
     private EtaOptions etaOptions;
-    private Provider<String> projectName;
-    private Provider<String> projectVersion;
+    private Provider<String> packageName;
+    private Provider<String> packageVersion;
     private FileCollection freezeConfigFile;
     private Provider<Boolean> freezeConfigChanged;
     private DirectoryProperty destinationDir;
@@ -67,12 +67,9 @@ public class EtaInstallDependencies extends DefaultTask {
     private Provider<RegularFile> cabalFile;
     private Property<String> executable;
     private Map<String,Object> extraPackageDBs = new LinkedHashMap<String, Object>();
-    private Provider<String> packageName;
 
     public EtaInstallDependencies() {
         this.project = getProject();
-        this.projectVersion =
-            project.provider(() -> project.getVersion().toString());
         this.freezeConfigFile = project.files();
         this.destinationDir =
             project.getLayout().directoryProperty();
@@ -109,8 +106,12 @@ public class EtaInstallDependencies extends DefaultTask {
     }
 
     @Input
-    public String getProjectVersion() {
-        return projectVersion.get();
+    public String getPackageVersion() {
+        return packageVersion.get();
+    }
+
+    public void setPackageVersion(Provider<String> packageVersion) {
+        this.packageVersion = packageVersion;
     }
 
     @Nested
@@ -319,7 +320,7 @@ public class EtaInstallDependencies extends DefaultTask {
                 directDeps.addAll(extraPackageDBs.keySet());
 
                 writeResults[0] = CabalHelper.generateCabalFile
-                    (getPackageName(), project.getVersion().toString(), executableSpec,
+                    (getPackageName(), getPackageVersion(), executableSpec,
                      getSourceDirs().getFiles().stream()
                      .map(File::getAbsolutePath)
                      .collect(Collectors.toList()),

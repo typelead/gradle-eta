@@ -116,6 +116,9 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         final Provider<String> packageName =
             project.provider(() -> NamingScheme.getPackageName(project, variantName));
 
+        final Provider<String> packageVersion =
+            project.provider(() -> NamingScheme.fixVersion(project.getVersion().toString()));
+
         project.getLogger()
             .debug("Processing variant " + variantName + " for Eta compilation.");
 
@@ -161,6 +164,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
              EtaInstallDependencies.class);
 
         installDependenciesTask.setPackageName(packageName);
+        installDependenciesTask.setPackageVersion(packageVersion);
         installDependenciesTask.setTargetConfiguration(targetConfiguration);
         installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
         installDependenciesTask.setFreezeConfigChanged
@@ -186,6 +190,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
                                       EtaCompile.class);
 
         compileTask.setPackageName(packageName);
+        compileTask.setPackageVersion(packageVersion);
         compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFileProvider());
         compileTask.setCabalFile(installDependenciesTask.getCabalFileProvider());
         compileTask.setDestinationDir(destinationDir);

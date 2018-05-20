@@ -90,6 +90,8 @@ public class EtaPlugin implements Plugin<Project> {
 
         final Provider<String> packageName =
             project.provider(() -> NamingScheme.getPackageName(project, sourceSet.getName()));
+        final Provider<String> packageVersion =
+            project.provider(() -> NamingScheme.fixVersion(project.getVersion().toString()));
 
         final DefaultEtaSourceSet etaSourceSet =
             project.getObjects().newInstance
@@ -133,6 +135,7 @@ public class EtaPlugin implements Plugin<Project> {
                                       EtaInstallDependencies.class);
 
         installDependenciesTask.setPackageName(packageName);
+        installDependenciesTask.setPackageVersion(packageVersion);
         installDependenciesTask.setTargetConfiguration(targetConfiguration);
         installDependenciesTask.setFreezeConfigFile(freezeConfigFile);
         installDependenciesTask.setFreezeConfigChanged
@@ -173,6 +176,7 @@ public class EtaPlugin implements Plugin<Project> {
             });
 
         compileTask.setPackageName(packageName);
+        compileTask.setPackageVersion(packageVersion);
         compileTask.setClasspath(project.provider
                                  (() -> sourceSet.getCompileClasspath()));
         compileTask.setCabalProjectFile(installDependenciesTask.getCabalProjectFileProvider());
