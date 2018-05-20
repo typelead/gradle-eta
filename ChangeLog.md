@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.3
+- Fix bug in the Eta plugin that caused jar files to duplicate every file twice.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.2
 - Allow dependency constraints like eta('[package-name]') to mean that any version is OK.
 - Inject dependencies task now has proper synchronization to avoid adding dependencies to a resolved configuration.
