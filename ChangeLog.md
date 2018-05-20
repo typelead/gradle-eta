@@ -1,3 +1,8 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.2
+- Allow dependency constraints like eta('[package-name]') to mean that any version is OK.
+- Inject dependencies task now has proper synchronization to avoid adding dependencies to a resolved configuration.
+- Generate library components for the underlying .cabal file, even for sourcesets with a Main.hs file.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.1
 - Fixed bug with maven dependency parsing that caused build failure when including eta-kafka-client as a dependency.
 
