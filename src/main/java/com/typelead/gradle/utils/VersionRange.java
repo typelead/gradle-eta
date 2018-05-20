@@ -23,6 +23,12 @@ public class VersionRange {
 
     private static final String SYMBOLS_STRING = "[]()";
 
+    private static final VersionRange anyVersion = new VersionRange(null, null);
+
+    public static VersionRange anyVersion() {
+        return anyVersion;
+    }
+
     public static VersionRange create(String versionRange) {
         Version lowerBound  = null;
         Version upperBound  = null;

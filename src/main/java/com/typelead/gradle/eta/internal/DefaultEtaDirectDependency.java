@@ -30,13 +30,18 @@ public class DefaultEtaDirectDependency extends AbstractEtaDependency
         validateConstraint(dependencyConstraint);
         String[] parts = dependencyConstraint.split(":");
         String packageName = parts[0];
-        VersionRange versionRange = VersionRange.create(parts[1]);
+        VersionRange versionRange;
+        if (parts.length > 1) {
+            versionRange = VersionRange.create(parts[1]);
+        } else {
+            versionRange = VersionRange.anyVersion();
+        }
         return new DefaultEtaDirectDependency(project, packageName, versionRange);
     }
 
     public static void validateConstraint(String dependencyConstraint) {
         String[] parts = dependencyConstraint.split(":");
-        if (parts.length != 2) {
+        if (parts.length > 2) {
             throw new IllegalArgumentException("Invalid Eta dependency constraint: " + dependencyConstraint + "\nA constraint must have exactly one ':'.");
         }
         String packageName = parts[0];
