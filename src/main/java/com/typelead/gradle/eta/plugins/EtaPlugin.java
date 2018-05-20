@@ -185,20 +185,24 @@ public class EtaPlugin implements Plugin<Project> {
         compileTask.dependsOn(javaCompileTask);
         compileTask.setDescription("Compiles the " + sourceSet.getName() + " Eta source.");
 
+        /* NOTE: We have commented out the code below since it may be useful later.
+
+           Map<String, Object> builtByOptions = new HashMap<String, Object>();
+           builtByOptions.put("builtBy", compileTask);
+           sourceSet.getOutput().dir(builtByOptions, classesDir);
+        */
+
         /* Register the Eta classes directory as an output so that the Jar task
            will pick it up nicely. */
-
-        Map<String, Object> builtByOptions = new HashMap<String, Object>();
-        builtByOptions.put("builtBy", compileTask);
 
         etaSourceDirectorySet.setOutputDir
             (project.provider(() -> classesDir.get().getAsFile()));
 
-        /* TODO: Are both classesDir and the output registration below required? */
         ((DefaultSourceSetOutput) sourceSet.getOutput()).addClassesDir
             (() -> etaSourceDirectorySet.getOutputDir());
 
-        sourceSet.getOutput().dir(builtByOptions, classesDir);
+        project.getTasks().findByName(sourceSet.getClassesTaskName())
+            .dependsOn(compileTask);
 
         /* Register the package databases as artifacts that will be collected
            upon dependency resolution of project dependencies. */
