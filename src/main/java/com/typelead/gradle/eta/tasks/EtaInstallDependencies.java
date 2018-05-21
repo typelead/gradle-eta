@@ -198,7 +198,7 @@ public class EtaInstallDependencies extends DefaultTask {
                                 String module = moduleWithExtension
                                     .substring(0, moduleWithExtension.lastIndexOf("."));
                                 if (module.equals("Main")) {
-                                    executable.set(moduleWithExtension);
+                                    executable.set(file.getFile().getAbsolutePath());
                                 } else {
                                     modules.add(module);
                                 }

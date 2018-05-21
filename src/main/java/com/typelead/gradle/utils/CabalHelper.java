@@ -26,13 +26,16 @@ public class CabalHelper {
         (String projectName, String projectVersion, String maybeExecutable,
          List<String> sourceDirectories, List<String> modules, EtaOptions options,
          List<String> dependencyConstraints, File workingDir) {
-        boolean hasModules = Collections.isNonEmpty(modules);
         StringBuilder sb = new StringBuilder();
         println(sb, "name: " + projectName);
         println(sb, "version: " + projectVersion);
         println(sb, "cabal-version: >= 1.10");
         println(sb, "build-type: Simple");
         println(sb, "library");
+        if (maybeExecutable != null) {
+            modules.add("Main");
+        }
+        boolean hasModules = Collections.isNonEmpty(modules);
         if (hasModules) {
             println(sb, "    exposed-modules:");
             for (String module : modules) {
