@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.5
+- Fix how Main module is handled
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.4
 - Fix regression in which projects with Main.hs and additional modules were failing.
 
