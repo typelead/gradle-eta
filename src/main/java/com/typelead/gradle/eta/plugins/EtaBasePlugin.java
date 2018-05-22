@@ -208,9 +208,8 @@ public class EtaBasePlugin implements Plugin<Project> {
                  (p -> {
                      JavaPluginConvention javaConvention =
                          p.getConvention().findPlugin(JavaPluginConvention.class);
-                     EtaPluginConvention etaConvention =
-                         p.getConvention().findPlugin(EtaPluginConvention.class);
-                     if (javaConvention != null && etaConvention == null) {
+                     EtaPlugin etaPlugin = p.getPlugins().findPlugin(EtaPlugin.class);
+                     if (javaConvention != null && etaPlugin == null) {
                          javaConvention.getSourceSets().all
                              (sourceSet -> configureSourceSetInjection(p, sourceSet));
                      }

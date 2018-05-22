@@ -10,6 +10,7 @@ import org.gradle.api.file.RegularFile;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.Property;
 import org.gradle.api.artifacts.Configuration;
@@ -18,6 +19,8 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import com.typelead.gradle.utils.EtlasCommand;
 import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.eta.api.EtaConfiguration;
+import com.typelead.gradle.eta.plugins.EtaPluginConvention;
+import com.typelead.gradle.eta.plugins.EtaPlugin;
 
 public class EtaInstallAllDependencies extends DefaultTask {
 
@@ -89,15 +92,32 @@ public class EtaInstallAllDependencies extends DefaultTask {
 
                 /* Inject the dependencies into the respective configurations. */
 
+                /* First Pass: Inject all the Eta dependencies into the Eta projects. */
+
                 for (Project p : project.getAllprojects()) {
-                    DependencyHandler dependencies = p.getDependencies();
-                    for (Configuration c: p.getConfigurations()) {
-                        final EtaConfiguration etaConfiguration =
-                          ExtensionHelper.getExtension(c, EtaConfiguration.class);
-                        if (etaConfiguration != null) {
-                            etaConfiguration.resolve
-                                (project, dependencies, dependencyGraph);
+                    if (p.getConvention().findPlugin(EtaPluginConvention.class) != null) {
+                        DependencyHandler dependencies = p.getDependencies();
+                        for (Configuration c: p.getConfigurations()) {
+                            final EtaConfiguration etaConfiguration =
+                                ExtensionHelper.getExtension(c, EtaConfiguration.class);
+                            if (etaConfiguration != null) {
+                                etaConfiguration.resolve
+                                    (project, dependencies, dependencyGraph);
+                            }
                         }
+                    }
+                }
+
+                /* Second Pass: Inject all the Eta dependencies into the non-Eta
+                                projects that follow the structure of the Java plugin.
+                */
+
+                for (Project p : project.getAllprojects()) {
+                    if (p.getPlugins().findPlugin(EtaPlugin.class) == null
+                     && p.getConvention()
+                        .findPlugin(JavaPluginConvention.class) != null) {
+                        p.getTasks().withType(EtaInjectDependencies.class).all
+                          (EtaInjectDependencies::injectDependencies);
                     }
                 }
             });

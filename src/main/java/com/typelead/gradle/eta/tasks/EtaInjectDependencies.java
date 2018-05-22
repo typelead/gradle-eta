@@ -63,17 +63,21 @@ public class EtaInjectDependencies extends DefaultTask {
 
     @TaskAction
     public void injectDependencies() {
-        final Project project = getProject();
+        injectDependenciesInternal(getProject(), getTargetConfiguration());
+    }
+
+    public static void injectDependenciesInternal(final Project project,
+                                                  final String targetConfiguration) {
         injectProjectDependencies(project, project.getDependencies(),
                                   ConfigurationUtils.getConfiguration
-                                  (project, getTargetConfiguration()));
+                                  (project, targetConfiguration));
     }
 
     private static final String INJECT_STATE_PROPERTY = "injectDependenciesState";
 
-    private void injectProjectDependencies(final Project project,
-                                           final DependencyHandler dependencies,
-                                           final Configuration configuration) {
+    private static void injectProjectDependencies(final Project project,
+                                                  final DependencyHandler dependencies,
+                                                  final Configuration configuration) {
         ConcurrentHashMap<Dependency, Boolean> injectState =
             getInjectState(configuration);
 
@@ -109,7 +113,7 @@ public class EtaInjectDependencies extends DefaultTask {
         }
     }
 
-    private ConcurrentHashMap<Dependency, Boolean> getInjectState
+    private static ConcurrentHashMap<Dependency, Boolean> getInjectState
         (final Configuration configuration) {
         ConcurrentHashMap<Dependency, Boolean> injectState = null;
         if (!ExtensionHelper.hasExtProperty(configuration, INJECT_STATE_PROPERTY)) {
