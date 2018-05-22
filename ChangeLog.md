@@ -1,3 +1,7 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.6
+- When preInstalledDependencies = true, Eta dependencies are injected into non-Eta projects that depend on Eta projects.
+- Fix a bug with injecting dependencies failing to occur with a root non-Eta project.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.5
 - Fix how Main module is handled
 
