@@ -39,6 +39,7 @@ import com.typelead.gradle.eta.api.NamingScheme;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.tasks.EtaInstallDependencies;
 import com.typelead.gradle.eta.tasks.EtaCompile;
+import com.typelead.gradle.eta.tasks.EtaRepl;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
 import com.typelead.gradle.eta.internal.DefaultEtaSourceSet;
 
@@ -146,6 +147,12 @@ public class EtaPlugin implements Plugin<Project> {
         installDependenciesTask.dependsOn(resolveDependenciesTask);
         installDependenciesTask.setDescription("Installs dependencies for the " + sourceSet.getName() + " Eta source.");
         installDependenciesTask.dependsOnOtherEtaProjects();
+
+        final EtaRepl replTask =
+            project.getTasks().create(etaSourceSet.getReplTaskName(), EtaRepl.class);
+        replTask.setPackageName(packageName);
+        replTask.setDestinationDir(destinationDir);
+        replTask.dependsOn(installDependenciesTask);
 
         /* The install dependencies tasks injects into this configuration so we must
            ensure that it runs before the Java compilation. */

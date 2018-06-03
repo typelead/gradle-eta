@@ -51,6 +51,10 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
         return getTaskName("installDependencies");
     }
 
+    public String getReplTaskName() {
+        return getTaskName("repl");
+    }
+
     public String getRelativeOutputDir() {
         String prefix;
         if (sourceSet != null) {

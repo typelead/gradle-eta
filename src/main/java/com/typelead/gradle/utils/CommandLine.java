@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.lang.ProcessBuilder.Redirect;
 
 public class CommandLine implements Log {
 
@@ -177,6 +178,28 @@ public class CommandLine implements Log {
         if (!stdOut.isEmpty()) message += "\nProcess Standard Output:\n" + stdOut;
         if (!stdErr.isEmpty()) message += "\nProcess Standard Error:\n" + stdErr;
         throw new GradleException(message);
+    }
+
+    public void fork() {
+        logger().info("Forking external command: " + command + " in workingDir: " + workingDir);
+        ProcessBuilder pb = new ProcessBuilder(command);
+        if (workingDir != null) pb.directory(new File(workingDir));
+        pb.redirectInput(Redirect.INHERIT);
+        pb.redirectOutput(Redirect.INHERIT);
+        pb.redirectError(Redirect.INHERIT);
+        Process p = null;
+        try {
+            p = pb.start();
+        } catch (IOException e) {
+            throw new GradleException("IOException occurred when forking command "
+                                      + command + " with workingDir " + workingDir, e);
+        }
+        try {
+            p.waitFor();
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+            throw new GradleException("Forked command was interrupted: " + command, e);
+        }
     }
 
     private Process start() {
