@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.1
+- Improve warning for REPL tasks to suggest using --console plain.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.0
 - Added 'repl' task for a global REPL.
 - Added 'repl[SourceSet]Eta' tasks for sourceSet-based REPL.
