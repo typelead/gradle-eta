@@ -2,6 +2,7 @@ package com.typelead.gradle.eta.plugins;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.nio.file.Paths;
@@ -18,10 +19,12 @@ import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.logging.LogLevel;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -44,10 +47,11 @@ import com.typelead.gradle.eta.api.EtaDependency;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.api.NamingScheme;
 import com.typelead.gradle.eta.api.ProguardFiles;
-import com.typelead.gradle.eta.tasks.EtaSetupEnvironment;
-import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
-import com.typelead.gradle.eta.tasks.EtaInstallAllDependencies;
 import com.typelead.gradle.eta.tasks.EtaInjectDependencies;
+import com.typelead.gradle.eta.tasks.EtaInstallAllDependencies;
+import com.typelead.gradle.eta.tasks.EtaRepl;
+import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
+import com.typelead.gradle.eta.tasks.EtaSetupEnvironment;
 import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
 import com.typelead.gradle.eta.internal.DefaultEtaProjectDependency;
 import com.typelead.gradle.eta.internal.EtlasMavenRepository;
@@ -198,6 +202,28 @@ public class EtaBasePlugin implements Plugin<Project> {
                     }
                 });
 
+            project.getGradle().getTaskGraph().whenReady(graph -> {
+                    List<Task> tasks = graph.getAllTasks();
+                    for (Task task: tasks) {
+                        if (task instanceof EtaRepl) {
+                            boolean inDaemon = false;
+                            Set<Thread> allThreads =
+                                Thread.getAllStackTraces().keySet();
+                            for (Thread thread: allThreads) {
+                                if (thread.getName().contains("Daemon")) {
+                                    inDaemon = true;
+                                    break;
+                                }
+                            }
+                            if (inDaemon) {
+                                throw new GradleException("You are running a REPL task '" + task.getName() + "' in daemon mode, which is not supported.\n\nAdd the flags '--no-daemon -q' for the best REPL experience.");
+                            }
+                            if (project.getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.QUIET) < 0) {
+                                project.getLogger().warn("WARNING: You are running a REPL task without '-q'. You will get a better REPL experience by using that flag.");
+                            }
+                        }
+                    }
+                });
         }
     }
 
