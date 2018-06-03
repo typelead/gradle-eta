@@ -24,13 +24,16 @@ public class EtaRepl extends DefaultTask {
     }
 
     public String getPackageName() {
-        return packageName.get();
+        if (packageName != null) {
+            return packageName.get();
+        } else {
+            return null;
+        }
     }
 
     public void setPackageName(Provider<String> packageName) {
         this.packageName = packageName;
     }
-
 
     public File getDestinationDir() {
         return destinationDir.getAsFile().get();
@@ -51,6 +54,7 @@ public class EtaRepl extends DefaultTask {
 
         etlas.getWorkingDirectory().set(workingDir);
 
-        etlas.repl(EtlasCommand.libTarget(getPackageName()));
+        String packageName = getPackageName();
+        etlas.repl(packageName == null? null : EtlasCommand.libTarget(packageName));
     }
 }

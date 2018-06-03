@@ -188,7 +188,11 @@ public class EtlasCommand {
 
     public void repl(String target) {
         CommandLine c = initCommandLineWithEtaVersion();
-        c.getCommand().addAll(Arrays.asList("repl", target));
+        if (target != null) {
+            c.getCommand().addAll(Arrays.asList("repl", target));
+        } else {
+            c.getCommand().add("repl");
+        }
         c.fork();
     }
 

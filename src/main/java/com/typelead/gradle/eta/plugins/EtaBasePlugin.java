@@ -79,6 +79,8 @@ public class EtaBasePlugin implements Plugin<Project> {
     public static final String
         ETA_INSTALL_ALL_DEPENDENCIES_TASK_NAME = "installAllDependenciesEta";
 
+    public static final String ETA_REPL_TASK_NAME = "repl";
+
     private Project project;
     private EtaExtension extension;
     private EtlasMavenRepository mavenRepository;
@@ -185,12 +187,19 @@ public class EtaBasePlugin implements Plugin<Project> {
                 project.getTasks().create(ETA_INSTALL_ALL_DEPENDENCIES_TASK_NAME,
                                           EtaInstallAllDependencies.class);
 
+            EtaRepl replTask =
+                project.getTasks().create(ETA_REPL_TASK_NAME, EtaRepl.class);
+
             resolveDependenciesTask.setVersionsChanged
                 (setupEnvironmentTask.getVersionsChanged());
 
             resolveDependenciesTask.dependsOn(setupEnvironmentTask);
 
             installAllDependenciesTask.dependsOn(resolveDependenciesTask);
+
+            replTask.setDestinationDir
+                (project.provider(() -> project.getLayout().getProjectDirectory()));
+            replTask.dependsOn(setupEnvironmentTask);
 
             // We need to wait until the Eta dependencies of *all* subprojects
             // have been configured.
