@@ -1,3 +1,8 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.0
+- Added 'repl' task for a global REPL.
+- Added 'repl[SourceSet]Eta' tasks for sourceSet-based REPL.
+- Minor bug fix which makes the Gradle Eta package cache versioned.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.6.6
 - When preInstalledDependencies = true, Eta dependencies are injected into non-Eta projects that depend on Eta projects.
 - Fix a bug with injecting dependencies failing to occur with a root non-Eta project.
