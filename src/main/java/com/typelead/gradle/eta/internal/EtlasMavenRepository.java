@@ -15,9 +15,12 @@ import java.text.SimpleDateFormat;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.provider.Provider;
 
-import com.typelead.gradle.utils.PackageInfo;
 import com.typelead.gradle.utils.ImmutableDAG;
+import com.typelead.gradle.utils.PackageInfo;
+import com.typelead.gradle.utils.ResolvedExecutable;
+import com.typelead.gradle.eta.api.EtaExtension;
 import static com.typelead.gradle.utils.PrintHelper.*;
 
 public class EtlasMavenRepository {
@@ -25,14 +28,27 @@ public class EtlasMavenRepository {
     public static final String DEFAULT_GROUP_ID = "eta";
     private final Project project;
     private final File    repositoryDirectory;
+    private final Provider<ResolvedExecutable> resolvedEta;
+    private String groupId;
 
     public EtlasMavenRepository(Project project, File repositoryDirectory) {
         this.project = project;
         this.repositoryDirectory = repositoryDirectory;
+        this.resolvedEta = project.provider
+            (() -> project.getRootProject().getExtensions()
+                          .getByType(EtaExtension.class).getEta().get());
     }
 
     public File getDirectory() {
         return repositoryDirectory;
+    }
+
+    public String getGroupId() {
+        if (groupId == null) {
+            groupId = DEFAULT_GROUP_ID + "-" +
+                      resolvedEta.get().getVersion().replace(".", "");
+        }
+        return groupId;
     }
 
     public boolean contains(PackageInfo packageInfo) {
@@ -40,8 +56,8 @@ public class EtlasMavenRepository {
     }
 
     public String getMavenDependency(PackageInfo packageInfo) {
-        return DEFAULT_GROUP_ID + ":" + packageInfo.getName()
-                                + ":" + packageInfo.getFullVersion();
+        return getGroupId() + ":" + packageInfo.getName()
+                            + ":" + packageInfo.getFullVersion();
     }
 
     public void installPackages(Collection<PackageInfo> packageInfos,
@@ -96,7 +112,7 @@ public class EtlasMavenRepository {
                 println(sb, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 println(sb, "<metadata>");
                 print(sb, "  <groupId>");
-                print(sb, DEFAULT_GROUP_ID);
+                print(sb, getGroupId());
                 println(sb, "</groupId>");
                 print  (sb, "  <artifactId>");
                 print  (sb, packageInfo.getName());
@@ -139,7 +155,7 @@ public class EtlasMavenRepository {
         println(sb, "<project xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\" xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");
         println(sb, "  <modelVersion>4.0.0</modelVersion>");
         print  (sb, "  <groupId>");
-        print  (sb, DEFAULT_GROUP_ID);
+        print  (sb, getGroupId());
         println(sb, "</groupId>");
         print  (sb, "  <artifactId>");
         print  (sb, packageInfo.getName());
@@ -224,12 +240,12 @@ public class EtlasMavenRepository {
 
     private File getPackageDirectory(PackageInfo packageInfo) {
         return new File(repositoryDirectory,
-                        getGroupIdPath(DEFAULT_GROUP_ID) + File.separator +
+                        getGroupIdPath(getGroupId()) + File.separator +
                         packageInfo.getName());
     }
 
     private String getGroupIdPath(String groupId) {
-        return groupId.replace("\\.", File.separator);
+        return groupId.replace(".", File.separator);
     }
 
     private File getPackageVersionDirectory(PackageInfo packageInfo) {
