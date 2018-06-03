@@ -25,6 +25,7 @@ import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.logging.LogLevel;
+import org.gradle.api.logging.configuration.ConsoleOutput;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -218,17 +219,24 @@ public class EtaBasePlugin implements Plugin<Project> {
                             boolean inDaemon = false;
                             Set<Thread> allThreads =
                                 Thread.getAllStackTraces().keySet();
+
                             for (Thread thread: allThreads) {
                                 if (thread.getName().contains("Daemon")) {
                                     inDaemon = true;
                                     break;
                                 }
                             }
+
                             if (inDaemon) {
-                                throw new GradleException("You are running a REPL task '" + task.getName() + "' in daemon mode, which is not supported.\n\nAdd the flags '--no-daemon -q' for the best REPL experience.");
+                                throw new GradleException("You are running a REPL task '" + task.getName() + "' in daemon mode, which is not supported.\n\nAdd the flags '--no-daemon -q --console plain' for the best REPL experience.");
                             }
+
                             if (project.getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.QUIET) < 0) {
-                                project.getLogger().warn("WARNING: You are running a REPL task without '-q'. You will get a better REPL experience by using that flag.");
+                                project.getLogger().warn("WARNING: You are running a REPL task without '-q'. You are missing out on a better REPL experience.");
+                            }
+
+                            if (!project.getGradle().getStartParameter().getConsoleOutput().equals(ConsoleOutput.Plain)) {
+                                project.getLogger().warn("WARNING: You are running a REPL task without '--console plain'. You are missing out on a better REPL experience.");
                             }
                         }
                     }
