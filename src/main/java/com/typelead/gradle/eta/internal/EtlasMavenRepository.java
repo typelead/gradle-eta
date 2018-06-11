@@ -167,7 +167,7 @@ public class EtlasMavenRepository {
         for (PackageInfo dependency : graph.getNodeValues(packageInfo.getName())) {
             println(sb, "    <dependency>");
             print  (sb, "      <groupId>");
-            print  (sb, DEFAULT_GROUP_ID);
+            print  (sb, getGroupId());
             println(sb, "</groupId>");
             print  (sb, "      <artifactId>");
             print  (sb, dependency.getName());
