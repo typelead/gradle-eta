@@ -1,7 +1,13 @@
 package com.typelead.gradle.eta.api;
 
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 import org.gradle.api.Project;
 import org.gradle.api.tasks.SourceSet;
+
+import com.typelead.gradle.utils.Version;
 
 public class NamingScheme {
 
@@ -52,10 +58,21 @@ public class NamingScheme {
         return (path + suffix).replace(":", "-");
     }
 
-    public static String fixVersion(String version) {
-        if (version.equals("unspecified")) {
-            return "0.0.0";
+    private final static String versionPatternTemplate = "\\d+\\.?";
+    private final static Pattern versionPattern = Pattern.compile(versionPatternTemplate);
+    private final static String zeroVersion = "0.0.0";
+
+    public static String fixVersion(final String version) {
+        final Matcher m = versionPattern.matcher(version);
+        final StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            sb.append(m.group(0));
         }
-        return version;
+        final String result = sb.toString();
+        if (result.length() > 0) {
+            return result;
+        } else {
+            return zeroVersion;
+        }
     }
 }
