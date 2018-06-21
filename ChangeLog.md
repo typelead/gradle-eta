@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.3
+- (#24) Allow any version to be set and translate to a valid Etlas version
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.2
 - Fix bug with Etlas Maven layout.
 
