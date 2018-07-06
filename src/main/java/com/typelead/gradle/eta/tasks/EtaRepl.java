@@ -42,7 +42,7 @@ public class EtaRepl extends DefaultTask {
              Optional.empty(),
              argsProp);
     }
-    
+
     public List<String> getArgs() {
         return Arrays.asList(args.get());
     }

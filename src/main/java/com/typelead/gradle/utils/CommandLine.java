@@ -172,12 +172,7 @@ public class CommandLine implements Log {
 
     private void checkExitCode(Process p, String stdOut, String stdErr) {
         if (p.exitValue() == 0) return;
-        String message =
-            "Nonzero (" + p.exitValue() + ") exit code for command " + command
-            + " with workingDir " + workingDir;
-        if (!stdOut.isEmpty()) message += "\nProcess Standard Output:\n" + stdOut;
-        if (!stdErr.isEmpty()) message += "\nProcess Standard Error:\n" + stdErr;
-        throw new GradleException(message);
+        throw new GradleException(command + " failed with ExitCode " + p.exitValue());
     }
 
     public void fork() {
