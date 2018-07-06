@@ -1,7 +1,8 @@
 package com.typelead.gradle.eta.api;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import org.gradle.api.Project;
 import org.gradle.api.Nullable;
@@ -12,11 +13,13 @@ import org.gradle.api.provider.Property;
 import com.typelead.gradle.utils.ExecutableSpec;
 import com.typelead.gradle.utils.EtaInfo;
 import com.typelead.gradle.utils.NoSpec;
+import com.typelead.gradle.utils.OverridingProperty;
 import com.typelead.gradle.utils.PathSpec;
 import com.typelead.gradle.utils.ResolvedExecutable;
 import com.typelead.gradle.utils.SystemSpec;
 import com.typelead.gradle.utils.VersionSpec;
 import com.typelead.gradle.eta.plugins.EtaPlugin;
+import static com.typelead.gradle.utils.PropertyParse.*;
 
 /**
  * Configuration options for the {@link EtaPlugin}
@@ -45,29 +48,28 @@ public class EtaExtension {
 
         final ObjectFactory objectFactory = project.getObjects();
 
-        etaSpec = objectFactory.property(ExecutableSpec.class);
-        etaSpec.set
+        etaSpec = new OverridingProperty<ExecutableSpec>
             (project.provider(() -> {
-                    String etaVersion = parseStringProperty("version");
-                    boolean useSystemEta =
-                        parseBooleanProperty("useSystemEta",
-                                             DEFAULT_USE_SYSTEM_ETA);
-                    if (useSystemEta) {
-                        return SystemSpec.getInstance();
-                    } else if (etaVersion != null) {
-                        return new VersionSpec(etaVersion);
-                    } else {
-                        return NoSpec.getInstance();
-                    }
-                }));
+                     String etaVersion = parseStringProperty(project, "version");
+                     boolean useSystemEta = parseBooleanProperty(project, "useSystemEta",
+                                                                 DEFAULT_USE_SYSTEM_ETA);
+                     if (useSystemEta) {
+                         return SystemSpec.getInstance();
+                     } else if (etaVersion != null) {
+                         return new VersionSpec(etaVersion);
+                     } else {
+                         return NoSpec.getInstance();
+                     }
+                 }),
+             t -> t == NoSpec.getInstance(),
+             objectFactory.property(ExecutableSpec.class));
 
-        etlasSpec = objectFactory.property(ExecutableSpec.class);
-        etlasSpec.set
+        etlasSpec = new OverridingProperty<ExecutableSpec>
             (project.provider(() -> {
-                    String etlasPath = parseStringProperty("etlasPath");
-                    String etlasVersion = parseStringProperty("etlasVersion");
+                    String etlasPath = parseStringProperty(project, "etlasPath");
+                    String etlasVersion = parseStringProperty(project, "etlasVersion");
                     boolean useSystemEtlas =
-                        parseBooleanProperty("useSystemEtlas",
+                        parseBooleanProperty(project, "useSystemEtlas",
                                              DEFAULT_USE_SYSTEM_ETLAS);
                     if (etlasPath != null) {
                         return new PathSpec(etlasPath);
@@ -78,12 +80,15 @@ public class EtaExtension {
                     } else {
                         return NoSpec.getInstance();
                     }
-                }));
+                }),
+            Optional.of(NoSpec.getInstance()),
+            objectFactory.property(ExecutableSpec.class));
 
-        etlasRepository = objectFactory.property(String.class);
-        etlasRepository.set
+        etlasRepository = new OverridingProperty<String>
             (project.provider
-             (() -> parseStringProperty("etlasRepository", DEFAULT_ETLAS_REPO)));
+             (() -> parseStringProperty(project, "etlasRepository", DEFAULT_ETLAS_REPO)),
+             Optional.empty(),
+             objectFactory.property(String.class));
 
         resolvedEta     = objectFactory.property(ResolvedExecutable.class);
         resolvedEtaInfo = objectFactory.property(EtaInfo.class);
@@ -93,38 +98,6 @@ public class EtaExtension {
         preInstallDependencies.set(false);
     }
 
-
-    private String parseStringProperty(final String name) {
-        return parseStringProperty(name, null);
-    }
-
-    private String parseStringProperty(final String name, final String def) {
-        Object v = project.findProperty("eta." + name);
-        String value;
-        if (v == null) {
-            value = def;
-        } else {
-            value = v.toString();
-        }
-        return value;
-    }
-
-    private boolean parseBooleanProperty(final String name, final boolean def) {
-        Object v = project.findProperty("eta." + name);
-        boolean value;
-        if (v == null) {
-            value = def;
-        } else {
-            String booleanString = v.toString();
-            if (booleanString.equalsIgnoreCase("true")) {
-                value = true;
-            } else if (booleanString.equalsIgnoreCase("false")) {
-                value = false;
-            } else throw new GradleException("Invalid property value for eta."
-                                             + name + ": " + booleanString);
-        }
-        return value;
-    }
 
     public Property<ExecutableSpec> getEtaSpec() {
         return etaSpec;

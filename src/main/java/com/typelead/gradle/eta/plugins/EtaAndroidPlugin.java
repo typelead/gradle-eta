@@ -23,7 +23,6 @@ import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.builder.model.SourceProvider;
 
-import com.typelead.gradle.eta.android.AndroidHelper;
 import com.typelead.gradle.eta.api.EtaExtension;
 import com.typelead.gradle.eta.api.EtaSourceSet;
 import com.typelead.gradle.eta.api.EtaOptions;
@@ -34,6 +33,7 @@ import com.typelead.gradle.eta.tasks.EtaCompile;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.internal.ConfigurationUtils;
 import com.typelead.gradle.eta.internal.DefaultEtaSourceSet;
+import com.typelead.gradle.utils.AndroidHelper;
 import com.typelead.gradle.utils.ExtensionHelper;
 
 /**

@@ -1,4 +1,4 @@
-package com.typelead.gradle.eta.android;
+package com.typelead.gradle.utils;
 
 import java.io.File;
 import java.util.Arrays;

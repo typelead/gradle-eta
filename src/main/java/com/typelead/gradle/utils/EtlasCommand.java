@@ -186,13 +186,14 @@ public class EtlasCommand {
         return isUpToDate(allLines);
     }
 
-    public void repl(String target) {
+    public void repl(String target, List<String> args) {
         CommandLine c = initCommandLineWithEtaVersion();
         if (target != null) {
             c.getCommand().addAll(Arrays.asList("repl", target));
         } else {
             c.getCommand().add("repl");
         }
+        c.getCommand().addAll(args);
         c.fork();
     }
 

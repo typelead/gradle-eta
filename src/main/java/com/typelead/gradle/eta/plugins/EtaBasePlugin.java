@@ -108,9 +108,9 @@ public class EtaBasePlugin implements Plugin<Project> {
 
         addEtaExtensionForConfigurations();
 
-        configureEtaRootTasks();
-
         configureInjectionTasks();
+
+        configureEtaRootTasks();
 
         createProguardFiles();
 
