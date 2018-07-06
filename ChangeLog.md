@@ -1,3 +1,8 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.4
+- (#23) Avoid reporting erros twice
+- -P properties will now override build.gradle
+- Added args property for EtaRepl task
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.3
 - (#24) Allow any version to be set and translate to a valid Etlas version
 
