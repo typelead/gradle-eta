@@ -9,7 +9,7 @@ jobs:
       - checkout
 
       - restore_cache:
-          key: gradle-eta-v074-
+          key: gradle-eta-v075-
 
       - run: ./gradlew pTML
 
@@ -36,7 +36,7 @@ jobs:
             ./gradlew test
 
       - save_cache:
-          key: gradle-eta-v074-{{ epoch }}
+          key: gradle-eta-v075-{{ epoch }}
           paths:
             - "~/.etlas/config"
             - "~/.etlas/packages"
