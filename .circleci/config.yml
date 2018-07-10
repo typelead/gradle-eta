@@ -15,19 +15,19 @@ jobs:
 
       - run:
           command: ./gradlew shadowJar
-          working-directory: tests/fatjar
+          working-directory: ./tests/fatjar
 
       - run:
           command: ./gradlew run
-          working-directory: tests/multi
+          working-directory: ./tests/multi
 
       - run:
           command: ./gradlew run
-          working-directory: tests/simple
+          working-directory: ./tests/simple
 
       - run:
           command: ./gradlew test
-          working-directory: tests/test
+          working-directory: ./tests/test
 
       - save_cache:
           key: gradle-eta-v073-{{ epoch }}
