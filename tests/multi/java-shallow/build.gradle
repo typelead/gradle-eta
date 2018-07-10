@@ -1,0 +1,8 @@
+plugins {
+  id 'java'
+}
+
+dependencies {
+  compile 'com.google.guava:guava:19.0'
+  compile project(':hio')
+}

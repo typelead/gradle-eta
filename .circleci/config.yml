@@ -1,0 +1,39 @@
+defaults: &defaults
+  docker:
+    - image: typelead/eta:latest
+
+version: 2.0
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: gradle-eta-v073-
+
+      - run: etlas update
+      - run: ./gradlew shadowJar
+          working-directory: tests/fatjar
+
+      - run: ./gradlew run
+          working-directory: tests/multi
+
+      - run: ./gradlew run
+          working-directory: tests/simple
+
+      - run: ./gradlew test
+          working-directory: tests/test
+
+      - save_cache:
+          key: gradle-eta-v073-{{ epoch }}
+          paths:
+            - "~/.etlas/config"
+            - "~/.etlas/packages"
+            - "~/.etlas/tools"
+
+workflows:
+  version: 2
+  full_cycle:
+    jobs:
+      - build

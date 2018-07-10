@@ -1,0 +1,33 @@
+buildscript {
+  repositories {
+    mavenLocal()
+  }
+
+  dependencies {
+    classpath 'com.typelead:gradle-eta:latest.release'
+  }
+}
+
+plugins {
+    id 'application'
+}
+
+apply plugin: 'eta'
+
+allprojects {
+  repositories {
+    mavenCentral()
+  }
+}
+
+eta {
+    useSystemEta = true
+    useSystemEtlas = true
+}
+
+dependencies {
+    compile eta('text:1.2.2.2')
+    compile eta('memory:0.14.14')
+    compile project(':hio')
+    compile project(':java-shallow')
+}

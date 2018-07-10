@@ -1,0 +1,47 @@
+buildscript {
+  repositories {
+    mavenLocal()
+  }
+
+  dependencies {
+    classpath 'com.typelead:gradle-eta:latest.release'
+  }
+}
+
+plugins {
+    id 'application'
+}
+
+apply plugin: 'eta'
+
+eta {
+  useSystemEta   = true
+  useSystemEtlas = true
+}
+
+sourceSets {
+  main {
+    eta {
+      srcDir 'eta'
+    }
+  }
+  test {
+    eta {
+      srcDir 'eta-test'
+    }
+  }
+}
+
+dependencies {
+  compile eta('base:4.8.2.0')
+}
+
+compileEta {
+  options {
+    args = ['-Wall']
+    extensions {
+      CPP
+    }
+    cpp = ['-DHELLO=1']
+  }
+}
