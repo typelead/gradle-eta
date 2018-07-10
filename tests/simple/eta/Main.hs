@@ -1,3 +1,5 @@
+module Main where
+
 import Lib
 
 data PrintStream = PrintStream @java.io.PrintStream
