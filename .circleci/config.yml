@@ -12,16 +12,21 @@ jobs:
           key: gradle-eta-v073-
 
       - run: etlas update
-      - run: ./gradlew shadowJar
+
+      - run:
+          command: ./gradlew shadowJar
           working-directory: tests/fatjar
 
-      - run: ./gradlew run
+      - run:
+          command: ./gradlew run
           working-directory: tests/multi
 
-      - run: ./gradlew run
+      - run:
+          command: ./gradlew run
           working-directory: tests/simple
 
-      - run: ./gradlew test
+      - run:
+          command: ./gradlew test
           working-directory: tests/test
 
       - save_cache:
