@@ -1,11 +1,10 @@
-defaults: &defaults
-  docker:
-    - image: typelead/eta:latest
-
 version: 2.0
+
 jobs:
   build:
-    <<: *defaults
+    docker:
+      - image: typelead/eta:latest
+
     steps:
       - checkout
 
