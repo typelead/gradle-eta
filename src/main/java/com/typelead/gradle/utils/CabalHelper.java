@@ -32,6 +32,9 @@ public class CabalHelper {
         println(sb, "cabal-version: >= 1.10");
         println(sb, "build-type: Simple");
         println(sb, "library");
+        if (maybeExecutable != null) {
+            modules.add("Main");
+        }
         boolean hasModules = Collections.isNonEmpty(modules);
         if (hasModules) {
             println(sb, "    exposed-modules:");
@@ -43,7 +46,7 @@ public class CabalHelper {
         printStanzaCommon(sb, sourceDirectories, dependencyConstraints, options);
 
         if (maybeExecutable != null) {
-            println(sb, "    eta-options: -shared " + maybeExecutable + " -this-unit-id main");
+            println(sb, "    eta-options: -shared -this-unit-id main");
         }
 
         return snapshotWrite(new File(workingDir, projectName + ".cabal"),
