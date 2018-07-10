@@ -16,20 +16,24 @@ jobs:
       - run: etlas update
 
       - run:
-          working-directory: ./tests/fatjar
-          command: pwd # ./tests/fatjar/gradlew shadowJar
+          command: |
+            cd tests/fatjar
+            ./gradlew shadowJar
 
       - run:
-          working-directory: ./tests/multi
-          command: pwd # ./tests/multi/gradlew run
+          command: |
+            cd tests/multi
+            ./gradlew run
 
       - run:
-          working-directory: ./tests/simple
-          command: pwd # ./tests/simple/gradlew run
+          command: |
+            cd tests/simple
+            ./gradlew run
 
       - run:
-          working-directory: ./tests/test
-          command: pwd # ./tests/test/gradlew test
+          command: |
+            cd tests/test
+            ./gradlew test
 
       - save_cache:
           key: gradle-eta-v074-{{ epoch }}
