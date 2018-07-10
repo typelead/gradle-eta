@@ -1,5 +1,8 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.5
+- (#20) Fix problem with module hear Main
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.4
-- (#23) Avoid reporting erros twice
+- (#23) Avoid reporting errors twice
 - -P properties will now override build.gradle
 - Added args property for EtaRepl task
 

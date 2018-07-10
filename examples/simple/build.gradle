@@ -1,5 +1,5 @@
 plugins {
-    id 'com.typelead.eta' version '0.7.4'
+    id 'com.typelead.eta' version '0.7.5'
     id 'application'
 }
 
