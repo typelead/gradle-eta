@@ -11,6 +11,8 @@ jobs:
       - restore_cache:
           key: gradle-eta-v074-
 
+      - run: ./gradlew pTML
+
       - run: etlas update
 
       - run:
