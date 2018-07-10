@@ -1,6 +1,6 @@
 # Gradle Plugin for Eta
 
-[![Build Status](https://travis-ci.org/typelead/gradle-eta.svg?branch=master)](https://travis-ci.org/typelead/gradle-eta)
+[![CircleCI](https://circleci.com/gh/typelead/gradle-eta/tree/master.svg?style=shield)](https://circleci.com/gh/typelead/gradle-eta/tree/master)
 [![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta-0.7.4-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta)
 [![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta.android-0.7.4-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta.android)
 [![Gradle Plugin Portal](https://img.shields.io/badge/com.typelead.eta.base-0.7.4-green.svg?longCache=true&style=plastic)](https://plugins.gradle.org/plugin/com.typelead.eta.base)
