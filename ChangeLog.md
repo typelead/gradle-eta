@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.6
+- Fix problem with nats package (and packages that don't generate code).
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.5
 - (#20) Fix problem with module hear Main
 
