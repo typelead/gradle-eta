@@ -18,22 +18,22 @@ jobs:
       - run:
           command: |
             cd tests/fatjar
-            ./gradlew shadowJar --stacktrace
+            ./gradlew shadowJar -i --stacktrace
 
       - run:
           command: |
             cd tests/multi
-            ./gradlew run --stacktrace
+            ./gradlew run -i --stacktrace
 
       - run:
           command: |
             cd tests/simple
-            ./gradlew run --stacktrace
+            ./gradlew run -i --stacktrace
 
       - run:
           command: |
             cd tests/test
-            ./gradlew test --stacktrace
+            ./gradlew test -i --stacktrace
 
       - save_cache:
           key: gradle-eta-v075-{{ epoch }}
