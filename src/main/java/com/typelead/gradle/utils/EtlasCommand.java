@@ -3,6 +3,7 @@ package com.typelead.gradle.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -244,24 +245,35 @@ public class EtlasCommand {
         for (String line: lines) {
             String[] parts = line.split(",");
             String packageName = parts[1];
-            List<String> preMavenDeps =
-                nonEmptyStringList(parts[2].split(":"));
-            Iterator<String> it = preMavenDeps.iterator();
-            List<String> mavenDeps = new ArrayList<String>(preMavenDeps.size() / 3);
-            while (it.hasNext()) {
-                mavenDeps.add(it.next() + ":" + it.next() + ":" + it.next());
-            }
-            String jarPath = parts[3];
+            List<String> mavenDeps;
             List<String> deps;
-            if (parts.length > 4) {
-                deps = nonEmptyStringList(parts[4].split(":"));
-            } else {
+            String jarPath;
+            if (parts.length <= 2) {
+                // Happens with nats package which doesn't generate code
+                mavenDeps = Collections.emptyList();
                 deps = emptyList;
+                jarPath = "";
+            } else {
+                List<String> preMavenDeps =
+                    nonEmptyStringList(parts[2].split(":"));
+                Iterator<String> it = preMavenDeps.iterator();
+                mavenDeps = new ArrayList<String>(preMavenDeps.size() / 3);
+                while (it.hasNext()) {
+                    mavenDeps.add(it.next() + ":" + it.next() + ":" + it.next());
+                }
+                jarPath = parts[3];
+                if (parts.length > 4) {
+                    deps = nonEmptyStringList(parts[4].split(":"));
+                } else {
+                    deps = emptyList;
+                }
             }
 
             /* TODO: This case happens when you have local dependencies. The real
-                     solution here is to fix etlas so that it spits out local paths. */
-            if (jarPath != null && jarPath.length() > 0) {
+                     solution here is to fix etlas so that it spits out local paths.
+                     Also handles the nats case.
+            */
+            if ((jarPath != null && jarPath.length() > 0) || (parts.length <= 2)) {
                 keyValues.put(packageName, new PackageInfo(packageName, jarPath, mavenDeps));
                 dependencies.put(packageName, deps);
             }

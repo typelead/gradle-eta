@@ -19,13 +19,18 @@ public class PackageInfo {
     }
 
     private void initVersionAndHash() {
-        int index = jarPath.lastIndexOf(File.separator);
-        String fileName = jarPath.substring(index + 1);
-        String baseName = fileName.substring(0, fileName.length() - 4);
-        String[] parts = baseName.split("-");
-        int len = parts.length;
-        this.version = parts[len - 2];
-        this.hash    = parts[len - 1];
+        if (jarPath == null || jarPath.length() == 0) {
+            this.version = "0.0.0";
+            this.hash = "inplace";
+        } else {
+            int index = jarPath.lastIndexOf(File.separator);
+            String fileName = jarPath.substring(index + 1);
+            String baseName = fileName.substring(0, fileName.length() - 4);
+            String[] parts = baseName.split("-");
+            int len = parts.length;
+            this.version = parts[len - 2];
+            this.hash    = parts[len - 1];
+        }
     }
 
     public String getName() {
