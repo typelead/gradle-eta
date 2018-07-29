@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.7
+- Fix problem with bytestring-builder package (also doesn't generate code).
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.6
 - Fix problem with nats package (and packages that don't generate code).
 
