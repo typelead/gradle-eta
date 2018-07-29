@@ -15,25 +15,7 @@ jobs:
 
       - run: etlas update
 
-      - run:
-          command: |
-            cd tests/fatjar
-            ./gradlew shadowJar -i --stacktrace
-
-      - run:
-          command: |
-            cd tests/multi
-            ./gradlew run -i --stacktrace
-
-      - run:
-          command: |
-            cd tests/simple
-            ./gradlew run -i --stacktrace
-
-      - run:
-          command: |
-            cd tests/test
-            ./gradlew test -i --stacktrace
+      - run: ./tests/test.sh
 
       - save_cache:
           key: gradle-eta-v075-{{ epoch }}

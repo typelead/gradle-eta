@@ -1,0 +1,26 @@
+buildscript {
+  repositories {
+    mavenLocal()
+  }
+
+  dependencies {
+    classpath 'com.typelead:gradle-eta:latest.release'
+  }
+}
+
+plugins {
+    id 'application'
+}
+
+apply plugin: 'eta'
+
+eta {
+  useSystemEta   = true
+  useSystemEtlas = true
+}
+
+dependencies {
+    compile eta('base:4.8.2.0')
+    compile eta('nats')
+    compile eta('bytestring-builder')
+}

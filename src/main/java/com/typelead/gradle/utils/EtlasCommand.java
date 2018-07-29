@@ -273,10 +273,9 @@ public class EtlasCommand {
                      solution here is to fix etlas so that it spits out local paths.
                      Also handles the nats case.
             */
-            if ((jarPath != null && jarPath.length() > 0) || (parts.length <= 2)) {
-                keyValues.put(packageName, new PackageInfo(packageName, jarPath, mavenDeps));
-                dependencies.put(packageName, deps);
-            }
+            if (jarPath == null) jarPath = "";
+            keyValues.put(packageName, new PackageInfo(packageName, jarPath, mavenDeps));
+            dependencies.put(packageName, deps);
         }
 
         dependencyGraphConsumer.accept(ImmutableDAG.<String,PackageInfo>create(keyValues, dependencies));
