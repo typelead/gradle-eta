@@ -21,7 +21,6 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.provider.Provider;
-import org.gradle.api.internal.DefaultDomainObjectCollection;
 
 import com.typelead.gradle.utils.ExtensionHelper;
 import com.typelead.gradle.utils.ImmutableDAG;
@@ -39,9 +38,7 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
     private final Configuration parentConfiguration;
     private final EtlasMavenRepository mavenRepository;
 
-    private DomainObjectCollection<EtaDependency> dependencies =
-        new DefaultDomainObjectCollection<EtaDependency>
-        (EtaDependency.class, new LinkedHashSet<EtaDependency>());
+    private Set<EtaDependency> dependencies = new LinkedHashSet<EtaDependency>();
 
     private Set<Provider<File>> artifacts = new LinkedHashSet<Provider<File>>();
     private List<String> resolvedMavenDependencies;
@@ -54,7 +51,7 @@ public class DefaultEtaConfiguration implements EtaConfiguration {
     }
 
     @Override
-    public DomainObjectCollection<EtaDependency> getDependencies() {
+    public Set<EtaDependency> getDependencies() {
         return dependencies;
     }
 

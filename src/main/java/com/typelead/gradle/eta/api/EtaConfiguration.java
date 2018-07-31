@@ -13,7 +13,7 @@ import com.typelead.gradle.utils.ImmutableDAG;
 import com.typelead.gradle.utils.PackageInfo;
 
 public interface EtaConfiguration {
-    DomainObjectCollection<EtaDependency> getDependencies();
+    Set<EtaDependency> getDependencies();
     Set<EtaDependency> getAllDependencies();
     void resolve(Project project, DependencyHandler dependencies,
                  ImmutableDAG<String, PackageInfo> dependencyGraph);

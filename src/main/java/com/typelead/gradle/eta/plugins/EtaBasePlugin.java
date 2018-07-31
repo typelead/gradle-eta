@@ -155,8 +155,7 @@ public class EtaBasePlugin implements Plugin<Project> {
             (configuration, ETA_CONFIGURATION_EXTENSION_NAME,
              DefaultEtaConfiguration.class, configuration, mavenRepository);
 
-        DomainObjectCollection<EtaDependency> dependencies =
-            etaConfiguration.getDependencies();
+        Set<EtaDependency> dependencies = etaConfiguration.getDependencies();
 
         configuration.getDependencies().all
             (dependency -> {
