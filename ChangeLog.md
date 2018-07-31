@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.8
+- (#27) Support Gradle 4.8+ by avoiding use of internal APIs.
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.7
 - Fix problem with bytestring-builder package (also doesn't generate code).
 
