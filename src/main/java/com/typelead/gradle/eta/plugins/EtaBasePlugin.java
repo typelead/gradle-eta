@@ -53,6 +53,7 @@ import com.typelead.gradle.eta.tasks.EtaInstallAllDependencies;
 import com.typelead.gradle.eta.tasks.EtaRepl;
 import com.typelead.gradle.eta.tasks.EtaResolveDependencies;
 import com.typelead.gradle.eta.tasks.EtaSetupEnvironment;
+import com.typelead.gradle.eta.tasks.EtlasUpdate;
 import com.typelead.gradle.eta.internal.DefaultEtaConfiguration;
 import com.typelead.gradle.eta.internal.DefaultEtaProjectDependency;
 import com.typelead.gradle.eta.internal.EtlasMavenRepository;
@@ -81,6 +82,8 @@ public class EtaBasePlugin implements Plugin<Project> {
         ETA_INSTALL_ALL_DEPENDENCIES_TASK_NAME = "installAllDependenciesEta";
 
     public static final String ETA_REPL_TASK_NAME = "repl";
+
+    public static final String ETLAS_UPDATE_TASK_NAME = "updateEtlas";
 
     private Project project;
     private EtaExtension extension;
@@ -190,6 +193,9 @@ public class EtaBasePlugin implements Plugin<Project> {
             EtaRepl replTask =
                 project.getTasks().create(ETA_REPL_TASK_NAME, EtaRepl.class);
 
+            EtlasUpdate updateTask =
+                project.getTasks().create(ETLAS_UPDATE_TASK_NAME, EtlasUpdate.class);
+
             resolveDependenciesTask.setVersionsChanged
                 (setupEnvironmentTask.getVersionsChanged());
 
@@ -200,6 +206,8 @@ public class EtaBasePlugin implements Plugin<Project> {
             replTask.setDestinationDir
                 (project.provider(() -> project.getLayout().getProjectDirectory()));
             replTask.dependsOn(setupEnvironmentTask);
+
+            updateTask.dependsOn(setupEnvironmentTask);
 
             // We need to wait until the Eta dependencies of *all* subprojects
             // have been configured.
