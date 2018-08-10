@@ -1,3 +1,7 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.9
+- (#28) Add updateEtlas task
+- Fix the periodic ConcurrentModificationException
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.8
 - (#27) Support Gradle 4.8+ by avoiding use of internal APIs.
 
