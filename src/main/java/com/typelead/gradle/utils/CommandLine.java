@@ -41,8 +41,8 @@ public class CommandLine implements Log {
     }
 
     public void execute() {
-        StringBuilder stdOutBuilder = new StringBuilder();
-        StringBuilder stdErrBuilder = new StringBuilder();
+        final StringBuilder stdOutBuilder = new StringBuilder();
+        final StringBuilder stdErrBuilder = new StringBuilder();
         Process p = executeAndConsumeOutput(stdOutLine -> {
                                                 logger().info(stdOutLine);
                                                 stdOutBuilder.append(stdOutLine).append(System.lineSeparator());
@@ -51,20 +51,18 @@ public class CommandLine implements Log {
                                                 logger().info(stdErrLine);
                                                 stdErrBuilder.append(stdErrLine).append(System.lineSeparator());
                                             });
-        checkExitCode(p, stdOutBuilder.toString(), stdErrBuilder.toString());
+        checkExitCode(p);
     }
 
     public String executeAndGetStandardOutput() {
-        StringBuilder stdOutBuilder = new StringBuilder();
-        StringBuilder stdErrBuilder = new StringBuilder();
+        final StringBuilder stdOutBuilder = new StringBuilder();
+        final StringBuilder stdErrBuilder = new StringBuilder();
         Process p = executeAndConsumeOutput(stdOutBuilder::append,
                                             stdErrLine -> {
                                                 logger().info(stdErrLine);
                                                 stdErrBuilder.append(stdErrLine).append(System.lineSeparator());
                                             });
-        String stdOut = stdOutBuilder.toString();
-        String stdErr = stdErrBuilder.toString();
-        checkExitCode(p, stdOut, stdErr);
+        checkExitCode(p);
         return stdOutBuilder.toString();
     }
 
@@ -76,9 +74,7 @@ public class CommandLine implements Log {
                                                 logger().info(stdErrLine);
                                                 stdErrBuilder.append(stdErrLine).append(System.lineSeparator());
                                             });
-        String stdOut = String.join(System.lineSeparator(), stdOutLines);
-        String stdErr = stdErrBuilder.toString();
-        checkExitCode(p, stdOut, stdErr);
+        checkExitCode(p);
         return stdOutLines;
     }
 
@@ -121,9 +117,7 @@ public class CommandLine implements Log {
                 logger().error(x);
                 stdErrBuilder.append(x).append(System.lineSeparator());
             });
-        String stdOut = String.join(System.lineSeparator(), stdOutLines);
-        String stdErr = stdErrBuilder.toString();
-        checkExitCode(p, stdOut, stdErr);
+        checkExitCode(p);
         // This avoids ConcurrentModificationExceptions that can happen because
         // another thread may still be adding elements to stdOutLines.
         done.set(true);
@@ -177,9 +171,10 @@ public class CommandLine implements Log {
         return p;
     }
 
-    private void checkExitCode(Process p, String stdOut, String stdErr) {
-        if (p.exitValue() == 0) return;
-        throw new GradleException(command + " failed with ExitCode " + p.exitValue());
+    private void checkExitCode(Process p) {
+        final int exitCode = p.exitValue();
+        if (exitCode == 0) return;
+        throw new GradleException(command + " failed with ExitCode " + exitCode);
     }
 
     public void fork() {
