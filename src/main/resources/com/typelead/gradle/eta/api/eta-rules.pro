@@ -22,6 +22,7 @@
 
 -keep public class base.ghc.io.Exception {
   eta.runtime.stg.Closure blockedIndefinitelyOnMVar();
+  eta.runtime.stg.Closure blockedIndefinitelyOnSTM();
 }
 
 -keep public class base.ghc.Weak {
