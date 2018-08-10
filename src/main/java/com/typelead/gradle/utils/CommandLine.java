@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.ProcessBuilder.Redirect;
 
 public class CommandLine implements Log {
@@ -104,6 +105,7 @@ public class CommandLine implements Log {
     public List<String> executeLogAndGetStandardOutputLines(Predicate<String> logLoudly) {
         List<String> stdOutLines = new ArrayList<>();
         StringBuilder stdErrBuilder = new StringBuilder();
+        final AtomicBoolean done = new AtomicBoolean();
         Process p = executeAndConsumeOutput
             (x -> {
                 if (logLoudly.test(x)) {
@@ -111,7 +113,9 @@ public class CommandLine implements Log {
                 } else {
                     logger().info(x);
                 }
-                stdOutLines.add(x);
+                if (!done.get()) {
+                    stdOutLines.add(x);
+                }
             },
              x -> {
                 logger().error(x);
@@ -120,6 +124,9 @@ public class CommandLine implements Log {
         String stdOut = String.join(System.lineSeparator(), stdOutLines);
         String stdErr = stdErrBuilder.toString();
         checkExitCode(p, stdOut, stdErr);
+        // This avoids ConcurrentModificationExceptions that can happen because
+        // another thread may still be adding elements to stdOutLines.
+        done.set(true);
         return stdOutLines;
     }
 
