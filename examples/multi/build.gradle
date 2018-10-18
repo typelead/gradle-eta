@@ -10,12 +10,12 @@ allprojects {
 }
 
 eta {
-    version = '0.8.0b2'
-    etlasVersion = '1.4.0.0'
+    version = '0.8.6b2'
+    etlasVersion = '1.5.0.0'
 }
 
 dependencies {
-    compile eta('text:1.2.2.2')
+    compile eta('text:1.2.3.0')
     compile eta('memory:0.14.14')
     compile project(':hio')
     compile project(':java-shallow')
