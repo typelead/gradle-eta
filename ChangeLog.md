@@ -1,3 +1,7 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.8.0
+- (#33) Fix git dependencies handling
+- Fix a race condition that was causing sporadic ConcurrentModificationExceptions
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.7.9
 - (#28) Add updateEtlas task
 - Fix the periodic ConcurrentModificationException
