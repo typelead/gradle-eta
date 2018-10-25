@@ -140,11 +140,17 @@ public class EtaResolveDependencies extends DefaultTask {
         DependencyUtils.foldEtaDependencies
             (project,
              dependencies.get(),
-             (directDeps, projectDeps) -> {
+             (directDeps, projectDeps, gitStringDeps, gitDeps) -> {
+
+                /* Include the git dependencies in the Etlas
+                   dependency list, but avoid project dependencies because they will be
+                   built separately and will not be found. */
+
+                directDeps.addAll(gitStringDeps);
+
                 writeResults[0] = CabalHelper.generateCabalFile
                     (getProject().getName(), NamingScheme.fixVersion(getProject().getVersion().toString()),
                      directDeps, workingDir);
-            }, gitDeps -> {
                 writeResults[1] =
                     CabalHelper.generateCabalProjectFile(gitDeps, workingDir);
             });

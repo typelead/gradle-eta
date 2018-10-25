@@ -311,12 +311,13 @@ public class EtaInstallDependencies extends DefaultTask {
         DependencyUtils.foldEtaDependencies
             (project,
              dependencies.get(),
-             (directDeps, projectDeps) -> {
+             (directDeps, projectDeps, gitStringDeps, gitDeps) -> {
 
-                /* Include the project dependencies in the Etlas
+                /* Include the project dependencies and git dependencies in the Etlas
                    dependency list. */
 
                 directDeps.addAll(projectDeps);
+                directDeps.addAll(gitStringDeps);
                 directDeps.addAll(extraPackageDBs.keySet());
 
                 writeResults[0] = CabalHelper.generateCabalFile
@@ -326,7 +327,6 @@ public class EtaInstallDependencies extends DefaultTask {
                      .collect(Collectors.toList()),
                      modules, etaOptions, directDeps, workingDir);
 
-            }, gitDeps -> {
                 writeResults[1] =
                     CabalHelper.generateCabalProjectFile(gitDeps, packageDBs,
                                                          workingDir);

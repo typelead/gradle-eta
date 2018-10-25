@@ -18,16 +18,18 @@ import com.typelead.gradle.eta.api.EtaProjectDependency;
 import com.typelead.gradle.eta.api.NamingScheme;
 import com.typelead.gradle.eta.api.SourceRepository;
 import com.typelead.gradle.eta.plugins.EtaPlugin;
+import com.typelead.gradle.utils.QuadConsumer;
 
 public class DependencyUtils {
     public static void foldEtaDependencies
         (final Project project,
-         Collection<EtaDependency> dependencies,
-         BiConsumer<List<String>, List<String>> directProjectConsumer,
-         Consumer<Set<SourceRepository>> gitConsumer) {
+         final Collection<EtaDependency> dependencies,
+         final QuadConsumer<List<String>, List<String>, List<String>, Set<SourceRepository>>
+           directProjectConsumer) {
 
         List<String> directDependencies = new ArrayList<>();
         List<String> projectDependencies = new ArrayList<>();
+        List<String> gitStringDependencies = new ArrayList<>();
         Set<SourceRepository> gitDependencies = new LinkedHashSet<>();
 
         for (EtaDependency dependency : dependencies) {
@@ -42,17 +44,15 @@ public class DependencyUtils {
                                                      SourceSet.MAIN_SOURCE_SET_NAME));
                 }
             } else if (dependency instanceof EtaGitDependency) {
-                gitDependencies.add
-                    (((EtaGitDependency) dependency).getSourceRepository());
+                final EtaGitDependency gitDep = (EtaGitDependency) dependency;
+                gitDependencies.add(gitDep.getSourceRepository());
+                gitStringDependencies.add(gitDep.getPackageName());
             }
         }
 
         if (directProjectConsumer != null) {
-            directProjectConsumer.accept(directDependencies, projectDependencies);
-        }
-
-        if (gitConsumer != null) {
-            gitConsumer.accept(gitDependencies);
+            directProjectConsumer.accept(directDependencies, projectDependencies,
+                                         gitStringDependencies, gitDependencies);
         }
     }
 
