@@ -3,6 +3,7 @@ package com.typelead.gradle.eta.tasks;
 import java.io.File;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.nio.file.Paths;
 
@@ -195,7 +196,7 @@ public class EtaCompile extends SourceTask {
            - Configure the `-cp` flag
         */
 
-        Set<File> classpathFiles = getClasspath().getFiles();
+        Set<File> classpathFiles = new LinkedHashSet<File>(getClasspath().getFiles());
 
         classpathFiles.addAll(getExtraClasspath());
 

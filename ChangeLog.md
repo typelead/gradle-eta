@@ -1,3 +1,6 @@
+# com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.8.1
+- (#43) Fix Gradle support for Gradle 5.0+
+
 # com.typelead.eta, com.typelead.eta.android, com.typelead.eta.base 0.8.0
 - (#33) Fix git dependencies handling
 - Fix a race condition that was causing sporadic ConcurrentModificationExceptions

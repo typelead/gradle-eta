@@ -1,5 +1,5 @@
 plugins {
-    id 'com.typelead.eta' version '0.8.0'
+    id 'com.typelead.eta' version '0.8.1'
     id 'application'
 }
 
@@ -10,7 +10,7 @@ allprojects {
 }
 
 eta {
-    version = '0.8.6b2'
+    version = '0.8.6b5'
     etlasVersion = '1.5.0.0'
 }
 
