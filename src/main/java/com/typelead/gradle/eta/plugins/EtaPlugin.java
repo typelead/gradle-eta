@@ -177,10 +177,10 @@ public class EtaPlugin implements Plugin<Project> {
                 if (sourceSet.getOutput().isLegacyLayout()) {
                     return buildDir.dir(buildDir.getAsFile().get().toPath()
                                         .relativize(sourceSet
-                                                .getOutput()
-                                                .getClassesDirs()
-                                                .getSingleFile()
-                                                .toPath())
+                                                    .getOutput()
+                                                    .getClassesDirs()
+                                                    .getSingleFile()
+                                                    .toPath())
                                         .toString()).get();
                 }
                 return buildDir.dir(etaSourceSet.getClassesDir()).get();

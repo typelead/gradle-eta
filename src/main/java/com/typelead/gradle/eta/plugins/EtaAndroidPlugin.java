@@ -123,6 +123,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         project.getLogger()
             .debug("Processing variant " + variantName + " for Eta compilation.");
 
+        // Use getJavaCompileProvider for newer API, but reserve this for backward compatibility
         final JavaCompile javaCompileTask = variant.getJavaCompile();
 
         if (javaCompileTask == null) {
@@ -182,8 +183,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
            configuration, it must run *before* the preBuild phase since every task
            after that will resolve configurations. */
 
-        // End of 2019 deprecates BaseVariantImpl.getPreBuild()
-        // variant.getPreBuildProvider().get().dependsOn(installDependenciesTask);
+        // Use getPreBuildProvider for newer API, but reserve this for backward compatibility
         variant.getPreBuild().dependsOn(installDependenciesTask);
 
         /* Create the compile task. */

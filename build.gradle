@@ -31,7 +31,7 @@ dependencies {
     compile gradleApi()
     compile localGroovy()
 
-    provided 'com.android.tools.build:gradle:3.0.0'
+    provided 'com.android.tools.build:gradle:3.5.2'
 
     testCompile gradleTestKit()
     testCompile 'junit:junit:4.12'
@@ -68,3 +68,11 @@ pluginBundle {
     }
   }
 }
+
+// allprojects {
+//     gradle.projectsEvaluated {
+//         tasks.withType(JavaCompile) {
+//             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+//         }
+//     }
+// }
