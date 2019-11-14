@@ -55,6 +55,7 @@ public class NamingScheme {
         } else {
             suffix = ":" + extraName;
         }
+        System.out.println(path + suffix);
         return (path + suffix).replace(":", "-");
     }
 

@@ -1,6 +1,7 @@
 package com.typelead.gradle.eta.internal;
 
 import javax.inject.Inject;
+import java.util.Optional;
 
 import groovy.lang.Closure;
 
@@ -19,11 +20,11 @@ public class DefaultEtaSourceSet implements EtaSourceSet {
     private final SourceDirectorySet eta;
 
     @Inject
-    public DefaultEtaSourceSet(SourceSet sourceSet,
+    public DefaultEtaSourceSet(Optional<SourceSet> sourceSet,
                                String name,
                                String displayName,
                                SourceDirectorySetFactory sourceDirectorySetFactory) {
-        this.sourceSet = sourceSet;
+        this.sourceSet = sourceSet.isPresent() ? sourceSet.get() : null;
         this.eta = sourceDirectorySetFactory.create(name, displayName + " Eta source");
         eta.getFilter().include("**/*.eta", "**/*.hs");
     }

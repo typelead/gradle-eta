@@ -3,6 +3,7 @@ package com.typelead.gradle.eta.plugins;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -83,8 +84,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
 
                 final DefaultEtaSourceSet etaSourceSet =
                     project.getObjects().newInstance
-                    (DefaultEtaSourceSet.class, null, ETA_SOURCE_SET_NAME,
-                     ((DefaultAndroidSourceSet) sourceSet).getDisplayName(),
+                    (DefaultEtaSourceSet.class, Optional.empty(), ETA_SOURCE_SET_NAME,
+                     ((DefaultAndroidSourceSet) sourceSet).getName(),
                      sourceDirectorySetFactory);
 
                 ExtensionHelper.createConvention
@@ -181,6 +182,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
            configuration, it must run *before* the preBuild phase since every task
            after that will resolve configurations. */
 
+        // End of 2019 deprecates BaseVariantImpl.getPreBuild()
+        // variant.getPreBuildProvider().get().dependsOn(installDependenciesTask);
         variant.getPreBuild().dependsOn(installDependenciesTask);
 
         /* Create the compile task. */

@@ -72,4 +72,33 @@ public class OverridingProperty<T> implements Property<T> {
     public <S> Provider<S> map(Transformer<? extends S, ? super T> transformer) {
         throw new UnsupportedOperationException("The map operation is not provided by OverridingProperty!");
     }
+
+    @Override
+    public <S> Provider<S> flatMap(Transformer<? extends Provider<? extends S>, ? super T> transformer) {
+        throw new UnsupportedOperationException("The flatMap operation is not provided by OverridingProperty!");
+    }
+
+    @Override
+    public void finalizeValue() {
+        throw new UnsupportedOperationException("The finalizeValue operation is not provided by OverridingProperty!");
+    }
+
+    @Override
+    public Property<T> convention(Provider<? extends T> valueProvider) {
+        throw new UnsupportedOperationException("The convention operation is not provided by OverridingProperty!");
+    }
+
+    @Override
+    public Property<T> convention(T value) {
+        throw new UnsupportedOperationException("The convention operation is not provided by OverridingProperty!");
+    }
+
+    public Property<T> value(Provider<? extends T> provider) {
+        throw new UnsupportedOperationException("The value operation is not provided by OverridingProperty!");
+    }
+
+    @Override
+    public Property<T> value(T value) {
+        throw new UnsupportedOperationException("The value operation is not provided by OverridingProperty!");
+    }
 }

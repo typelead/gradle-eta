@@ -94,6 +94,11 @@ public class EtaExtension {
         resolvedEtaInfo = objectFactory.property(EtaInfo.class);
         resolvedEtlas   = objectFactory.property(ResolvedExecutable.class);
 
+        resolvedEta.set(new ResolvedExecutable(
+            parseStringProperty(project, "etlasPath"),
+            parseStringProperty(project, "etlasVersion")
+        ));
+
         preInstallDependencies = objectFactory.property(Boolean.class);
         preInstallDependencies.set(false);
     }
