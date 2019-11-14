@@ -3,6 +3,7 @@ package com.typelead.gradle.eta.plugins;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -83,8 +84,8 @@ public class EtaAndroidPlugin implements Plugin<Project> {
 
                 final DefaultEtaSourceSet etaSourceSet =
                     project.getObjects().newInstance
-                    (DefaultEtaSourceSet.class, null, ETA_SOURCE_SET_NAME,
-                     ((DefaultAndroidSourceSet) sourceSet).getDisplayName(),
+                    (DefaultEtaSourceSet.class, Optional.empty(), ETA_SOURCE_SET_NAME,
+                     ((DefaultAndroidSourceSet) sourceSet).getName(),
                      sourceDirectorySetFactory);
 
                 ExtensionHelper.createConvention
@@ -122,6 +123,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
         project.getLogger()
             .debug("Processing variant " + variantName + " for Eta compilation.");
 
+        // Use getJavaCompileProvider for newer API, but reserve this for backward compatibility
         final JavaCompile javaCompileTask = variant.getJavaCompile();
 
         if (javaCompileTask == null) {
@@ -181,6 +183,7 @@ public class EtaAndroidPlugin implements Plugin<Project> {
            configuration, it must run *before* the preBuild phase since every task
            after that will resolve configurations. */
 
+        // Use getPreBuildProvider for newer API, but reserve this for backward compatibility
         variant.getPreBuild().dependsOn(installDependenciesTask);
 
         /* Create the compile task. */

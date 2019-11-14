@@ -3,6 +3,7 @@ package com.typelead.gradle.eta.plugins;
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -96,7 +97,7 @@ public class EtaPlugin implements Plugin<Project> {
 
         final DefaultEtaSourceSet etaSourceSet =
             project.getObjects().newInstance
-            (DefaultEtaSourceSet.class, sourceSet, "eta",
+            (DefaultEtaSourceSet.class, Optional.ofNullable(sourceSet), "eta",
              ((DefaultSourceSet) sourceSet).getDisplayName(),
              sourceDirectorySetFactory);
 
@@ -175,8 +176,11 @@ public class EtaPlugin implements Plugin<Project> {
                   project.getLayout().getBuildDirectory();
                 if (sourceSet.getOutput().isLegacyLayout()) {
                     return buildDir.dir(buildDir.getAsFile().get().toPath()
-                                        .relativize(sourceSet.getOutput()
-                                                    .getClassesDir().toPath())
+                                        .relativize(sourceSet
+                                                    .getOutput()
+                                                    .getClassesDirs()
+                                                    .getSingleFile()
+                                                    .toPath())
                                         .toString()).get();
                 }
                 return buildDir.dir(etaSourceSet.getClassesDir()).get();
