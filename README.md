@@ -108,6 +108,10 @@ buildscript {
     }
   }
 }
+
+apply plugin: 'com.typelead.eta'
+// apply plugin: 'com.typelead.eta.base'
+// apply plugin: 'com.typelead.eta.android'
 ```
 
 ## Quick Start
