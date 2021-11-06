@@ -68,3 +68,10 @@ pluginBundle {
     }
   }
 }
+
+allprojects {
+    tasks.withType(Test).configureEach {
+        forkEvery = 100
+    }
+
+}
